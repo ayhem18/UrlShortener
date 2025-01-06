@@ -8,16 +8,13 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.DigestException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+
 
 @Validated
 @RestController
 public class UrlController {
-
-    private final String salt = "8560b4f4b3";
 
     private final UrlRepository urlRepo;
     private final UrlValidator urlValidator;
@@ -39,8 +36,8 @@ public class UrlController {
 
 
     @PostMapping("api/url/encode")
-    public String shortenUrl(@Valid @RequestBody UrlRequest urlRequest) throws JsonProcessingException, DigestException {
-        String urlStr = urlRequest.getUrl();
+    public String shortenUrl(@Valid @RequestBody UrlReq urlReq) throws JsonProcessingException, DigestException {
+        String urlStr = urlReq.getUrl();
         // verify the passed string is indeed an url
         boolean urlValid = this.urlValidator.validate(urlStr);
 
@@ -80,8 +77,6 @@ public class UrlController {
 
     @GetMapping("api/url/redirect/{hash}")
     public String redirect(@PathVariable(value="hash") String hashUrl) throws NoHashedUrlException, JsonProcessingException{
-        // need to redirect to the original url
-        // look for the hashed url
         Url url = this.urlRepo.findByHash(hashUrl).
                 orElseThrow(() -> new NoHashedUrlException("The passed hashed url is not saved in the database"));
 

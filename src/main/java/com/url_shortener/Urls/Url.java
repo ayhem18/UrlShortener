@@ -1,39 +1,12 @@
 package com.url_shortener.Urls;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.UniqueConstraint;
-import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.repository.CrudRepository;
 
 import java.util.Optional;
-
-class UrlRequest {
-    // still unable to customize the error message when passing a blank url
-    @NotBlank(message="The url cannot be empty")
-    private String url;
-
-    public UrlRequest(String url) {
-        this.url = url;
-    }
-
-    // every class that goes through Jackson needs a no-arg constructor
-    public UrlRequest() {
-
-    }
-
-    // since the Jackson library does not set the fields using the constructor, it is necessary
-    // to add a setter (otherwise, the Parser would have no access to the field)
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-}
-
 
 
 @Entity
@@ -41,6 +14,8 @@ public class Url {
     @Id
     private String url;
 
+    // setting the non-null and unique constraints to the field
+    @Column(nullable = false, unique = true)
     @JsonProperty("url_short")
     private String hash;
 
