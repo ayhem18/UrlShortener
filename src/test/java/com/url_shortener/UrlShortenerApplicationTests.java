@@ -7,7 +7,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 class UrlShortenerApplicationTests {
 
 	@Test
-	void contextLoads() {
+	void someFunction() {
+
 	}
 
 }
