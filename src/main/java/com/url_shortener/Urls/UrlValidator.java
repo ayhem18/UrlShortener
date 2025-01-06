@@ -11,9 +11,15 @@ class InvalidUrlException extends RuntimeException {
     }
 }
 
+class NoHashedUrlException extends  RuntimeException {
+    public NoHashedUrlException(String message) {
+        super(message);
+    }
+}
+
 @Configuration
 class UrlValidator {
-    private final Pattern noSpacePattern = Pattern.compile("www\\.[a-zA-Z0-9$_?=\\/-]+\\.[a-zA-Z]{3,}");
+    private final Pattern noSpacePattern = Pattern.compile("https://www\\.[a-zA-Z0-9$_?=/-]+\\.[a-zA-Z]{3,}");
 
     public boolean validate(String url) {
         return noSpacePattern.matcher(url).matches();

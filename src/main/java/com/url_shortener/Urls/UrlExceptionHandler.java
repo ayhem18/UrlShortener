@@ -29,4 +29,12 @@ public class UrlExceptionHandler extends ResponseEntityExceptionHandler {
             InvalidUrlException e, WebRequest request) {
         return handle(e, request, HttpStatus.BAD_REQUEST);
     }
+
+
+    @ExceptionHandler(NoHashedUrlException.class)
+    public ResponseEntity<CustomErrorMessage> handleNoHashedUrlException(
+            NoHashedUrlException e, WebRequest request) {
+        return handle(e, request, HttpStatus.BAD_REQUEST);
+    }
+
 }
