@@ -4,10 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.DigestException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,14 +30,9 @@ public class UrlController {
         this.urlValidator = urlValidator;
     }
 
-//    @Bean(name = "urlEncoder")
-//    public TextEncryptor urlEncoder() {
-//        return  new RsaRawEncryptor();
-//    }
-
 
     @PostMapping("api/url/encode")
-    public String shortenUrl(@Valid @RequestBody UrlReq urlReq) throws JsonProcessingException, DigestException {
+    public ResponseEntity<String> shortenUrl(@Valid @RequestBody UrlReq urlReq) throws JsonProcessingException {
         String urlStr = urlReq.getUrl();
         // verify the passed string is indeed an url
         boolean urlValid = this.urlValidator.validate(urlStr);
@@ -46,26 +42,22 @@ public class UrlController {
             throw  new InvalidUrlException("The passed url format is incorrect");
         }
 
-//        String urlHashed;
-//
-//        // hash the url
-//        try {
-//            MessageDigest md = MessageDigest.getInstance("MD5");
-//            md.update(urlStr.getBytes());
-//
-//            urlHashed = new String(((MessageDigest) md.clone()).digest());
-//
-//        } catch (CloneNotSupportedException | NoSuchAlgorithmException cnse) {
-//            throw new DigestException("couldn't make digest of partial content");
-//        }
+
+        if (this.urlRepo.existsById(urlStr)) {
+            return new ResponseEntity<>(
+                    new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(this.urlRepo.findById(urlStr).get()), // body
+                    HttpStatus.OK // status code 200 since the object wasn't created.
+            );
+        }
 
         Url url = new Url(urlStr, String.valueOf(urlStr.hashCode()));
-
         // save the url and its hash to the database
         this.urlRepo.save(url);
 
-        // return both the url and its has
-        return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(url);
+        // if I return only the String, the status code would be 200
+        // return a Response entity specifying the status code myself (probably this has already been solved by someone and can be avoided)
+        return new ResponseEntity<>(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(url),
+                HttpStatus.CREATED);
     }
 
     @GetMapping("api/url/url_count")
@@ -76,7 +68,8 @@ public class UrlController {
     }
 
     @GetMapping("api/url/redirect/{hash}")
-    public String redirect(@PathVariable(value="hash") String hashUrl) throws NoHashedUrlException, JsonProcessingException{
+    public String redirect(@PathVariable(value="hash") String hashUrl) throws JsonProcessingException, NoHashedUrlException{
+        // need to learn about redirects to properly complete this method
         Url url = this.urlRepo.findByHash(hashUrl).
                 orElseThrow(() -> new NoHashedUrlException("The passed hashed url is not saved in the database"));
 
