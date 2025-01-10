@@ -39,6 +39,8 @@ out/
 
 gradle/**
 
-
 *.db
 
+# the resources files contain my username and password to the Mongodb Clusters
+src/test/resources/application.properties
+src/main/resources/application.properties

@@ -47,10 +47,10 @@ class Owner implements Role {
         return List.of(new CanPay(), new CanViewStats(), new CanEditUrl(), new CanUseShortUrl());
     }
 
-    @Override
-    public String toString() {
+    public static String role() {
         return "Owner";
     }
+
 }
 
 class Admin implements Role {
@@ -59,8 +59,7 @@ class Admin implements Role {
         return List.of(new CanViewStats(), new CanEditUrl(), new CanUseShortUrl());
     }
 
-    @Override
-    public String toString() {
+    public static String role() {
         return "Admin";
     }
 }
@@ -71,9 +70,8 @@ class RegisteredUser implements Role {
         return List.of(new CanUseShortUrl());
     }
 
-    @Override
-    public String toString() {
-        return "RegisterUser";
+    public static String role() {
+        return "RegisteredUser";
     }
 }
 
