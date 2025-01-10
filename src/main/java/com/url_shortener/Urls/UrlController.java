@@ -56,6 +56,13 @@ public class UrlController {
 
         // if I return only the String, the status code would be 200
         // return a Response entity specifying the status code myself (probably this has already been solved by someone and can be avoided)
+
+        // according to the HTTPS specification, a successful post request should return a Response with the
+        // code 201 and a header with the location of the newly-allocated resource
+        // this can be done as follows: ResponseEntity.created(Uri).build()
+
+        // check  the URI
+
         return new ResponseEntity<>(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(url),
                 HttpStatus.CREATED);
     }

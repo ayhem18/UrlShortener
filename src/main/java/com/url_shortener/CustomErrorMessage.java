@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 // make it JSON serializable with the jackson annotations
 // Passing non JSON-Serializable object to the ResponseEntity class would raise
-//HttpMediaTypeNotAcceptableException
+// a HttpMediaTypeNotAcceptableException
 @JsonPropertyOrder({"statusCode", "timestamp", "message", "description"})
 public class CustomErrorMessage {
 
