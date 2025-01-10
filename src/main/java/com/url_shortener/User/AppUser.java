@@ -1,37 +1,36 @@
 package com.url_shortener.User;
 
-import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
-// this class represents the main user of our service
 
-
-// IMPORTANT: MAKE SURE TO PASS THE @Entity annotation so that JPA recognizes it as a database TABLE
 @Entity
-public class UserSite {
+public class AppUser {
 
-    @JsonProperty("user_name")
-    private String userName;
-
-    // EACH entity must have at least one field with the @Id annotation
     @Id
-    private String site;
+    @JsonProperty(value = "user_name")
+    private String userName;
 
     // the password should be written :Json to obj
     // but not read: obj to json
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
+    // each user is associated with a company (a specific site)
+    Company company;
 
-    public UserSite(String userName, String site, String password) {
+    // the role the user plays in this company (determines the authorities !!)
+    Role role;
+
+    public AppUser(String userName, String password, Company company, Role role) {
         this.userName = userName;
-        this.site = site;
         this.password = password;
+        this.company = company;
+        this.role = role;
     }
 
-    public UserSite() {
+    public AppUser() {
     }
 
     public String getUserName() {
@@ -42,19 +41,27 @@ public class UserSite {
         this.userName = userName;
     }
 
-    public String getSite() {
-        return site;
-    }
-
-    public void setSite(String site) {
-        this.site = site;
-    }
-
     public String getPassword() {
         return password;
     }
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Company getCompany() {
+        return company;
+    }
+
+    public void setCompany(Company company) {
+        this.company = company;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 }
