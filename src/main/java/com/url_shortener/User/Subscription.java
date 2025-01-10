@@ -1,10 +1,13 @@
 package com.url_shortener.User;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-@Entity
+@Document
 public class Subscription {
+
+    // one troublesome fact is that the @Id annotation has 2 variants one for MongoDB and one for SQL,
+    // need to be careful not to use SQL and nonSQL annotation with the same class
     @Id
     String tier;
 

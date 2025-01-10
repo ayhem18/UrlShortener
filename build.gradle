@@ -23,11 +23,11 @@ dependencies {
 	// add this dependency to build Web APIs
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 
-	// for ORM
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	// for ORM (SQL)
+//	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
 	// for the h2 database
-	implementation 'com.h2database:h2'
+//	implementation 'com.h2database:h2'
 
 	// for jackson validation
 	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: '3.4.0'

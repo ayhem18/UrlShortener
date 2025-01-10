@@ -1,17 +1,14 @@
 package com.url_shortener.User;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@Entity
+@Document("Company") // make sure to use the Document annotation and not the @Entity since this is not a SQL table...
 public class Company {
     private static long COMPANY_COUNT = 0;
 
@@ -34,19 +31,22 @@ public class Company {
 
     // all ids should be read-only
     @Id
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+//    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     String id; // some sort of Company identifier
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+//    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     String siteId;
 
-    @Column(nullable = false, unique = true) // the site must be unique as well
+
+//    @Column(nullable = false, unique = true) // the site must be unique as well
+    // the flexibility of MongoDB comes with the complete lack of any constraints enforcements
+    // basically might have to check myself if the site is unique or not
     String site;
 
     // need to figure out the annotation and necessary stuff to make it work properly with the MongoDB database
 //    Subscription subscription;
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+//    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     Map<String, String> RoleTokens;
 
     public Company(String id, String site,  Map<String, String> roleTokens) {
@@ -105,7 +105,8 @@ public class Company {
 }
 
 
-@Configuration
+//@Configuration I still do not understand why it is not necessary to associate the Repository interface
+// with the @Configuration / @Bean annotations. (maybe because it is an interface / abstract class)
 interface CompanyRepository extends MongoRepository<Company, String> {
     Optional<Company> findById(String id);
     Optional<Company> findBySite(String site);

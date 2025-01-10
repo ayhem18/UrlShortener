@@ -1,11 +1,11 @@
 package com.url_shortener.User;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 
-@Entity
+@Document("user")
 public class AppUser {
 
     @Id

@@ -2,7 +2,6 @@ package com.url_shortener.User;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.url_shortener.CustomErrorMessage;
 import com.url_shortener.CustomRandomGenerator;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,10 +11,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.yaml.snakeyaml.tokens.FlowEntryToken;
 
 import java.util.HashMap;
-import java.util.HashSet;
 
 
 // an annotation to create Rest APis
@@ -34,7 +31,7 @@ public class UserController {
     }
 
 
-    @PostMapping("")
+    @PostMapping("api/auth/register")
     public ResponseEntity<String> RegisterCompany(@Valid @RequestBody CompanyRegisterRequest req) throws JsonProcessingException {
         if (this.companyRepo.findById(req.id()).isPresent()) {
             throw new ExistingCompanyException("There is already a registered company with the given email.");
@@ -53,7 +50,6 @@ public class UserController {
         roleTokens.put(RegisteredUser.role(), String.valueOf(this.generator.randomString(ROLE_TOKEN_LENGTH).hashCode()));
 
         // build the company object
-
         Company newCompany = new Company(req.id(), req.site(), roleTokens);
 
         // save it to the database
