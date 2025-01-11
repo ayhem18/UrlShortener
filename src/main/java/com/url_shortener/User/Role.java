@@ -1,6 +1,8 @@
 package com.url_shortener.User;
 
 
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.List;
@@ -37,8 +39,6 @@ class CanUseShortUrl implements GrantedAuthority {
 
 public interface Role {
     List<GrantedAuthority> getAuthorities();
-
-    String toString();
 }
 
 class Owner implements Role {
@@ -51,6 +51,10 @@ class Owner implements Role {
         return "Owner".toLowerCase();
     }
 
+    @Override
+    public String toString() {
+        return "owner";
+    }
 }
 
 class Admin implements Role {
@@ -62,6 +66,12 @@ class Admin implements Role {
     public static String role() {
         return "Admin".toLowerCase();
     }
+
+    @Override
+    public String toString() {
+        return "admin";
+    }
+
 }
 
 class RegisteredUser implements Role {
@@ -73,5 +83,11 @@ class RegisteredUser implements Role {
     public static String role() {
         return "RegisteredUser".toLowerCase();
     }
+
+    @Override
+    public String toString() {
+        return "registereduser";
+    }
 }
+
 

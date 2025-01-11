@@ -46,3 +46,15 @@ class IncorrectRoleTokenException extends RuntimeException {
                 super(message);
         }
 }
+
+class UserBeforeOwnerException extends RuntimeException {
+        public UserBeforeOwnerException(String message) {
+                super(message);
+        }
+}
+
+class MultipleOwnersException extends RuntimeException {
+        public MultipleOwnersException(String message) {
+                super(message);
+        }
+}

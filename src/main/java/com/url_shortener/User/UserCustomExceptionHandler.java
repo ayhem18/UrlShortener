@@ -29,4 +29,10 @@ public class UserCustomExceptionHandler extends CustomExceptionHandler {
             IncorrectRoleTokenException e, WebRequest request) {
         return handle(e, request, HttpStatus.UNAUTHORIZED);
     }
+
+    @ExceptionHandler(UserBeforeOwnerException.class)
+    public ResponseEntity<CustomErrorMessage> handleUserBeforeOwnerException(
+            UserBeforeOwnerException e, WebRequest request) {
+        return handle(e, request, HttpStatus.FORBIDDEN);
+    }
 }
