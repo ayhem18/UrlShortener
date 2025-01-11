@@ -83,11 +83,10 @@ public class Company {
     // that checks the condition on the fly, returning Null when the condition is not verified
     @JsonGetter(value = "id")
     private String jsonGetId() {
-        System.out.println("\n the jsonGetId method was called !! \n");
 
-        // 3 represents the number of sensitive fields that should be serialized only once:
+        // 4 represents the number of sensitive fields that should be serialized only once:
         // when saved into the database
-        if (serializeSensitiveCount < 3) {
+        if (serializeSensitiveCount < 4) {
             serializeSensitiveCount += 1;
             return this.id;
         }
@@ -99,9 +98,8 @@ public class Company {
     // or the name displayed in the resulting Json
     @JsonGetter(value = "siteId")
     private String jsonGetSiteId() {
-        System.out.println("\n the jsonGetSiteId method was called !! \n");
 
-        if (serializeSensitiveCount < 3) {
+        if (serializeSensitiveCount < 4) {
             serializeSensitiveCount += 1;
             return this.siteId;
         }
@@ -110,11 +108,18 @@ public class Company {
 
     @JsonGetter(value = "roleTokens")
     private Map<String, String> jsonGetRoleTokens() {
-        System.out.println("\n the jsonGetRoleTokens method was called !! \n");
-
-        if (serializeSensitiveCount < 3) {
+        if (serializeSensitiveCount < 4) {
             serializeSensitiveCount += 1;
             return this.roleTokens;
+        }
+        return null;
+    }
+
+    @JsonGetter(value = "roleHashedTokens")
+    private Map<String, String> jsonGetRoleTokensHashed() {
+        if (serializeSensitiveCount < 4) {
+            serializeSensitiveCount += 1;
+            return this.roleTokensHashed;
         }
         return null;
     }
@@ -154,10 +159,10 @@ public class Company {
         // deep Copy the role Tokens
         this.roleTokensHashed = new HashMap<>(this.roleTokens);
         // hash the tokens
-        this.roleTokensHashed.entrySet().forEach(
-                entry -> entry.setValue(
-                        String.valueOf(entry.getKey().hashCode()))
-        );
+        for (Map.Entry<String, String> entry : this.roleTokensHashed.entrySet()) {
+            entry.setValue(
+                    String.valueOf(entry.getKey().hashCode()));
+        }
     }
 }
 

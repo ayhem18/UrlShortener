@@ -71,37 +71,30 @@ public class UserController {
             throw new UserWithNoCompanyException("No registered company with the given id: " + req.companyId());
         }
 
+        String claimedRole = req.role();
+
+        if (!this.roleStrings().contains(claimedRole.toLowerCase())) {
+            throw new UndefinedRoleException("The claimed role " + claimedRole + " is not yet supported.");
+        }
+
         // at this point we know the company id is valid
         // extract the company object
         Company company = this.companyRepo.findById(req.companyId()).get();
 
-        String claimedRole = req.role().toLowerCase();
+        // make sure the user is authenticated: has the right token for the right role
+        String roleToken = req.roleToken();
 
-        if (!this.roleStrings().contains(claimedRole)) {
-            throw new UndefinedRoleException("The claimed role " + claimedRole + " is not yet supported.");
+        String roleTokenHashed = company.getRoleTokens().get(claimedRole);
+
+        System.out.println("\n" + roleTokenHashed + "\n");
+
+        System.out.println("\n" + roleToken.hashCode() + "\n");
+
+        if (! String.valueOf(roleToken.hashCode()).equals(roleTokenHashed)) {
+            throw new IncorrectRoleTokenException("The role token is incorrect");
         }
 
-
-        // create the role tokens
-        HashMap<String, String> roleTokens = new HashMap<>();
-
-        // add the owner role token
-        roleTokens.put(Owner.role(), this.generator.randomString(ROLE_TOKEN_LENGTH));
-
-        // add the admin role token
-        roleTokens.put(Admin.role(), this.generator.randomString(ROLE_TOKEN_LENGTH));
-
-        // add the registeredUser role token
-        roleTokens.put(RegisteredUser.role(), this.generator.randomString(ROLE_TOKEN_LENGTH));
-
-        // build the company object
-        Company newCompany = new Company(req.id(), req.site(), roleTokens);
-
-        // save it to the database
-        this.companyRepo.save(newCompany);
-
-        return new ResponseEntity<>(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(newCompany),
-                HttpStatus.CREATED);
+        return ResponseEntity.ok("token role authentication done correctly !!");
     }
 
 }

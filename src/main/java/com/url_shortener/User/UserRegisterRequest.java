@@ -10,10 +10,10 @@ public record UserRegisterRequest (
         String companyId,
 
         @Size(min=2, max=16, message="username must of length between 2 and 16")
-        @Pattern(regexp = "^[a-zA-Z][a-zA-Z0-9_$@]",
+        @Pattern(regexp = "^[a-zA-Z][a-zA-Z0-9_$@]+",
                 message="Only alpha numerical characters are allowed + '_'. The first character must be alphabetic")
         @NotBlank
-        String userName,
+        String username,
 
         @NotBlank
         String password,
@@ -25,3 +25,24 @@ public record UserRegisterRequest (
         String roleToken) {};
 
 
+/**
+ * user-register related exceptions
+ */
+
+class UserWithNoCompanyException extends RuntimeException {
+        public UserWithNoCompanyException(String message) {
+                super(message);
+        }
+}
+
+class UndefinedRoleException extends RuntimeException {
+        public UndefinedRoleException(String message) {
+                super(message);
+        }
+}
+
+class IncorrectRoleTokenException extends RuntimeException {
+        public IncorrectRoleTokenException(String message) {
+                super(message);
+        }
+}

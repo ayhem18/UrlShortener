@@ -22,15 +22,4 @@ class ExistingCompanyException extends RuntimeException {
     }
 }
 
-class UserWithNoCompanyException extends RuntimeException {
-    public UserWithNoCompanyException(String message) {
-        super(message);
-    }
-}
-
-class UndefinedRoleException extends RuntimeException {
-    public UndefinedRoleException(String message) {
-        super(message);
-    }
-}
 
