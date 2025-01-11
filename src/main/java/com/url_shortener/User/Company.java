@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -57,7 +58,7 @@ public class Company {
     private Map<String, String> roleTokensHashed;
 
 
-    public Company(String id, String site,  Map<String, String> roleTokens) {
+    public Company(String id, String site, Map<String, String> roleTokens, PasswordEncoder encoder) {
         this.id = id;
         // generate id uses the 25-based site id
         this.siteId = generateSiteId();
@@ -66,7 +67,7 @@ public class Company {
         this.site = site;
 
 //      this.subscription = subscription;
-        this.setRoleTokens(roleTokens);
+        this.setRoleTokens(roleTokens, encoder);
         this.serializeSensitiveCount = 0;
     }
 
@@ -153,15 +154,17 @@ public class Company {
         return this.roleTokensHashed;
     }
 
-    public void setRoleTokens(Map<String, String> roleTokens) {
+    public void setRoleTokens(Map<String, String> roleTokens, PasswordEncoder encoder) {
+        // the method signature ensures that the hashes are always persistent with the actual tokens
+        // set the field
         this.roleTokens = roleTokens;
 
         // deep Copy the role Tokens
         this.roleTokensHashed = new HashMap<>(this.roleTokens);
-        // hash the tokens
+
+        // encoder the tokens
         for (Map.Entry<String, String> entry : this.roleTokensHashed.entrySet()) {
-            entry.setValue(
-                    String.valueOf(entry.getKey().hashCode()));
+            entry.setValue(encoder.encode(entry.getValue())); // make sure to encode the value !! and not the key !!!
         }
     }
 }

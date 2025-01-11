@@ -5,8 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.url_shortener.CustomRandomGenerator;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,14 +34,20 @@ public class UserController {
         this.generator = generator;
     }
 
+    @Bean("UserControllerEncoder")
+    public PasswordEncoder encoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+
     private List<String> roleStrings() {
-        return List.of(Admin.role().toLowerCase(), Owner.role().toLowerCase(), RegisteredUser.role().toLowerCase());
+        return List.of(Admin.role(), Owner.role(), RegisteredUser.role());
     }
 
 
     @PostMapping("api/auth/register/company")
     public ResponseEntity<String> registerCompany(@Valid @RequestBody CompanyRegisterRequest req) throws JsonProcessingException {
-        if (this.companyRepo.findById(req.id()).isPresent()) {
+        if (this.companyRepo.existsById(req.id())) {
             throw new ExistingCompanyException("There is already a company with the given id.");
         }
 
@@ -55,7 +64,7 @@ public class UserController {
         roleTokens.put(RegisteredUser.role(), this.generator.randomString(ROLE_TOKEN_LENGTH));
 
         // build the company object
-        Company newCompany = new Company(req.id(), req.site(), roleTokens);
+        Company newCompany = new Company(req.id(), req.site(), roleTokens, this.encoder());
 
         // save it to the database
         this.companyRepo.save(newCompany);
@@ -71,9 +80,9 @@ public class UserController {
             throw new UserWithNoCompanyException("No registered company with the given id: " + req.companyId());
         }
 
-        String claimedRole = req.role();
+        String claimedRole = req.role().toLowerCase();
 
-        if (!this.roleStrings().contains(claimedRole.toLowerCase())) {
+        if (!this.roleStrings().contains(claimedRole)) {
             throw new UndefinedRoleException("The claimed role " + claimedRole + " is not yet supported.");
         }
 
@@ -81,16 +90,13 @@ public class UserController {
         // extract the company object
         Company company = this.companyRepo.findById(req.companyId()).get();
 
-        // make sure the user is authenticated: has the right token for the right role
-        String roleToken = req.roleToken();
+//        System.out.println("\n" + company.getRoleTokens().get(claimedRole) + "\n");
+//        System.out.println("\n" + req.roleToken() + "\n");
+//
 
-        String roleTokenHashed = company.getRoleTokens().get(claimedRole);
-
-        System.out.println("\n" + roleTokenHashed + "\n");
-
-        System.out.println("\n" + roleToken.hashCode() + "\n");
-
-        if (! String.valueOf(roleToken.hashCode()).equals(roleTokenHashed)) {
+        // make sure the user is authenticated: has the right token for the right role:
+        // use the password encoder to verify the roleToken
+        if (! encoder().matches(req.roleToken(), company.getRoleTokens().get(claimedRole))) {
             throw new IncorrectRoleTokenException("The role token is incorrect");
         }
 

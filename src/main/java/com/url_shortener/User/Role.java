@@ -9,28 +9,28 @@ import java.util.List;
 class CanPay implements GrantedAuthority {
     @Override
     public String getAuthority() {
-        return "canPay";
+        return "canPay".toLowerCase();
     }
 }
 
 class CanViewStats implements GrantedAuthority {
     @Override
     public String getAuthority() {
-        return "CanViewStats";
+        return "CanViewStats".toLowerCase();
     }
 }
 
 class CanEditUrl implements GrantedAuthority {
     @Override
     public String getAuthority() {
-        return "CanEditUrl";
+        return "CanEditUrl".toLowerCase();
     }
 }
 
 class CanUseShortUrl implements GrantedAuthority {
     @Override
     public String getAuthority() {
-        return "canUseShortUrl";
+        return "canUseShortUrl".toLowerCase();
     }
 }
 
@@ -48,7 +48,7 @@ class Owner implements Role {
     }
 
     public static String role() {
-        return "Owner";
+        return "Owner".toLowerCase();
     }
 
 }
@@ -60,7 +60,7 @@ class Admin implements Role {
     }
 
     public static String role() {
-        return "Admin";
+        return "Admin".toLowerCase();
     }
 }
 
@@ -71,7 +71,7 @@ class RegisteredUser implements Role {
     }
 
     public static String role() {
-        return "RegisteredUser";
+        return "RegisteredUser".toLowerCase();
     }
 }
 
