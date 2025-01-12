@@ -24,8 +24,7 @@ public class AppUser {
     @Id
     private String username;
 
-    // the password should be written :Json to obj
-    // but not read: obj to json
+    // the password should be written :Json to obj, but not read: obj to json
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
@@ -125,8 +124,13 @@ interface  UserRepository extends MongoRepository<AppUser, String> {
     Optional<AppUser> findById(String id);
     Optional<AppUser> findByUsername(String id);
 
+    // the method below does NOT work as expected. the method right below does the trick
     @Query("{'company': ?0, 'roleString': ?1}")
     List<AppUser> findRolesInCompany(String companyId, String role);
+
+    List<AppUser> findByCompanyAndRole(Company company, Role role);
+
+    List<AppUser> findByCompany(Company company);
 }
 
 

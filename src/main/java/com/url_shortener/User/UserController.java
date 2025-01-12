@@ -11,9 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -39,11 +37,17 @@ public class UserController {
 
     }
 
-    @Bean("UserControllerEncoder")
+    @Bean("userControllerEncoder")
     public PasswordEncoder encoder() {
         return new BCryptPasswordEncoder();
     }
 
+    @Bean("userControllerObjectMapper")
+    public ObjectMapper objectMapper() {
+        ObjectMapper om = new ObjectMapper();
+        om.writerWithDefaultPrettyPrinter();
+        return om;
+    }
 
     @PostMapping("api/auth/register/company")
     public ResponseEntity<String> registerCompany(@Valid @RequestBody CompanyRegisterRequest req) throws JsonProcessingException {
@@ -69,8 +73,15 @@ public class UserController {
         // save it to the database
         this.companyRepo.save(newCompany);
 
-        return new ResponseEntity<>(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(newCompany),
+        return new ResponseEntity<>(this.objectMapper().writeValueAsString(newCompany),
                 HttpStatus.CREATED);
+    }
+
+    @GetMapping("api/auth/users/{companyId}")
+    public ResponseEntity<String> usersInCompany(@PathVariable String companyId) throws JsonProcessingException {
+        List<AppUser> users = this.userRepo.findByCompany(this.companyRepo.findById(companyId).get());
+
+        return ResponseEntity.ok(this.objectMapper().writeValueAsString(users));
     }
 
     @PostMapping("api/auth/register/user")
@@ -99,8 +110,8 @@ public class UserController {
         // the request should be rejected
 
         // 2. if there is an OWNER already, then the request should be rejected too
-
-        List<AppUser> companyOwner = this.userRepo.findRolesInCompany(company.getId(), claimedRole);
+//        List<AppUser> companyOwner = this.userRepo.findRolesInCompany(company.getId(), RoleManager.OWNER_ROLE);
+        List<AppUser> companyOwner = this.userRepo.findByCompanyAndRole(company, RoleManager.getRole(RoleManager.OWNER_ROLE));
 
         System.out.println("\n" + companyOwner + "\n");
 
@@ -114,7 +125,7 @@ public class UserController {
 
         // make sure the user is authenticated: has the right token for the right role:
         // use the password encoder to verify the roleToken
-        if (! encoder().matches(req.roleToken(), company.getRoleTokens().get(claimedRole))) {
+        if (! encoder().matches(req.roleToken(), company.getTokens().get(claimedRole))) {
             throw new IncorrectRoleTokenException("The role token is incorrect");
         }
 

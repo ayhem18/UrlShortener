@@ -32,7 +32,6 @@ public class Company {
         return instanceId.toString();
     }
 
-
     // all ids should be read-only
     @Id
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
@@ -41,14 +40,7 @@ public class Company {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     String siteId;
 
-
-//    @Column(nullable = false, unique = true) // the site must be unique as well
-    // the flexibility of MongoDB comes with the complete lack of any constraints enforcements
-    // basically might have to check myself if the site is unique or not
     String site;
-
-    // need to figure out the annotation and necessary stuff to make it work properly with the MongoDB database
-//    Subscription subscription;
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Map<String, String> roleTokens;
@@ -56,7 +48,6 @@ public class Company {
     private int serializeSensitiveCount;
 
     private Map<String, String> roleTokensHashed;
-
 
     public Company(String id, String site, Map<String, String> roleTokens, PasswordEncoder encoder) {
         this.id = id;
@@ -66,8 +57,7 @@ public class Company {
         COMPANY_COUNT += 1;
         this.site = site;
 
-//      this.subscription = subscription;
-        this.setRoleTokens(roleTokens, encoder);
+        this.setTokens(roleTokens, encoder);
         this.serializeSensitiveCount = 0;
     }
 
@@ -82,9 +72,10 @@ public class Company {
     }
     // one trick to serialize fields conditionally is to write a JsonGetter method
     // that checks the condition on the fly, returning Null when the condition is not verified
+    // not sure if the "value" field in the annotation refers to the field in the class
+    // or the name displayed in the resulting Json
     @JsonGetter(value = "id")
     private String jsonGetId() {
-
         // 4 represents the number of sensitive fields that should be serialized only once:
         // when saved into the database
         if (serializeSensitiveCount < 4) {
@@ -94,12 +85,8 @@ public class Company {
         return null;
     }
 
-
-    // not sure if the "value" field in the annotation refers to the field in the class
-    // or the name displayed in the resulting Json
     @JsonGetter(value = "siteId")
     private String jsonGetSiteId() {
-
         if (serializeSensitiveCount < 4) {
             serializeSensitiveCount += 1;
             return this.siteId;
@@ -142,19 +129,12 @@ public class Company {
         this.site = site;
     }
 
-//    public Subscription getSubscription() {
-//        return subscription;
-//    }
-//
-//    public void setSubscription(Subscription subscription) {
-//        this.subscription = subscription;
-//    }
-
-    public Map<String, String> getRoleTokens() {
+    // changed the name of the getter from the standard java convention so that the Mongodb driver wouldn't use it
+    public Map<String, String> getTokens() {
         return this.roleTokensHashed;
     }
 
-    public void setRoleTokens(Map<String, String> roleTokens, PasswordEncoder encoder) {
+    public void setTokens(Map<String, String> roleTokens, PasswordEncoder encoder) {
         // the method signature ensures that the hashes are always persistent with the actual tokens
         // set the field
         this.roleTokens = roleTokens;
