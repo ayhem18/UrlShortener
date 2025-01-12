@@ -1,19 +1,20 @@
-package com.url_shortener.User;
+package com.url_shortener.Service.User;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.url_shortener.CustomRandomGenerator;
+import com.url_shortener.Service.*;
+import com.url_shortener.Service.Company.Company;
+import com.url_shortener.Service.Company.CompanyRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.HttpStatus;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 
 
@@ -25,56 +26,24 @@ public class UserController {
 
     private final CompanyRepository companyRepo;
     private final UserRepository userRepo;
-    private final CustomRandomGenerator generator;
 
     @Autowired
     public UserController(CompanyRepository companyRepo,
-                          UserRepository userRepo,
-                          CustomRandomGenerator generator) {
+                          UserRepository userRepo) {
         this.companyRepo = companyRepo;
         this.userRepo = userRepo;
-        this.generator = generator;
-
     }
 
     @Bean("userControllerEncoder")
+    @Primary
     public PasswordEncoder encoder() {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean("userControllerObjectMapper")
-    public ObjectMapper objectMapper() {
+    private ObjectMapper objectMapper() {
         ObjectMapper om = new ObjectMapper();
         om.writerWithDefaultPrettyPrinter();
         return om;
-    }
-
-    @PostMapping("api/auth/register/company")
-    public ResponseEntity<String> registerCompany(@Valid @RequestBody CompanyRegisterRequest req) throws JsonProcessingException {
-        if (this.companyRepo.existsById(req.id())) {
-            throw new ExistingCompanyException("There is already a company with the given id.");
-        }
-
-        // create the role tokens
-        HashMap<String, String> roleTokens = new HashMap<>();
-
-        // add the owner role token
-        roleTokens.put(Owner.role(), this.generator.randomString(ROLE_TOKEN_LENGTH));
-
-        // add the admin role token
-        roleTokens.put(Admin.role(), this.generator.randomString(ROLE_TOKEN_LENGTH));
-
-        // add the registeredUser role token
-        roleTokens.put(RegisteredUser.role(), this.generator.randomString(ROLE_TOKEN_LENGTH));
-
-        // build the company object
-        Company newCompany = new Company(req.id(), req.site(), roleTokens, this.encoder());
-
-        // save it to the database
-        this.companyRepo.save(newCompany);
-
-        return new ResponseEntity<>(this.objectMapper().writeValueAsString(newCompany),
-                HttpStatus.CREATED);
     }
 
     @GetMapping("api/auth/users/{companyId}")
@@ -91,6 +60,9 @@ public class UserController {
             throw new UserWithNoCompanyException("No registered company with the given id: " + req.companyId());
         }
 
+        if (this.userRepo.existsById(req.username())) {
+            throw new AlreadyExistingUserException("The username is already register");
+        }
         String claimedRole = req.role().toLowerCase();
 
         if (!RoleManager.ROLES_STRING.contains(claimedRole)) {
@@ -110,7 +82,6 @@ public class UserController {
         // the request should be rejected
 
         // 2. if there is an OWNER already, then the request should be rejected too
-//        List<AppUser> companyOwner = this.userRepo.findRolesInCompany(company.getId(), RoleManager.OWNER_ROLE);
         List<AppUser> companyOwner = this.userRepo.findByCompanyAndRole(company, RoleManager.getRole(RoleManager.OWNER_ROLE));
 
         System.out.println("\n" + companyOwner + "\n");
@@ -130,11 +101,11 @@ public class UserController {
         }
 
         // at this point we are ready to create the User
-        AppUser newUser = new AppUser(req.username(), req.password(), company, RoleManager.getRole(claimedRole));
+        AppUser newUser = new AppUser(req.username(), this.encoder().encode(req.password()), company, RoleManager.getRole(claimedRole));
 
         this.userRepo.save(newUser);
 
-        return ResponseEntity.ok("token role authentication done correctly !!");
+        return ResponseEntity.ok(this.objectMapper().writeValueAsString(newUser));
     }
 
 }

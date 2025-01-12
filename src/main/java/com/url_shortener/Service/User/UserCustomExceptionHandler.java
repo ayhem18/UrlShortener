@@ -1,4 +1,4 @@
-package com.url_shortener.User;
+package com.url_shortener.Service.User;
 
 import com.url_shortener.CustomErrorMessage;
 import com.url_shortener.CustomExceptionHandler;
@@ -27,7 +27,7 @@ public class UserCustomExceptionHandler extends CustomExceptionHandler {
     @ExceptionHandler(IncorrectRoleTokenException.class)
     public ResponseEntity<CustomErrorMessage> handleIncorrectRoleTokenException(
             IncorrectRoleTokenException e, WebRequest request) {
-        return handle(e, request, HttpStatus.UNAUTHORIZED);
+        return handle(e, request, HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(UserBeforeOwnerException.class)
@@ -35,4 +35,11 @@ public class UserCustomExceptionHandler extends CustomExceptionHandler {
             UserBeforeOwnerException e, WebRequest request) {
         return handle(e, request, HttpStatus.FORBIDDEN);
     }
+
+    @ExceptionHandler(AlreadyExistingUserException.class)
+    public ResponseEntity<CustomErrorMessage> handleAlreadyExistingUserException(
+            AlreadyExistingUserException e, WebRequest request) {
+        return handle(e, request, HttpStatus.FORBIDDEN);
+    }
+
 }

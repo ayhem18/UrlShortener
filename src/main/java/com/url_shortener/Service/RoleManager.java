@@ -1,5 +1,6 @@
-package com.url_shortener.User;
+package com.url_shortener.Service;
 
+import com.url_shortener.Service.User.UndefinedRoleException;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.HashMap;

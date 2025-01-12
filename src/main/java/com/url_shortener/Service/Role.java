@@ -1,12 +1,17 @@
-package com.url_shortener.User;
+package com.url_shortener.Service;
 
 
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.List;
 
+
+class canUpdateCompany implements GrantedAuthority {
+    @Override
+    public String getAuthority() {
+        return "canUpdateCompany".toLowerCase();
+    }
+}
 
 class CanPay implements GrantedAuthority {
     @Override
@@ -44,7 +49,7 @@ public interface Role {
 class Owner implements Role {
     @Override
     public List<GrantedAuthority> getAuthorities() {
-        return List.of(new CanPay(), new CanViewStats(), new CanEditUrl(), new CanUseShortUrl());
+        return List.of(new canUpdateCompany(), new CanPay(), new CanViewStats(), new CanEditUrl(), new CanUseShortUrl());
     }
 
     public static String role() {

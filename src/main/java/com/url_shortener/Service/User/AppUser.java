@@ -1,12 +1,12 @@
-package com.url_shortener.User;
+package com.url_shortener.Service.User;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.url_shortener.Service.Company.Company;
+import com.url_shortener.Service.Role;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -14,8 +14,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
 
 
 @Document()
@@ -33,8 +31,6 @@ public class AppUser {
     Company company;
 
     String roleString;
-
-    List<String> authorities;
 
     // the role the user plays in this company (determines the authorities !!)
     Role role;
@@ -107,31 +103,18 @@ class UserDetailsImp implements UserDetails {
     }
 
     @Override
-    public String getPassword() {
-        return user.getPassword();
-    }
-
-    @Override
     public String getUsername() {
         return user.getUsername();
     }
 
+    @Override
+    public String getPassword() {
+        return user.getPassword();
+    }
+
+
 }
 
-// need userRepository class to save the application users
-
-interface  UserRepository extends MongoRepository<AppUser, String> {
-    Optional<AppUser> findById(String id);
-    Optional<AppUser> findByUsername(String id);
-
-    // the method below does NOT work as expected. the method right below does the trick
-    @Query("{'company': ?0, 'roleString': ?1}")
-    List<AppUser> findRolesInCompany(String companyId, String role);
-
-    List<AppUser> findByCompanyAndRole(Company company, Role role);
-
-    List<AppUser> findByCompany(Company company);
-}
 
 
 @Component

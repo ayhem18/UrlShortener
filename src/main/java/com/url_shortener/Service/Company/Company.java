@@ -1,4 +1,4 @@
-package com.url_shortener.User;
+package com.url_shortener.Service.Company;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -35,12 +35,12 @@ public class Company {
     // all ids should be read-only
     @Id
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    String id; // some sort of Company identifier
+    private String id; // some sort of Company identifier
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    String siteId;
+    private String siteId;
 
-    String site;
+    private String site;
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Map<String, String> roleTokens;
@@ -150,11 +150,5 @@ public class Company {
 }
 
 
-//@Configuration I still do not understand why it is not necessary to associate the Repository interface
-// with the @Configuration / @Bean annotations. (maybe because it is an interface / abstract class)
-interface CompanyRepository extends MongoRepository<Company, String> {
-    Optional<Company> findById(String id);
-    Optional<Company> findBySite(String site);
-}
 
 

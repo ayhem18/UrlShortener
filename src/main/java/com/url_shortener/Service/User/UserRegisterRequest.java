@@ -1,4 +1,4 @@
-package com.url_shortener.User;
+package com.url_shortener.Service.User;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -35,11 +35,6 @@ class UserWithNoCompanyException extends RuntimeException {
         }
 }
 
-class UndefinedRoleException extends RuntimeException {
-        public UndefinedRoleException(String message) {
-                super(message);
-        }
-}
 
 class IncorrectRoleTokenException extends RuntimeException {
         public IncorrectRoleTokenException(String message) {
@@ -57,4 +52,11 @@ class MultipleOwnersException extends RuntimeException {
         public MultipleOwnersException(String message) {
                 super(message);
         }
+}
+
+class AlreadyExistingUserException extends RuntimeException {
+        public AlreadyExistingUserException(String message) {
+                super(message);
+        }
+
 }

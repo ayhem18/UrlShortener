@@ -1,4 +1,4 @@
-package com.url_shortener.User;
+package com.url_shortener.Service.Company;
 
 
 import jakarta.validation.constraints.NotBlank;

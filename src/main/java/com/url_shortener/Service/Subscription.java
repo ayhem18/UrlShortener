@@ -1,4 +1,4 @@
-package com.url_shortener.User;
+package com.url_shortener.Service;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
