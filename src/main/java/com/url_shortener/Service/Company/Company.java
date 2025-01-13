@@ -2,6 +2,7 @@ package com.url_shortener.Service.Company;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.url_shortener.Urls.Subscription;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,27 +35,34 @@ public class Company {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String id; // some sort of Company identifier
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+//    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String siteId;
 
     private String site;
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+//    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Map<String, String> roleTokens;
 
-    private int serializeSensitiveCount;
 
     private Map<String, String> roleTokensHashed;
 
-    public Company(String id, String site, Map<String, String> roleTokens, PasswordEncoder encoder) {
+    private int serializeSensitiveCount;
+
+    private Subscription subscription;
+
+    public Company(String id, String site, Subscription sub, Map<String, String> roleTokens, PasswordEncoder encoder) {
         this.id = id;
         // generate id uses the 25-based site id
         this.siteId = generateSiteId();
         // make sure to increment the count
         COMPANY_COUNT += 1;
+
         this.site = site;
 
         this.setTokens(roleTokens, encoder);
+
+        this.subscription = sub;
+
         this.serializeSensitiveCount = 0;
     }
 
@@ -69,8 +77,6 @@ public class Company {
     }
     // one trick to serialize fields conditionally is to write a JsonGetter method
     // that checks the condition on the fly, returning Null when the condition is not verified
-    // not sure if the "value" field in the annotation refers to the field in the class
-    // or the name displayed in the resulting Json
     @JsonGetter(value = "id")
     private String jsonGetId() {
         // 4 represents the number of sensitive fields that should be serialized only once:
@@ -144,6 +150,15 @@ public class Company {
             entry.setValue(encoder.encode(entry.getValue())); // make sure to encode the value !! and not the key !!!
         }
     }
+
+    public Subscription getSubscription() {
+        return subscription;
+    }
+
+    public void setSubscription(Subscription subscription) {
+        this.subscription = subscription;
+    }
+
 }
 
 

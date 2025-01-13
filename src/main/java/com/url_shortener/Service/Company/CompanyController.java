@@ -6,6 +6,8 @@ import com.url_shortener.CustomRandomGenerator;
 import com.url_shortener.Service.*;
 import com.url_shortener.Service.User.AppUser;
 import com.url_shortener.Service.User.UserRepository;
+import com.url_shortener.Urls.Subscription;
+import com.url_shortener.Urls.SubscriptionManager;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -78,6 +80,13 @@ public class CompanyController {
 
         // add the registeredUser role token
         roleTokens.put(RoleManager.REGISTERED_USER_ROLE, this.generator.randomString(ROLE_TOKEN_LENGTH));
+
+        // get the subscription from the SubscriptionManager
+        Subscription sub = SubscriptionManager.getSubscription(req.subscription());
+
+        if (sub == null) {
+            throw new SubscriptionManager.NoExistingSubscription();
+        }
 
         // build the company object
         Company newCompany = new Company(req.id(), req.site(), roleTokens, this.encoder());

@@ -1,53 +1,41 @@
 package com.url_shortener.Urls;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.url_shortener.Service.Company.Company;
-import com.url_shortener.Service.Company.CompanyRepository;
 import com.url_shortener.Service.User.UserRepository;
 import com.url_shortener.Service.UserCompanyMisalignedException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.swing.text.html.parser.Entity;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-
-
 
 
 @Validated
 @RestController
 public class UrlController {
 
-    private final CompanyRepository companyRepo;
+//    private final CompanyRepository companyRepo;
     private final UserRepository userRepo;
     private final UrlDecoder urlDecoder;
     // since the UrlValidator class is annotated with @Configuration
     // we can assign a reference as a field of this class by using the @Autowired annotation
     // basically constructor dependency injection
     @Autowired
-    public UrlController(CompanyRepository companyRepo, UserRepository userRepo, UrlDecoder urlDecoder) {
-        this.companyRepo = companyRepo;
+    public UrlController(UserRepository userRepo, UrlDecoder urlDecoder) {
+//        this.companyRepo = companyRepo;
         this.userRepo = userRepo;
         this.urlDecoder = urlDecoder;
     }
 
-    @PostMapping
-    public ResponseEntity<String> encodeUrl(@Valid @RequestBody UrlReq req,
-                                            @AuthenticationPrincipal UserDetails currentUserDetails)
-                                            throws JsonProcessingException {
+    private Map.Entry<String, Company> checkUrlSiteAlignment(UrlReq req, UserDetails userDetails) {
         // 1. extract the url
-
         String urlStr = req.getUrl();
 
         // 2. since the url might not start with "www.", add it to the url string
@@ -61,15 +49,40 @@ public class UrlController {
         // 4. make sure the site aligns with the user
         String userCompanySite = levels.getFirst().levelName();
 
-        String username = currentUserDetails.getUsername();
+        String username = userDetails.getUsername();
         Company userCompany = this.userRepo.findById(username).get().getCompany();
 
         if (! userCompany.getSite().equalsIgnoreCase(userCompanySite))  {
             throw new UserCompanyMisalignedException("The url site does not align with the user company site");
         }
 
-        // 5. first check: subscription and the maximum number of levels
+        return Map.entry(urlStr, userCompany);
+    }
 
+
+    @PostMapping
+    public ResponseEntity<String> encodeUrl(@Valid @RequestBody UrlReq req,
+                                            @AuthenticationPrincipal UserDetails currentUserDetails)
+                                            throws JsonProcessingException {
+        // check the alignment between the site in the url and the user's company site
+
+        Map.Entry<String, Company> pair = checkUrlSiteAlignment(req, currentUserDetails);
+        String urlStr = pair.getKey();
+        Company userCompany = pair.getValue();
+
+        Subscription sub = userCompany.getSub();
+
+        // decode the url
+        List<UrlLevelEntity> levels = this.urlDecoder.breakdown(urlStr);
+
+        // first check
+        Integer maxNumLevels = sub.getMaxNumLevels();
+
+        if ((maxNumLevels != null) && (levels.size() - 1 ) > sub.getMaxNumLevels()) {
+            throw new MaxNumLevelsSubExceeded(levels.size() - 1, maxNumLevels);
+        }
+
+        //
         return ResponseEntity.ok().build();
     }
 

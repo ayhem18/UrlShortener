@@ -12,7 +12,10 @@ public record CompanyRegisterRequest (
 
     @NotBlank
     @Pattern(regexp = "(www\\.)*[a-zA-Z0-9]+\\.[a-zA-Z]{2,}", message = "the site is in the wrong format")
-    String site) {};
+    String site,
+
+    @NotBlank
+    String subscription) {};
 
 
 
