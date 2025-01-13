@@ -46,13 +46,6 @@ public class UserController {
         return om;
     }
 
-    @GetMapping("api/auth/users/{companyId}")
-    public ResponseEntity<String> usersInCompany(@PathVariable String companyId) throws JsonProcessingException {
-        List<AppUser> users = this.userRepo.findByCompany(this.companyRepo.findById(companyId).get());
-
-        return ResponseEntity.ok(this.objectMapper().writeValueAsString(users));
-    }
-
     @PostMapping("api/auth/register/user")
     public ResponseEntity<String> registerUser(@Valid @RequestBody UserRegisterRequest req) throws JsonProcessingException {
 

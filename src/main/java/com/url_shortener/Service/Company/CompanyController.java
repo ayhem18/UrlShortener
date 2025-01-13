@@ -19,6 +19,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 
 
@@ -98,17 +99,47 @@ public class CompanyController {
             throw new NoCompanyException("There is no company with the given Id");
         }
 
+
+        // this function can be called by the Owner user of the company
+        AppUser currentUser = this.userRepo.findById(currentUserDetails.getUsername()).get();
+
+
+        if (!currentUser.getRole().toString().equals(RoleManager.OWNER_ROLE)) {
+            throw new RuntimeException("Man you messed up the authentication");
+        }
+
+        // delete all users in the given company
+        this.userRepo.deleteByCompany(company.get());
+
+        // delete the company itself from the database
+        this.companyRepo.deleteById(companyId);
+
         return new ResponseEntity<>("Company and users deleted successfully", HttpStatus.NO_CONTENT);
 
-//        // this function can be called by the Owner user of the company
-//        AppUser currentUser = this.userRepo.findById(currentUserDetails.getUsername()).get();
-//
-//        if (currentUser.getRole().toString().equals(RoleManager.OWNER_ROLE)) {
-//            throw new RuntimeException("Man you messed up the authentication");
-//        }
-//
-//        // delete all users in the given company
-//        this.userRepo.deleteByCompany(company.get());
+    }
 
+
+    @GetMapping("api/company/{companyId}/users")
+    public ResponseEntity<String> viewUsersInCompany(@PathVariable String companyId) throws JsonProcessingException {
+        Optional<Company> company = this.companyRepo.findById(companyId);
+
+        if (company.isEmpty()) {
+            throw new NoCompanyException("There is no company with the given Id");
+        }
+
+        List<AppUser> companyUsers = this.userRepo.findByCompany(company.get());
+
+        return new ResponseEntity<>(this.objectMapper().writeValueAsString(companyUsers), HttpStatus.OK);
+    }
+
+    @GetMapping("api/company/{companyId}/details")
+    public ResponseEntity<String> viewCompanyDetails(@PathVariable String companyId) throws JsonProcessingException {
+        Optional<Company> company = this.companyRepo.findById(companyId);
+
+        if (company.isEmpty()) {
+            throw new NoCompanyException("There is no company with the given Id");
+        }
+
+        return new ResponseEntity<>(this.objectMapper().writeValueAsString(company.get()), HttpStatus.OK);
     }
 }

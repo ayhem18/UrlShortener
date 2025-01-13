@@ -6,38 +6,45 @@ import org.springframework.security.core.GrantedAuthority;
 import java.util.List;
 
 
-class canUpdateCompany implements GrantedAuthority {
+class canUpdateCompanyDetails implements GrantedAuthority {
     @Override
     public String getAuthority() {
-        return "canUpdateCompany".toLowerCase();
+        return "can_Update_Company".toUpperCase();
+    }
+}
+
+class canViewCompanyDetails implements GrantedAuthority {
+    @Override
+    public String getAuthority() {
+        return "can_Update_Company".toUpperCase();
     }
 }
 
 class CanPay implements GrantedAuthority {
     @Override
     public String getAuthority() {
-        return "canPay".toLowerCase();
+        return "can_Pay".toUpperCase();
     }
 }
 
 class CanViewStats implements GrantedAuthority {
     @Override
     public String getAuthority() {
-        return "CanViewStats".toLowerCase();
+        return "Can_View_Stats".toUpperCase();
     }
 }
 
 class CanEditUrl implements GrantedAuthority {
     @Override
     public String getAuthority() {
-        return "CanEditUrl".toLowerCase();
+        return "Can_Edit_Url".toUpperCase();
     }
 }
 
 class CanUseShortUrl implements GrantedAuthority {
     @Override
     public String getAuthority() {
-        return "canUseShortUrl".toLowerCase();
+        return "can_UseShort_Url".toUpperCase();
     }
 }
 
@@ -49,7 +56,12 @@ public interface Role {
 class Owner implements Role {
     @Override
     public List<GrantedAuthority> getAuthorities() {
-        return List.of(new canUpdateCompany(), new CanPay(), new CanViewStats(), new CanEditUrl(), new CanUseShortUrl());
+        return List.of(new canUpdateCompanyDetails(),
+                new canViewCompanyDetails(),
+                new CanPay(),
+                new CanViewStats(),
+                new CanEditUrl(),
+                new CanUseShortUrl());
     }
 
     public static String role() {
@@ -65,7 +77,12 @@ class Owner implements Role {
 class Admin implements Role {
     @Override
     public List<GrantedAuthority> getAuthorities() {
-        return List.of(new CanViewStats(), new CanEditUrl(), new CanUseShortUrl());
+        return List.of(
+                new canViewCompanyDetails(),
+                new CanViewStats(),
+                new CanEditUrl(),
+                new CanUseShortUrl()
+        );
     }
 
     public static String role() {
