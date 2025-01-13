@@ -4,15 +4,12 @@ import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @Document("Company") // make sure to use the Document annotation and not the @Entity since this is not a SQL table...
-
 public class Company {
     private static long COMPANY_COUNT = 0;
 

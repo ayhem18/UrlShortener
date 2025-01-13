@@ -82,10 +82,14 @@ public class CompanyController {
         // build the company object
         Company newCompany = new Company(req.id(), req.site(), roleTokens, this.encoder());
 
+        // make sure to call the serialize first, so that the "serializeSensitiveCount" field will be saved as "4"
+        // in the database preventing the serialization of sensitive information beyond the very first time
+        String companySerialized = this.objectMapper().writeValueAsString(newCompany);
+
         // save it to the database
         this.companyRepo.save(newCompany);
 
-        return new ResponseEntity<>(this.objectMapper().writeValueAsString(newCompany),
+        return new ResponseEntity<>(companySerialized,
                 HttpStatus.CREATED);
     }
 

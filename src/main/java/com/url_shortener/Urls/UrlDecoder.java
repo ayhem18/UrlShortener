@@ -34,19 +34,31 @@ public class UrlDecoder {
 
         if (urlLevel.contains("?")) {
             List<String> items = List.of(urlLevel.split("\\?"));
-            String levelName = items.getFirst();
 
             List<String> qpNames = new ArrayList<>();
             List<String> qpValues = new ArrayList<>();
 
             for (String v : items.subList(1, items.size())) {
                 // split by the "=" character
-                List<String> qp = List.of(v.split("0"));
+                List<String> qp = List.of(v.split("="));
                 qpNames.add(qp.getFirst());
                 qpValues.add(qp.get(1));
             }
 
-            return new UrlLevelEntity(levelName, null, qpNames, qpValues);
+            // the string right before the "?" delimiter might be either path variable or a levelName
+            String levelName;
+            String pathVariable;
+
+            if (items.getFirst().matches("[a-zA-Z]+")) {
+                levelName = items.getFirst();
+                pathVariable = null;
+            }
+            else {
+                pathVariable = items.getFirst();
+                levelName = null;
+            }
+
+            return new UrlLevelEntity(levelName, pathVariable, qpNames, qpValues);
         }
 
         if (urlLevel.matches("[a-zA-Z]+")) {
@@ -57,15 +69,24 @@ public class UrlDecoder {
 
     }
 
-    public List<UrlLevelEntity> decode(String urlString) {
-        // 1. split by the "/" character
-        List<String> levels = List.of(urlString.split("/"));
+    public List<UrlLevelEntity> breakdown(String urlString) {
+        //
+        String strToWorkWith;
+
+        if (urlString.startsWith("https://")) {
+            strToWorkWith = urlString.substring(0, "https://".length());
+        }
+        else {
+            strToWorkWith = urlString.substring(0, "http://".length());
+        }
+
+        // 1. split by the "/" character (which can be only done after removing the http(s) delimiter
+        List<String> levels = List.of(strToWorkWith.split("/"));
 
         String topLevelUrl = levels.getFirst();
 
         List<UrlLevelEntity> entities = levels.subList(1, levels.size()).stream().
-                map(this::decode). // for some reason at this point, we have a Stream<List<UrlLevelEntity>> instead of Stream<UrlLevelEntity>
-                map(List::getFirst). // reduce the list inside to the first element
+                map(this::inspectLevel).
                 toList();
 
         entities.addFirst(new UrlLevelEntity(topLevelUrl, null, null, null));
