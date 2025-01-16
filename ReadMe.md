@@ -38,7 +38,7 @@ Each level is composed of the following elements:
 3. query parameter name(s)
 4. query parameter value(s)
 
-My simple algorithm is based on the observation above. For a given company, save the data in question for each level 
+My simple algorithm is based on the observation above. For a given company, save the dataEncoded in question for each level 
 which gives the possibility to encode and decode exponentially more urls than the naive approach.
 
 For example, given a GitHub as a client to encode (and decode) the following url: 
