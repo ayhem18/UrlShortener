@@ -54,13 +54,12 @@ public class UserController {
         }
 
         if (this.userRepo.existsById(req.username())) {
-            throw new AlreadyExistingUserException("The username is already register");
+            throw new AlreadyExistingUserException("The username already exists");
         }
-        String claimedRole = req.role().toLowerCase();
 
-        if (!RoleManager.ROLES_STRING.contains(claimedRole)) {
-            throw new UndefinedRoleException("The claimed role " + claimedRole + " is not yet supported.");
-        }
+        String claimedRoleStr = req.role().toLowerCase();
+        // the RoleManager.getRole throws an exception if the role does not exist ...
+        Role claimedRole = RoleManager.getRole(claimedRoleStr);
 
         // at this point we know the company id is in the database and the role is indeed supported.
         // however, the following security measures should be carried out:
@@ -69,7 +68,7 @@ public class UserController {
         // extract the company object
         Company company = this.companyRepo.findById(req.companyId()).get();
 
-        System.out.println(company);
+//        System.out.println(company);
 
         // 1. if the company has no "OWNER" user, then it has to be created first: in other words, if the role is not OWNER
         // the request should be rejected
@@ -77,24 +76,24 @@ public class UserController {
         // 2. if there is an OWNER already, then the request should be rejected too
         List<AppUser> companyOwner = this.userRepo.findByCompanyAndRole(company, RoleManager.getRole(RoleManager.OWNER_ROLE));
 
-        System.out.println("\n" + companyOwner + "\n");
+//        System.out.println("\n" + companyOwner + "\n");
 
-        if (companyOwner.isEmpty() && ! claimedRole.equalsIgnoreCase(RoleManager.OWNER_ROLE)) {
+        if (companyOwner.isEmpty() && ! claimedRoleStr.equalsIgnoreCase(RoleManager.OWNER_ROLE)) {
             throw new UserBeforeOwnerException("No user can be created before creating the OWNER user!!");
         }
 
-        if ((!companyOwner.isEmpty()) && claimedRole.equalsIgnoreCase(RoleManager.OWNER_ROLE)) {
+        if ((!companyOwner.isEmpty()) && claimedRoleStr.equalsIgnoreCase(RoleManager.OWNER_ROLE)) {
             throw new MultipleOwnersException("The user for the given company was already created");
         }
 
         // make sure the user is authenticated: has the right token for the right role:
         // use the password encoder to verify the roleToken
-        if (! encoder().matches(req.roleToken(), company.getTokens().get(claimedRole))) {
+        if (! encoder().matches(req.roleToken(), company.getTokens().get(claimedRoleStr))) {
             throw new IncorrectRoleTokenException("The role token is incorrect");
         }
 
         // at this point we are ready to create the User
-        AppUser newUser = new AppUser(req.username(), this.encoder().encode(req.password()), company, RoleManager.getRole(claimedRole));
+        AppUser newUser = new AppUser(req.username(), this.encoder().encode(req.password()), company, claimedRole);
 
         this.userRepo.save(newUser);
 

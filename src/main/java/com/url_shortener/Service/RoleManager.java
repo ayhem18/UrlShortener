@@ -1,6 +1,5 @@
 package com.url_shortener.Service;
 
-import com.url_shortener.Service.User.UndefinedRoleException;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.HashMap;
@@ -23,9 +22,16 @@ public class RoleManager {
         ROLES_MAP.put(REGISTERED_USER_ROLE, ROLES.getLast());
     }
 
-    public static Role getRole(String roleString) throws UndefinedRoleException {
+
+    public static class NoExistingRoleException extends RuntimeException{
+        public NoExistingRoleException(String message) {
+            super(message);
+        }
+    }
+
+    public static Role getRole(String roleString) throws NoExistingRoleException {
         if (!ROLES_MAP.containsKey(roleString.toLowerCase())) {
-            throw new UndefinedRoleException("The role " + roleString + " is not yet supported");
+            throw new NoExistingRoleException("The role " + roleString + " is not yet supported");
         }
         return ROLES_MAP.get(roleString.toLowerCase());
     }

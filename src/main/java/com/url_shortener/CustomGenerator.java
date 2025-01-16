@@ -5,7 +5,7 @@ import java.util.Random;
 
 
 @Configuration
-public class CustomRandomGenerator {
+public class CustomGenerator {
     private static final String ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     private static final String CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijk"
@@ -23,4 +23,18 @@ public class CustomRandomGenerator {
     }
 
 
+    public String generateId(long order) {
+
+        StringBuilder instanceId = new StringBuilder();
+
+        while (order >= 26) {
+            instanceId.append("z");
+            order = order / 26;
+        }
+
+        int asciiOfA = 'a';
+        instanceId.append((char)(asciiOfA + order));
+        return instanceId.toString();
+
+    }
 }

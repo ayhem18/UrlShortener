@@ -2,7 +2,7 @@ package com.url_shortener.Service.Company;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.url_shortener.CustomRandomGenerator;
+import com.url_shortener.CustomGenerator;
 import com.url_shortener.Service.*;
 import com.url_shortener.Service.User.AppUser;
 import com.url_shortener.Service.User.UserRepository;
@@ -38,13 +38,13 @@ public class CompanyController {
     private static final int ROLE_TOKEN_LENGTH = 32;
 
     private final CompanyRepository companyRepo;
-    private final CustomRandomGenerator generator;
+    private final CustomGenerator generator;
     private final UserRepository userRepo;
 
     @Autowired
     public CompanyController(CompanyRepository companyRepo,
                           UserRepository userRepo,
-                          CustomRandomGenerator generator) {
+                          CustomGenerator generator) {
         this.companyRepo = companyRepo;
         this.generator = generator;
         this.userRepo = userRepo;
@@ -84,12 +84,9 @@ public class CompanyController {
         // get the subscription from the SubscriptionManager
         Subscription sub = SubscriptionManager.getSubscription(req.subscription());
 
-        if (sub == null) {
-            throw new SubscriptionManager.NoExistingSubscription();
-        }
-
         // build the company object
-        Company newCompany = new Company(req.id(), req.site(), roleTokens, this.encoder());
+        // pass the password encoder and the custom generator fields to properly initialize the Company object
+        Company newCompany = new Company(req.id(), req.site(), sub, roleTokens, this.encoder(), this.generator);
 
         // make sure to call the serialize first, so that the "serializeSensitiveCount" field will be saved as "4"
         // in the database preventing the serialization of sensitive information beyond the very first time

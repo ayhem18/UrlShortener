@@ -60,6 +60,8 @@ public class UrlController {
     }
 
 
+
+
     @PostMapping
     public ResponseEntity<String> encodeUrl(@Valid @RequestBody UrlReq req,
                                             @AuthenticationPrincipal UserDetails currentUserDetails)
@@ -70,7 +72,7 @@ public class UrlController {
         String urlStr = pair.getKey();
         Company userCompany = pair.getValue();
 
-        Subscription sub = userCompany.getSub();
+        Subscription sub = userCompany.getSubscription();
 
         // decode the url
         List<UrlLevelEntity> levels = this.urlDecoder.breakdown(urlStr);

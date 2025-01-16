@@ -2,6 +2,7 @@ package com.url_shortener.Service.Company;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.url_shortener.CustomGenerator;
 import com.url_shortener.Urls.Subscription;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -13,22 +14,6 @@ import java.util.Map;
 @Document("Company") // make sure to use the Document annotation and not the @Entity since this is not a SQL table...
 public class Company {
     private static long COMPANY_COUNT = 0;
-
-    private static String generateSiteId() {
-        // use the COMPANY_COUNT static field
-        long number = COMPANY_COUNT;
-
-        StringBuilder instanceId = new StringBuilder();
-
-        while (number >= 26) {
-            instanceId.append("z");
-            number = number / 26;
-        }
-
-        int asciiOfA = 'a';
-        instanceId.append((char)(asciiOfA + number));
-        return instanceId.toString();
-    }
 
     // all ids should be read-only
     @Id
@@ -50,10 +35,11 @@ public class Company {
 
     private Subscription subscription;
 
-    public Company(String id, String site, Subscription sub, Map<String, String> roleTokens, PasswordEncoder encoder) {
+    public Company(String id, String site, Subscription sub,
+                   Map<String, String> roleTokens, PasswordEncoder encoder, CustomGenerator gen) {
         this.id = id;
         // generate id uses the 25-based site id
-        this.siteId = generateSiteId();
+        this.siteId = gen.generateId(COMPANY_COUNT);
         // make sure to increment the count
         COMPANY_COUNT += 1;
 

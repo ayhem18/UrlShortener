@@ -2,6 +2,7 @@ package com.url_shortener.Service.User;
 
 import com.url_shortener.CustomErrorMessage;
 import com.url_shortener.CustomExceptionHandler;
+import com.url_shortener.Service.RoleManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -18,9 +19,9 @@ public class UserCustomExceptionHandler extends CustomExceptionHandler {
     }
 
 
-    @ExceptionHandler(UndefinedRoleException.class)
+    @ExceptionHandler(RoleManager.NoExistingRoleException.class)
     public ResponseEntity<CustomErrorMessage> handleNoHashedUrlException(
-            UndefinedRoleException e, WebRequest request) {
+            RoleManager.NoExistingRoleException e, WebRequest request) {
         return handle(e, request, HttpStatus.BAD_REQUEST);
     }
 
