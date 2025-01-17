@@ -14,10 +14,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.swing.text.html.Option;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 
@@ -68,7 +66,7 @@ public class UrlController {
             UrlLevelEntity entity = levels.get(i);
 
             // get the current at the level i
-            for (String valueType: CompanyUrlData.VALUE_TYPES) {
+            for (UrlEntity valueType: UrlEntity.values()) {
                 List<String> values = entity.get(valueType);
 
                 HashMap<String, String> levelTypeData = companyData.get().getLevelTypeData(i, valueType).getKey();
@@ -93,14 +91,32 @@ public class UrlController {
     }
 
 
+    private String verifyUrl(String url) {
+        return "";
+    }
+
+
     @GetMapping("api/url/{url}")
     public ResponseEntity<String> encodeUrl(@PathVariable String url,
             @AuthenticationPrincipal UserDetails currentUserDetails)
                                             throws JsonProcessingException {
-        // 1. since the url might not start with "www.", add it to the url string
-        if (! url.startsWith("www.")) {
-            url = "www." + url;
+        // 1. make sure the passed string is indeed an url
+
+
+        // 2. since the url might not start with "www.", add it to the url string
+        if (url.startsWith("https://")) {
+            String noHttpSubStr = url.substring("https://".length());
+            if (! noHttpSubStr.startsWith("www.")) {
+                url = "https://www." + url;
+            }
         }
+        else {
+            String noHttpSubStr = url.substring("http://".length());
+            if (! noHttpSubStr.startsWith("www.")) {
+                url = "http://www." + url;
+            }
+        }
+
 
         // 3. break the url down into components
         List<UrlLevelEntity> levels = this.urlDecoder.breakdown(url);

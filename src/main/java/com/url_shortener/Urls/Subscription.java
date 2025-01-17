@@ -14,6 +14,16 @@ public interface Subscription {
     Integer getMaxQueryParameters();
 
     Integer getMaxQueryValues();
+
+    default Integer get(UrlEntity valueType) {
+        return switch (valueType) {
+            case UrlEntity.LEVEL_NAME -> this.getMaxLevelNames();
+            case UrlEntity.PATH_VARIABLE -> this.getMaxPathVariables();
+            case UrlEntity.QUERY_PARAM_VALUE -> this.getMaxQueryValues();
+            default -> this.getMaxQueryParameters();
+        };
+    }
+
 }
 
 

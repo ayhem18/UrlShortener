@@ -10,31 +10,14 @@ import java.util.List;
 // credit to JetBrains IDEA automatically converting a read-only class to a Record automatically
 record UrlLevelEntity(String levelName, String pathVariable, List<String> queryParamNames,
                       List<String> queryParamValues) {
-    public static final String LEVEL_NAME = "levelName";
-    public static final String PATH_VARIABLE = "pathVariable";
-    public static final String QUERY_PARAM = "queryParameter";
-    public static final String QUERY_PARAM_VALUE = "queryParameterValue";
-    public static final List<String> VALUE_TYPES = List.of(LEVEL_NAME.toLowerCase(),
-            PATH_VARIABLE.toLowerCase(),
-            QUERY_PARAM.toLowerCase(),
-            QUERY_PARAM_VALUE.toLowerCase()
-    );
 
-
-    public List<String> get(String valueType) {
-        if (!VALUE_TYPES.contains(valueType.toLowerCase())) {
-            throw new RuntimeException("Undefined value type");
-        }
-
-        if (valueType.equalsIgnoreCase(LEVEL_NAME)) {
-            return List.of(this.levelName());
-        } else if (valueType.equalsIgnoreCase(PATH_VARIABLE)) {
-            return List.of(this.pathVariable());
-        } else if (valueType.equalsIgnoreCase(QUERY_PARAM)) {
-            return this.queryParamNames();
-        } else {
-            return this.queryParamValues();
-        }
+    public List<String> get(UrlEntity valueType) {
+        return switch (valueType) {
+            case UrlEntity.LEVEL_NAME -> List.of(this.levelName());
+            case UrlEntity.PATH_VARIABLE -> List.of(this.pathVariable());
+            case UrlEntity.QUERY_PARAM_VALUE -> this.queryParamValues();
+            default -> this.queryParamNames();
+        };
     }
 }
 
