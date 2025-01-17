@@ -104,13 +104,19 @@ public class CompanyUrlData {
         Map.Entry<HashMap<String, String>, HashMap<String, String>>
                 levelData =  getLevelTypeData(level, valueType);
 
+        HashMap<String, String> levelDataEncoded = levelData.getKey();
+
+        // only update the hashmap if the value has not been already saved in the database
+        if (levelDataEncoded.containsKey(value)) {
+            return;
+        }
+
+        HashMap<String, String> levelDataDecoded= levelData.getValue();
+
         int itemsCount = levelData.getKey().size();
         String valueHash = gen.generateId(itemsCount);
 
-        HashMap<String, String> levelDataEncoded = levelData.getKey();
-        HashMap<String, String> levelDataDecoded= levelData.getValue();
 
-        //
         levelDataEncoded.put(value, valueHash);
         levelDataDecoded.put(valueHash, value);
     }
