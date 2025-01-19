@@ -1,12 +1,6 @@
-package com.url_shortener;
-
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.core.parameters.P;
-
 import java.util.Random;
 
 
-@Configuration
 public class CustomGenerator {
     private static final String ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 

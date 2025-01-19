@@ -11,4 +11,4 @@ plugins {
 }
 
 rootProject.name = 'url_shortener'
-include('app', 'list', 'utilities', 'url')
+include('app', 'list', 'utilities', 'url', 'utils', 'data')
