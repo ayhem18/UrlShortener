@@ -1,4 +1,5 @@
-package com.url_shortener.Urls;
+package org.url;
+
 
 public enum UrlEntity {
     LEVEL_NAME, // "levelName";
