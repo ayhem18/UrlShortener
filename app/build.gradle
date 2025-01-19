@@ -5,6 +5,7 @@
  * For more details on building Java & JVM projects, please refer to https://docs.gradle.org/8.12/userguide/building_java_projects.html in the Gradle documentation.
  */
 
+
 plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.1'
@@ -29,6 +30,11 @@ dependencies {
     implementation project(':url')
     implementation project(':utils')
 }
+
+//bootJar {
+//    enabled = false
+//}
+
 
 springBoot {
     mainClass = 'org.app.App'

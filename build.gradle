@@ -40,6 +40,10 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+springBoot {
+	mainClass = 'url_shortener.org.app.App'
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
 }

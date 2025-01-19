@@ -32,12 +32,12 @@ public class CustomGenerator {
 
 
     public String generateId(long order) {
-        if (order == 0) {
-            return "a";
+        if (order <= 0) {
+            throw new RuntimeException("No negative numbers allowed");
         }
 
         if (order == 1) {
-            return "b";
+            return "a";
         }
 
         // the first step is to calculate the logarithm of n with respect to 26
@@ -48,22 +48,26 @@ public class CustomGenerator {
         int power26 = verify_power_26(order);
 
         if (power26 == -1) {
-            n = (int) Math.floor(Math.log(order) / Math.log(26));
+            n = (int) Math.floor(Math.log(order) / Math.log(26)) + 1;
         }
         else {
-            n = power26 + 1;
+            n = power26 ;
         }
 
-        long power = (long) Math.pow(26, n);
+//        System.out.println("\norder: " +  order + "\n");
+//        System.out.println("\n n " +  n + "\n");
 
         int asciiOfA = 'a';
         StringBuilder instanceId = new StringBuilder();
 
-        while (order > 0) {
-            long quotient = order / power;
+        long power;
+        long quotient;
+
+        for (int i = n - 1; i >= 0; i--) {
+            power = (long) Math.pow(26, i);
+            quotient = order / power;
+            instanceId.append((char)(asciiOfA + quotient - 1));
             order = order - power * quotient;
-            power = power / 26;
-            instanceId.append((char)(asciiOfA + quotient));
         }
 
         return instanceId.toString();
