@@ -1,12 +1,7 @@
-package com.url_shortener;
-
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.core.parameters.P;
+package org.utils;
 
 import java.util.Random;
 
-
-@Configuration
 public class CustomGenerator {
     private static final String ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -23,14 +18,42 @@ public class CustomGenerator {
         return str.toString();
     }
 
+    public int verify_power_26(long number) {
+        int log26 = 0;
+        while (number > 0 && number % 26 == 0) {
+            number /= 26;
+            log26 += 1;
+        }
+        if (number == 1) {
+            return log26;
+        }
+        return -1;
+    }
+
 
     public String generateId(long order) {
         if (order == 0) {
             return "a";
         }
 
-        // since java does not offer a direct function to calculate the log with a random base: need to improvise
-        int n = (int) Math.floor(Math.log(order) / Math.log(26));
+        if (order == 1) {
+            return "b";
+        }
+
+        // the first step is to calculate the logarithm of n with respect to 26
+
+        // for numbers that aren't a power of 26, using log_a(x) = log(x) / log(a) trick seems to work well enough
+        // however for powers of 26, the same trick leads to bugs
+        int n;
+        int power26 = verify_power_26(order);
+
+        if (power26 == -1) {
+            n = (int) Math.floor(Math.log(order) / Math.log(26));
+        }
+        else {
+            n = power26 + 1;
+        }
+
         long power = (long) Math.pow(26, n);
 
         int asciiOfA = 'a';

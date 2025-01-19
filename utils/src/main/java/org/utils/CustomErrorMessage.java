@@ -1,4 +1,4 @@
-package com.url_shortener;
+package org.utils;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
