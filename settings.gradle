@@ -1,1 +1,5 @@
 rootProject.name = 'url_shortener'
+
+include ('url')
+include ('app')
+

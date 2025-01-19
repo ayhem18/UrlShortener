@@ -1,11 +1,10 @@
-package com.url_shortener.Urls;
+package org.example;
 
 
-import org.springframework.context.annotation.Configuration;
+//import org.springframework.context.annotation.Configuration;
 
 import java.util.ArrayList;
 import java.util.List;
-
 
 // credit to JetBrains IDEA automatically converting a read-only class to a Record automatically
 record UrlLevelEntity(String levelName, String pathVariable, List<String> queryParamNames,
@@ -24,7 +23,7 @@ record UrlLevelEntity(String levelName, String pathVariable, List<String> queryP
 
 // this class will be used across the application and should be loaded in boot-up
 // hence the @Configuration annotation
-@Configuration
+//@Configuration
 public class UrlDecoder {
     private UrlLevelEntity inspectLevel(String urlLevel) {
         // this method assume teh levelUrl is not the top level url (nothing such as www.youtube.com...)

@@ -1,11 +1,10 @@
-package com.url_shortener.Urls;
+package org.example;
 
-import org.springframework.context.annotation.Configuration;
 import java.util.regex.Pattern;
 
 
 
-@Configuration
+//@Configuration
 public class UrlValidator {
     private final Pattern noSpacePattern = Pattern.compile(
             "http(s)?://(www\\.)*[a-zA-Z0-9]+\\.[a-zA-Z]{3,}(/+[a-zA-Z0-9?=_!.-]+)*"
