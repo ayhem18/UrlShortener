@@ -23,24 +23,19 @@ dependencies {
 	// add this dependency to build Web APIs
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 
-	// for ORM (SQL)
-//	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-
-	// for the h2 database
-//	implementation 'com.h2database:h2'
-
 	// for jackson validation
 	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: '3.4.0'
 
 	// for security stuff
 	implementation "org.springframework.boot:spring-boot-starter-security"
 
-	// used to read Json strings (for testing purposes) mainly
+	// used to read Json (can be used to test responses)
 	implementation group: 'com.jayway.jsonpath', name: 'json-path', version: '2.9.0'
 
-	// used to use mongodb as a database
+	// used for mongodb as a database
 	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
 
+	// used for testing: imports a set of useful libraries
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

@@ -1,16 +1,9 @@
 package com.url_shortener;
 
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.ReadContext;
-import com.url_shortener.Urls.UrlReq;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 //import com.url_shortener.Urls.UrlReq;
 
@@ -20,11 +13,19 @@ class UrlShortenerApplicationTests {
 	@Autowired
 	TestRestTemplate restTemplate;
 
-//	@Test
-//	void testUrlCountEndpoint() {
-//		ResponseEntity<String> response = restTemplate.getForEntity("/api/url/url_count", String.class);
-//		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-//	}
+
+	@Test
+	void checkInvalidUrlsFail() {
+		// no tests will pass until I understand how to mock authorization
+
+		//		String badUrl1 = "https://github.com/ayhem 18";
+//		ResponseEntity<String> res1 = restTemplate.getForEntity("/api/url/encode" + badUrl1, String.class);
+//		assertThat(res1.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+//
+//		String badUrl2 = "https://github.c/ayhem18";
+//		ResponseEntity<String> res2 = restTemplate.getForEntity("/api/url/encode" + badUrl2, String.class);
+//		assertThat(res2.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+	}
 
 //	@Test
 //	void testPostEndpoint() {

@@ -5,13 +5,6 @@ import java.util.Map;
 
 public class SubscriptionManager {
 
-    // make the class public to be accessed anywhere in the codebase
-    public static class NoExistingSubscription extends RuntimeException {
-        public NoExistingSubscription(String message) {
-            super(message);
-        }
-    }
-
     public static abstract class SubscriptionViolatedException extends RuntimeException{
         public SubscriptionViolatedException(String message) {
             super(message);
@@ -93,7 +86,12 @@ public class SubscriptionManager {
         }
     }
 
-
+    // make the class public to be accessed anywhere in the codebase
+    public static class NoExistingSubscription extends RuntimeException {
+        public NoExistingSubscription(String message) {
+            super(message);
+        }
+    }
 
     private static final Map<String, Subscription> STRING_SUB_MAP = new HashMap<>();
     public static final String TIER1_SUB = "TIER_1";

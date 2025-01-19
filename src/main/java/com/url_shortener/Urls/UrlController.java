@@ -137,7 +137,7 @@ public class UrlController {
         }
     }
 
-    @GetMapping("api/url/{url}")
+    @GetMapping("api/url/encode/{url}")
     public ResponseEntity<String> encodeUrl(@PathVariable String url,
             @AuthenticationPrincipal UserDetails currentUserDetails)
                                             throws JsonProcessingException {

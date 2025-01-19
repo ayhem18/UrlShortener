@@ -23,7 +23,6 @@ public interface Subscription {
             default -> this.getMaxQueryParameters();
         };
     }
-
 }
 
 
