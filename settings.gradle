@@ -2,5 +2,6 @@ rootProject.name = 'url_shortener'
 
 include ('url')
 include ('utils')
-//include ('app')
+include ('common')
+include ('data')
 include ('src')

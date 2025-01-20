@@ -1,9 +1,10 @@
-package com.url_shortener.Service.User;
+package org.data.repositories;
 
 // need userRepository class to save the application users
 
-import com.url_shortener.Service.Company.Company;
-import com.url_shortener.Service.Role;
+import org.common.Role;
+import org.data.entities.AppUser;
+import org.data.entities.Company;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;

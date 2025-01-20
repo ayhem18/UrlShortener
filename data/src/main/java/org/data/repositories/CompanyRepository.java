@@ -1,4 +1,4 @@
-package com.url_shortener.Service.Company;
+package org.data.repositories;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 

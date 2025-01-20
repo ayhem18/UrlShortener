@@ -1,8 +1,8 @@
-package com.url_shortener.Service.User;
+package org.data.entities;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.url_shortener.Service.Company.Company;
-import com.url_shortener.Service.Role;
+import org.common.Role;
+import org.data.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
+
 
 import java.util.Collection;
 

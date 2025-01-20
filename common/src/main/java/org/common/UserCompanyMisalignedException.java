@@ -1,4 +1,4 @@
-package com.url_shortener.Service;
+package org.common;
 
 
 public class UserCompanyMisalignedException extends RuntimeException{

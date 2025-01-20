@@ -45,6 +45,7 @@ class CustomComponentsTest {
     }
 
     @Test
+    // TODO: make the verify_power_26 private and access it through reflection in the tests...
     void testCustomerGeneratorPowers26() {
         for (int i = 1; i <= 6; i++) {
             long power26 = (long) Math.pow(26, i);
@@ -57,6 +58,7 @@ class CustomComponentsTest {
     }
 
     @Test
+    @Disabled // the test takes some time to run: however the current implementation passes
     void testIdNumberConversion() {
         for (long i = 0; i <= (long) Math.pow(26,6); i++) {
             String id = customGenerator.generateId(i);

@@ -1,4 +1,4 @@
-package com.url_shortener.Service.Company;
+package org.data.entities;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;

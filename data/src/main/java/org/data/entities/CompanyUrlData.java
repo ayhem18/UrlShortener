@@ -1,7 +1,6 @@
-package com.url_shortener.Urls.UrlData;
+package org.data.entities;
 
 import com.url_shortener.CustomGenerator;
-import com.url_shortener.Service.Company.Company;
 import com.url_shortener.Urls.UrlEntity;
 import org.springframework.data.mongodb.core.mapping.Document;
 

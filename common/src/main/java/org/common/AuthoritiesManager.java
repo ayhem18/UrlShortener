@@ -1,4 +1,4 @@
-package com.url_shortener.Service;
+package org.common;
 
 import org.springframework.security.core.GrantedAuthority;
 

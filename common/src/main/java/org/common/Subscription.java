@@ -1,5 +1,7 @@
-package com.url_shortener.Urls;
+package org.common;
 
+
+import org.example.UrlEntity;
 
 public interface Subscription {
 

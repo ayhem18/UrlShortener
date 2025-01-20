@@ -1,6 +1,6 @@
-package com.url_shortener.Urls.UrlData;
+package org.data.repositories;
 
-import com.url_shortener.Service.Company.Company;
+import org.data.entities.Company;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
 

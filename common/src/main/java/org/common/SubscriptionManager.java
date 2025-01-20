@@ -1,4 +1,6 @@
-package com.url_shortener.Urls;
+package org.common;
+
+import org.example.UrlEntity;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -75,9 +77,9 @@ public class SubscriptionManager {
 
 
     public static void throwSubscriptionViolatedException(UrlEntity valueType,
-                                                             int level,
-                                                             int num,
-                                                             int max) {
+                                                          int level,
+                                                          int num,
+                                                          int max) {
         switch (valueType) {
             case UrlEntity.LEVEL_NAME -> throw new LevelNamesSubExceeded(level, num, max);
             case UrlEntity.PATH_VARIABLE -> throw new LevelPathVariablesSubExceeded(level, num, max);
