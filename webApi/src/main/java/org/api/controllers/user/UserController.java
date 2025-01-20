@@ -1,11 +1,16 @@
-package com.url_shortener.Service.User;
+package org.api.controllers.user;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.url_shortener.Service.*;
-import com.url_shortener.Service.Company.Company;
-import com.url_shortener.Service.Company.CompanyRepository;
 import jakarta.validation.Valid;
+import org.api.requests.UserRegisterRequest;
+import org.api.requests.UserWithNoCompanyException;
+import org.common.Role;
+import org.common.RoleManager;
+import org.data.entities.AppUser;
+import org.data.entities.Company;
+import org.data.repositories.CompanyRepository;
+import org.data.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;

@@ -1,4 +1,4 @@
-package org.api.Requests;
+package org.api.requests;
 
 
 import jakarta.validation.constraints.NotBlank;
@@ -19,10 +19,5 @@ public record CompanyRegisterRequest (
 
 
 
-class ExistingCompanyException extends RuntimeException {
-    public ExistingCompanyException(String message) {
-        super(message);
-    }
-}
 
 

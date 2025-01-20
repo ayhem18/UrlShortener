@@ -1,6 +1,8 @@
-package org.api.ExceptionHandlers;
+package org.api.controllers.company;
 
-import org.api.Requests.ExistingCompanyException;
+import org.api.controllers.CustomExceptionHandler;
+import org.api.exceptions.ExistingCompanyException;
+import org.api.exceptions.NoCompanyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;

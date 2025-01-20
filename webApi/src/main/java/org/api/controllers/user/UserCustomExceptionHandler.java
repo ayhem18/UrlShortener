@@ -1,13 +1,13 @@
-package com.url_shortener.Service.User;
+package org.api.controllers.user;
 
-import com.url_shortener.CustomErrorMessage;
-import com.url_shortener.CustomExceptionHandler;
-import com.url_shortener.Service.RoleManager;
+import org.api.controllers.CustomExceptionHandler;
+import org.common.RoleManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
+import org.utils.CustomErrorMessage;
 
 
 @ControllerAdvice

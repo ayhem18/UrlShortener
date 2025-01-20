@@ -1,5 +1,6 @@
-package org.api.ExceptionHandlers;
+package org.api.controllers.url;
 
+import org.api.controllers.CustomExceptionHandler;
 import org.common.SubscriptionManager;
 import org.example.UrlValidator;
 import org.springframework.http.HttpStatus;
