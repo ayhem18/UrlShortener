@@ -5,7 +5,7 @@ package org.app;/*
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.utils.CustomGenerator;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "org.app")
 public class App {
     public String getGreeting() {
         return "Hello World!";

@@ -32,45 +32,54 @@ public class CustomGenerator {
 
 
     public String generateId(long order) {
-        if (order <= 0) {
-            throw new RuntimeException("No negative numbers allowed");
-        }
-
-        if (order == 1) {
+        if (order == 0) {
             return "a";
         }
 
-        // the first step is to calculate the logarithm of n with respect to 26
+        // the id generation would basically be the decomposition of the integer into the base of 26
 
+        // the first step is to calculate the logarithm of n with respect to 26
         // for numbers that aren't a power of 26, using log_a(x) = log(x) / log(a) trick seems to work well enough
         // however for powers of 26, the same trick leads to bugs
+
         int n;
         int power26 = verify_power_26(order);
 
         if (power26 == -1) {
-            n = (int) Math.floor(Math.log(order) / Math.log(26)) + 1;
+            n = (int) Math.floor(Math.log(order) / Math.log(26));
         }
         else {
-            n = power26 ;
+            n = power26;
         }
-
-//        System.out.println("\norder: " +  order + "\n");
-//        System.out.println("\n n " +  n + "\n");
 
         int asciiOfA = 'a';
         StringBuilder instanceId = new StringBuilder();
 
-        long power;
+        long power = (long) Math.pow(26, n);
         long quotient;
 
-        for (int i = n - 1; i >= 0; i--) {
-            power = (long) Math.pow(26, i);
-            quotient = order / power;
-            instanceId.append((char)(asciiOfA + quotient - 1));
+        while (power > 0) {
+            quotient = order / power; // integer division
+            instanceId.append((char)(asciiOfA + quotient));
             order = order - power * quotient;
+            power = power / 26;
         }
 
         return instanceId.toString();
-
     }
+
+    public long orderFromId(String id) {
+        int n = id.length();
+        long power = (long) (Math.pow(26, n - 1));
+        long number = 0;
+
+        int asciiA = 'a';
+        for (int i = 0; i < n;i++) {
+            number += power * (((int) id.charAt(i)) - asciiA);
+            power = power / 26;
+        }
+
+        return number;
+    }
+
 }

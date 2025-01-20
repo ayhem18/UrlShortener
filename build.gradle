@@ -4,7 +4,7 @@ plugins {
 	id 'io.spring.dependency-management' version '1.1.7'
 }
 
-group = 'com'
+group = 'org.app'
 version = '0.0.1-SNAPSHOT'
 
 java {
@@ -17,31 +17,22 @@ repositories {
 	mavenCentral()
 }
 
-dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter'
 
-	// add this dependency to build Web APIs
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 
-	// for jackson validation
-//	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: '3.4.0'
-//
-//	// for security stuff
-//	implementation "org.springframework.boot:spring-boot-starter-security"
-//
-//	// used to read Json (can be used to test responses)
-//	implementation group: 'com.jayway.jsonpath', name: 'json-path', version: '2.9.0'
-//
-//	// used for mongodb as a database
-//	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
 
-	// used for testing: imports a set of useful libraries
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	implementation project(':url')
+	implementation project(':utils')
 }
 
+
 springBoot {
-	mainClass = 'url_shortener.org.app.App'
+	mainClass = 'org.app.App'
 }
 
 tasks.named('test') {

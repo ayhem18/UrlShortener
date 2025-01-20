@@ -7,7 +7,7 @@
 
 
 plugins {
-    id 'java'
+    id 'application'
     id 'org.springframework.boot' version '3.4.1'
     id 'io.spring.dependency-management' version '1.1.7'
 }
@@ -15,9 +15,6 @@ plugins {
 group = 'org.app'
 version = '0.0.1-SNAPSHOT'
 
-java {
-    sourceCompatibility = '21'
-}
 
 repositories {
     mavenCentral()
@@ -36,10 +33,10 @@ dependencies {
 //}
 
 
-springBoot {
-    mainClass = 'org.app.App'
-}
+//springBoot {
+//    mainClass = 'org.app.App'
+//}
 
-tasks.named('test') {
-    useJUnitPlatform()
-}
+//tasks.named('test') {
+//    useJUnitPlatform()
+//}

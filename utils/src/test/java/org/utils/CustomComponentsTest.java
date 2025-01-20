@@ -11,27 +11,25 @@ class CustomComponentsTest {
     private final CustomGenerator customGenerator = new CustomGenerator();
 
     @Test
-    @Disabled
     void testCustomGenerateIdOrder1() {
         int asciiOfA = 'a';
 
-        for (int i = 1; i <= 26; i++) {
-            char c = (char) (asciiOfA + i - 1);
+        for (int i = 0; i <= 25; i++) {
+            char c = (char) (asciiOfA + i);
             String id = customGenerator.generateId(i);
-            assertEquals(Character.toString(c), id, "the id generation does not work for one number from 1 to 26");
+            assertEquals(Character.toString(c), id, "the id generation does not work for one number from 1 to 25");
         }
 
     }
 
     @Test
-    @Disabled
     void testCustomGenerateIdOrder2() {
         int asciiOfA = 'a';
 
         int i1 = 10;
         int i2 = 4;
 
-        for (int j = 1; j <= 26; j++) {
+        for (int j = 1; j < 26; j++) {
             int order = 26 * j + i1;
             String id = customGenerator.generateId(order);
             char c1 = (char) (asciiOfA + j);
@@ -47,15 +45,24 @@ class CustomComponentsTest {
     }
 
     @Test
-    @Disabled
     void testCustomerGeneratorPowers26() {
         for (int i = 1; i <= 6; i++) {
             long power26 = (long) Math.pow(26, i);
             assertEquals(i, customGenerator.verify_power_26(power26), "The calculation of the logarithm is wrong");
 
             String id = customGenerator.generateId(power26);
-            String realId = "a".repeat(i + 1);
+            String realId = "b" + "a".repeat(i);
             assertEquals(realId, id, "it does not work with powers of 26...");
         }
     }
+
+    @Test
+    void testIdNumberConversion() {
+        for (long i = 0; i <= (long) Math.pow(26,6); i++) {
+            String id = customGenerator.generateId(i);
+            long numberId = customGenerator.orderFromId(id);
+            assertEquals(i, numberId);
+        }
+    }
+
 }
