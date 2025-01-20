@@ -1,6 +1,6 @@
-package com.url_shortener;
+package org.api;
 
-import com.url_shortener.Service.AuthoritiesManager;
+import org.common.AuthoritiesManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;

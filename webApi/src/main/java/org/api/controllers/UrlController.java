@@ -1,13 +1,18 @@
-package com.url_shortener.Urls;
+package org.api.controllers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.url_shortener.CustomGenerator;
-import com.url_shortener.Service.Company.Company;
-import com.url_shortener.Service.User.UserRepository;
-import com.url_shortener.Service.UserCompanyMisalignedException;
-import com.url_shortener.Urls.UrlData.CompanyUrlData;
-import com.url_shortener.Urls.UrlData.CompanyUrlDataRepository;
+import org.common.Subscription;
+import org.common.SubscriptionManager;
+import org.common.UserCompanyMisalignedException;
+import org.data.entities.Company;
+import org.data.entities.CompanyUrlData;
+import org.data.repositories.CompanyUrlDataRepository;
+import org.data.repositories.UserRepository;
+import org.example.UrlDecoder;
+import org.example.UrlEntity;
+import org.example.UrlLevelEntity;
+import org.example.UrlValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.http.HttpStatus;
@@ -16,6 +21,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.utils.CustomGenerator;
 
 import java.util.HashMap;
 import java.util.List;

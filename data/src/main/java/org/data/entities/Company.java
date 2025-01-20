@@ -2,11 +2,11 @@ package org.data.entities;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.url_shortener.CustomGenerator;
-import com.url_shortener.Urls.Subscription;
+import org.common.Subscription;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.utils.CustomGenerator;
 
 import java.util.HashMap;
 import java.util.Map;

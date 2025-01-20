@@ -1,5 +1,6 @@
 package org.data.repositories;
 
+import org.data.entities.Company;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Optional;

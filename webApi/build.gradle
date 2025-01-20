@@ -25,8 +25,9 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
-    // for Jackson
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.18.2'
+    // for jackson validation
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: '3.4.0'
+
     // for security
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '3.4.1'
 
@@ -37,9 +38,10 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    implementation project(':utils')
+    implementation project(':utils') // for id generation
     implementation project(':url') // for the url utilities
     implementation project(':common') // for the Subscription / roles / authorities classes
+    implementation project(':data') // for Mongo Repositories
 }
 
 tasks.withType(JavaCompile).configureEach {

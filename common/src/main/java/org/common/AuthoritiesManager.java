@@ -15,6 +15,6 @@ public class AuthoritiesManager {
     );
 
     public static final String CAN_UPDATE_COMPANY_DETAILS = AUTHS.getFirst().getAuthority();
-    public static final String CAN_VIEW_COMPANY_DETAILS = AUTHS.getFirst().getAuthority();
+    public static final String CAN_VIEW_COMPANY_DETAILS = AUTHS.get(1).getAuthority();
     public static final String CAN_PAY_AUTH = AUTHS.get(1).getAuthority();
 }

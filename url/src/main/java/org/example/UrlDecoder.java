@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 // credit to JetBrains IDEA automatically converting a read-only class to a Record automatically
-record UrlLevelEntity(String levelName, String pathVariable, List<String> queryParamNames,
+public record UrlLevelEntity(String levelName, String pathVariable, List<String> queryParamNames,
                       List<String> queryParamValues) {
 
     public List<String> get(UrlEntity valueType) {

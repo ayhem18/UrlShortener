@@ -13,7 +13,7 @@ public class SubscriptionManager {
         }
     }
 
-    static class MaxNumLevelsSubExceeded extends SubscriptionViolatedException {
+    public static class MaxNumLevelsSubExceeded extends SubscriptionViolatedException {
 
         public MaxNumLevelsSubExceeded(String message) {
             super(message);

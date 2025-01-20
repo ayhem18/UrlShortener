@@ -8,7 +8,7 @@ public class UrlValidator {
             "http(s)?://(www\\.)*[a-zA-Z0-9]+\\.[a-zA-Z]{3,}(/+[a-zA-Z0-9?=_!.-]+)*"
     );
 
-    static class InvalidUrlException extends RuntimeException {
+    public static class InvalidUrlException extends RuntimeException {
         public InvalidUrlException(String message) {
             super(message);
         }

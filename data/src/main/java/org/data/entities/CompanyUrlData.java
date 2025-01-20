@@ -1,8 +1,8 @@
 package org.data.entities;
 
-import com.url_shortener.CustomGenerator;
-import com.url_shortener.Urls.UrlEntity;
+import org.example.UrlEntity;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.utils.CustomGenerator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,13 +24,13 @@ public class CompanyUrlData {
     public CompanyUrlData(Company company, String companySiteHash) {
         this.company = company;
         this.companySiteHash = companySiteHash;
-        this.dataEncoded = new ArrayList<HashMap<UrlEntity, HashMap<String, String>>>();
-        this.dataDecoded = new ArrayList<HashMap<UrlEntity, HashMap<String, String>>>();
+        this.dataEncoded = new ArrayList<>();
+        this.dataDecoded = new ArrayList<>();
     }
 
     public CompanyUrlData() {
-        this.dataEncoded = new ArrayList<HashMap<UrlEntity, HashMap<String, String>>>();
-        this.dataDecoded = new ArrayList<HashMap<UrlEntity, HashMap<String, String>>>();
+        this.dataEncoded = new ArrayList<>();
+        this.dataDecoded = new ArrayList<>();
     }
 
     public Company getCompany() {
