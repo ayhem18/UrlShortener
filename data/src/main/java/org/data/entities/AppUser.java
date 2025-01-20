@@ -29,19 +29,16 @@ public class AppUser {
 
     // each user is associated with a company (a specific site)
     @DocumentReference
-    Company company;
-
-    String roleString;
+    private Company company;
 
     // the role the user plays in this company (determines the authorities !!)
-    Role role;
+    private Role role;
 
     public AppUser(String userName, String password, Company company, Role role) {
         this.username = userName;
         this.password = password;
         this.company = company;
         this.role = role;
-        this.roleString = role.toString();
     }
 
     public AppUser() {

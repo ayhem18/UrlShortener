@@ -4,24 +4,7 @@ package org.example;
 import java.util.ArrayList;
 import java.util.List;
 
-// credit to JetBrains IDEA automatically converting a read-only class to a Record automatically
-public record UrlLevelEntity(String levelName, String pathVariable, List<String> queryParamNames,
-                      List<String> queryParamValues) {
 
-    public List<String> get(UrlEntity valueType) {
-        return switch (valueType) {
-            case UrlEntity.LEVEL_NAME -> List.of(this.levelName());
-            case UrlEntity.PATH_VARIABLE -> List.of(this.pathVariable());
-            case UrlEntity.QUERY_PARAM_VALUE -> this.queryParamValues();
-            default -> this.queryParamNames();
-        };
-    }
-}
-
-
-// this class will be used across the application and should be loaded in boot-up
-// hence the @Configuration annotation
-//@Configuration
 public class UrlDecoder {
     private UrlLevelEntity inspectLevel(String urlLevel) {
         // this method assume teh levelUrl is not the top level url (nothing such as www.youtube.com...)

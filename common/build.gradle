@@ -35,9 +35,9 @@ tasks.withType(JavaCompile).configureEach {
     options.compilerArgs.add("-parameters")
 }
 
-bootJar {
-    enabled = false
-}
+//bootJar {
+//    enabled = false
+//}
 
 
 // for some reason, any module with the spring boot plugin fails to build without this springBoot mainClass thingy

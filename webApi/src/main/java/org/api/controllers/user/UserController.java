@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import org.api.requests.UserRegisterRequest;
-import org.api.requests.UserWithNoCompanyException;
 import org.common.Role;
 import org.common.RoleManager;
 import org.data.entities.AppUser;
