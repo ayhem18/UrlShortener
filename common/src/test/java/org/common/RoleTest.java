@@ -42,7 +42,7 @@ class RoleTest {
 //    @Disabled
     void nonRoleStringRaisesException() {
         String randomStr = gen.randomAlphaString(6);
-        // make sure it throws an error for any string that does represent a role
+        // make sure it throws an error for any string that does not represent a role
         for (int i = 0; i < 100; i++) {
             while (RoleManager.ROLES_STRING.contains(randomStr.toLowerCase())) {
                 randomStr = gen.randomAlphaString(6);
@@ -62,6 +62,14 @@ class RoleTest {
     }
 
     @Test
+    void testAdminUserAuths() {
+        Role admin = RoleManager.getRole("admin");
+        List<GrantedAuthority> expected = List.of(canEditUrl, canView, canViewStats, canUseUrl);
+        assertThat(admin.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList()).
+                hasSameElementsAs(expected.stream().map(GrantedAuthority::getAuthority).toList());
+    }
+
+    @Test
     void testRegisteredUserAuths() {
         Role registeredUser = RoleManager.getRole("registeredUser");
         List<GrantedAuthority> expected = List.of(canUseUrl);
@@ -69,11 +77,4 @@ class RoleTest {
                 hasSameElementsAs(expected.stream().map(GrantedAuthority::getAuthority).toList());
     }
 
-    @Test
-    void testAdminUserAuths() {
-        Role admin = RoleManager.getRole("admin");
-        List<GrantedAuthority> expected = List.of(canEditUrl, canView, canViewStats, canUseUrl);
-        assertThat(admin.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList()).
-                hasSameElementsAs(expected.stream().map(GrantedAuthority::getAuthority).toList());
-    }
 }

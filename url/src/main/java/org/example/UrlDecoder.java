@@ -23,10 +23,14 @@ public class UrlDecoder {
         if (urlLevel.contains("?")) {
             List<String> items = List.of(urlLevel.split("\\?"));
 
+            String queryParamValuePairsString = items.get(1);
+
+            List<String> queryParamValuePairsList = List.of(queryParamValuePairsString.split("&"));
+
             List<String> qpNames = new ArrayList<>();
             List<String> qpValues = new ArrayList<>();
 
-            for (String v : items.subList(1, items.size())) {
+            for (String v : queryParamValuePairsList) {
                 // split by the "=" character
                 List<String> qp = List.of(v.split("="));
                 qpNames.add(qp.getFirst());
@@ -62,10 +66,11 @@ public class UrlDecoder {
         String strToWorkWith;
 
         if (urlString.startsWith("https://")) {
-            strToWorkWith = urlString.substring(0, "https://".length());
+            // make sure to extract the substring after the protocol part of the url
+            strToWorkWith = urlString.substring("https://".length());
         }
         else {
-            strToWorkWith = urlString.substring(0, "http://".length());
+            strToWorkWith = urlString.substring("http://".length());
         }
 
         // 1. split by the "/" character (which can be only done after removing the http(s) delimiter
@@ -77,9 +82,12 @@ public class UrlDecoder {
                 map(this::inspectLevel).
                 toList();
 
-        entities.addFirst(new UrlLevelEntity(topLevelUrl, null, null, null));
+        // make sure the 'entities' variable is mutable
+        ArrayList<UrlLevelEntity> m_entities = new ArrayList<>(entities);
 
-        return entities;
+        m_entities.addFirst(new UrlLevelEntity(topLevelUrl, null, null, null));
+
+        return m_entities;
     }
 
 }
