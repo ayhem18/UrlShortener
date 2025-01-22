@@ -1,6 +1,8 @@
 package org.data.entities;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.common.Subscription;
 import org.springframework.data.annotation.Id;
@@ -11,7 +13,9 @@ import org.utils.CustomGenerator;
 import java.util.HashMap;
 import java.util.Map;
 
-@Document("Company") // make sure to use the Document annotation and not the @Entity since this is not a SQL table...
+// make sure to use the Document annotation and not the @Entity since this is not a SQL table...
+@Document("Company")
+@JsonInclude(JsonInclude.Include.NON_NULL) // a class-wide annotation ignoring all null fields
 public class Company {
     private static long COMPANY_COUNT = 0;
 
@@ -20,18 +24,17 @@ public class Company {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String id; // some sort of Company identifier
 
-//    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String siteId;
 
     private String site;
 
-//    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Map<String, String> roleTokens;
-
 
     private Map<String, String> roleTokensHashed;
 
-    private int serializeSensitiveCount;
+    // written but never read...
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private int serializeSensitiveCount = 0;
 
     private Subscription subscription;
 
@@ -65,10 +68,12 @@ public class Company {
     // that checks the condition on the fly, returning Null when the condition is not verified
     @JsonGetter(value = "id")
     private String jsonGetId() {
+        System.out.println("jsonGetId is called");
+
         // 4 represents the number of sensitive fields that should be serialized only once:
         // when saved into the database
         if (serializeSensitiveCount < 4) {
-            serializeSensitiveCount += 1;
+            this.serializeSensitiveCount += 1;
             return this.id;
         }
         return null;
@@ -76,8 +81,9 @@ public class Company {
 
     @JsonGetter(value = "siteId")
     private String jsonGetSiteId() {
-        if (serializeSensitiveCount < 4) {
-            serializeSensitiveCount += 1;
+        System.out.println("jsonGetSiteId is called");
+        if (this.serializeSensitiveCount < 4) {
+            this.serializeSensitiveCount += 1;
             return this.siteId;
         }
         return null;
@@ -85,17 +91,19 @@ public class Company {
 
     @JsonGetter(value = "roleTokens")
     private Map<String, String> jsonGetRoleTokens() {
-        if (serializeSensitiveCount < 4) {
-            serializeSensitiveCount += 1;
+        System.out.println("jsonGetRoleTokens is called");
+        if (this.serializeSensitiveCount < 4) {
+            this.serializeSensitiveCount += 1;
             return this.roleTokens;
         }
         return null;
     }
 
-    @JsonGetter(value = "roleHashedTokens")
+    @JsonGetter(value = "roleTokensHashed")
     private Map<String, String> jsonGetRoleTokensHashed() {
-        if (serializeSensitiveCount < 4) {
-            serializeSensitiveCount += 1;
+        System.out.println("jsonGetHashedRoles is called");
+        if (this.serializeSensitiveCount < 4) {
+            this.serializeSensitiveCount += 1;
             return this.roleTokensHashed;
         }
         return null;
@@ -119,6 +127,8 @@ public class Company {
     }
 
     // changed the name of the getter from the standard java convention so that the Mongodb driver wouldn't use it
+    // added the JsonIgnore annotation so that Json would not create a field "tokens" when serializing a Company Object
+    @JsonIgnore
     public Map<String, String> getTokens() {
         return this.roleTokensHashed;
     }
@@ -145,6 +155,14 @@ public class Company {
         this.subscription = subscription;
     }
 
+    // added mainly for Json
+    private int getSerializeSensitiveCount() {
+        return serializeSensitiveCount;
+    }
+
+    public void setSerializeSensitiveCount(int serializeSensitiveCount) {
+        this.serializeSensitiveCount = serializeSensitiveCount;
+    }
 }
 
 

@@ -14,7 +14,7 @@ public interface  UserRepository extends MongoRepository<AppUser, String> {
     Optional<AppUser> findById(String id);
     Optional<AppUser> findByUsername(String id);
 
-    // the method below does NOT work as expected. the method right below does the trick
+// the method below does NOT work as expected. the method right below does the trick
 //    @Query("{'company': ?0, 'roleString': ?1}")
 //    List<AppUser> findRolesInCompany(String companyId, String role);
 

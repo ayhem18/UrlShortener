@@ -73,6 +73,9 @@ class UrlUtilitiesTest {
                 new UrlLevelEntity("sqlpad", null, null, null)
         );
 
+        List<UrlLevelEntity> l1 = decoder.breakdown(u1);
+        assertEquals(l1, e1);
+
         String u2 = "https://github.com/ayhem18?tab=overview&from=2025-01-01&to=2025-01-22";
 
         List<UrlLevelEntity> e2 = List.of(
@@ -82,9 +85,6 @@ class UrlUtilitiesTest {
                         List.of("overview", "2025-01-01", "2025-01-22")
                         )
         );
-
-        List<UrlLevelEntity> l1 = decoder.breakdown(u1);
-        assertEquals(l1, e1);
 
         List<UrlLevelEntity> l2 = decoder.breakdown(u2);
         assertEquals(l2, e2);
