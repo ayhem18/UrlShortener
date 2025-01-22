@@ -28,16 +28,19 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    // https://joel-costigliola.github.io/assertj/assertj-core-quick-start.html
+    testImplementation "org.assertj:assertj-core:3.11.1"
+
     implementation project(':url')
+    implementation project(':utils')
+
+
+
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.compilerArgs.add("-parameters")
 }
-
-//bootJar {
-//    enabled = false
-//}
 
 
 // for some reason, any module with the spring boot plugin fails to build without this springBoot mainClass thingy

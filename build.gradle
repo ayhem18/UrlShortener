@@ -29,6 +29,9 @@ dependencies {
 	implementation project(':utils')
 	implementation project(':url')
 	implementation project(':common')
+	implementation project(':data')
+	implementation project(':webApi')
+
 }
 
 

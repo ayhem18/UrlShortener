@@ -8,15 +8,24 @@ public class CustomGenerator {
     private static final String CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijk"
             +"lmnopqrstuvwxyz!@#$%&";
 
-    public String randomString(int length) {
+    private String innerRandomString(int length, String characters) {
         StringBuilder str = new StringBuilder();
         Random random = new Random();
         for (int i = 0 ; i < length; i++) {
-            str.append(CHARS.charAt(random.nextInt(0, CHARS.length())));
+            str.append(characters.charAt(random.nextInt(0, characters.length())));
         }
 
         return str.toString();
     }
+
+    public String randomString(int length) {
+        return innerRandomString(length, CHARS);
+    }
+
+    public String randomAlphaString(int length) {
+        return innerRandomString(length, ALPHA);
+    }
+
 
     public int verify_power_26(long number) {
         int log26 = 0;
@@ -29,7 +38,6 @@ public class CustomGenerator {
         }
         return -1;
     }
-
 
     public String generateId(long order) {
         if (order == 0) {
@@ -80,6 +88,21 @@ public class CustomGenerator {
         }
 
         return number;
+    }
+
+    public String randomCaseString(String str) {
+        StringBuilder newString = new StringBuilder();
+        for (int i = 0; i < str.length();i++) {
+            String c = Character.toString(str.charAt(i));
+            if (Math.random() < 0.5) {
+                c = c.toLowerCase();
+            }
+            else {
+                c = c.toUpperCase();
+            }
+            newString.append(c);
+        }
+        return newString.toString();
     }
 
 }

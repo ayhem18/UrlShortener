@@ -19,10 +19,10 @@ public class SecurityConfiguration {
 
                 .authorizeHttpRequests(auth -> auth
                             .requestMatchers(RegexRequestMatcher.regexMatcher("/api/auth/register/[A-Za-z]+")).permitAll()
-                            .requestMatchers(RegexRequestMatcher.regexMatcher(HttpMethod.DELETE,"/api/company/[A-Za-z0-9/]+")).hasAuthority(AuthoritiesManager.CAN_UPDATE_COMPANY_DETAILS)
-                            .requestMatchers(RegexRequestMatcher.regexMatcher(HttpMethod.POST, "/api/company/[A-Za-z0-9/]+")).hasAuthority(AuthoritiesManager.CAN_UPDATE_COMPANY_DETAILS)
-                            .requestMatchers(RegexRequestMatcher.regexMatcher(HttpMethod.PUT, "/api/company/[A-Za-z0-9/]+")).hasAuthority(AuthoritiesManager.CAN_UPDATE_COMPANY_DETAILS)
-                            .requestMatchers(RegexRequestMatcher.regexMatcher(HttpMethod.GET, "/api/company/[A-Za-z0-9/]+")).hasAuthority(AuthoritiesManager.CAN_VIEW_COMPANY_DETAILS)
+                            .requestMatchers(RegexRequestMatcher.regexMatcher(HttpMethod.DELETE,"/api/company/[A-Za-z0-9/]+")).hasAuthority(AuthoritiesManager.CAN_UPDATE_COMPANY_DETAILS_STR)
+                            .requestMatchers(RegexRequestMatcher.regexMatcher(HttpMethod.POST, "/api/company/[A-Za-z0-9/]+")).hasAuthority(AuthoritiesManager.CAN_UPDATE_COMPANY_DETAILS_STR)
+                            .requestMatchers(RegexRequestMatcher.regexMatcher(HttpMethod.PUT, "/api/company/[A-Za-z0-9/]+")).hasAuthority(AuthoritiesManager.CAN_UPDATE_COMPANY_DETAILS_STR)
+                            .requestMatchers(RegexRequestMatcher.regexMatcher(HttpMethod.GET, "/api/company/[A-Za-z0-9/]+")).hasAuthority(AuthoritiesManager.CAN_VIEW_COMPANY_DETAILS_STR)
                 );
 
         return http.build();
