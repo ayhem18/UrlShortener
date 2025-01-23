@@ -82,16 +82,21 @@ class CompanyTest {
         // Otherwise, the serialization wouldn't work
         assertEquals(4, (int) f.get(com));
 
-        // 2nd serialization: using the conditional only the "site" key should be present
-        // the "serializeSensitiveCount" field won't be modified
-        String comJson = this.om.writeValueAsString(com);
-        assertEquals(4, (int) f.get(com));
 
-        System.out.println(comJson);
+        // due to the conditional serialization, any subsequent serialization
+        // should return only "site" and "subscription" as keys
+        // the "serializeSensitiveCount" field should not  be modified
 
-        Object doc = Configuration.defaultConfiguration().jsonProvider().parse(comJson);
-        Set<String> keys = JsonPath.read(doc, "keys()");
-        Assertions.assertThat(keys).hasSameElementsAs(serializationFields2);
+        String comJson;
+        Object doc;
+        for (int i = 0; i < 100; i++) {
+            comJson = this.om.writeValueAsString(com);
+            assertEquals(4, (int) f.get(com));
+
+            doc = Configuration.defaultConfiguration().jsonProvider().parse(comJson);
+            Set<String> keys = JsonPath.read(doc, "keys()");
+            Assertions.assertThat(keys).hasSameElementsAs(serializationFields2);
+        }
 
     }
 

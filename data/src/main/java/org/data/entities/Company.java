@@ -68,8 +68,6 @@ public class Company {
     // that checks the condition on the fly, returning Null when the condition is not verified
     @JsonGetter(value = "id")
     private String jsonGetId() {
-        System.out.println("jsonGetId is called");
-
         // 4 represents the number of sensitive fields that should be serialized only once:
         // when saved into the database
         if (serializeSensitiveCount < 4) {
@@ -81,7 +79,6 @@ public class Company {
 
     @JsonGetter(value = "siteId")
     private String jsonGetSiteId() {
-        System.out.println("jsonGetSiteId is called");
         if (this.serializeSensitiveCount < 4) {
             this.serializeSensitiveCount += 1;
             return this.siteId;
@@ -91,7 +88,6 @@ public class Company {
 
     @JsonGetter(value = "roleTokens")
     private Map<String, String> jsonGetRoleTokens() {
-        System.out.println("jsonGetRoleTokens is called");
         if (this.serializeSensitiveCount < 4) {
             this.serializeSensitiveCount += 1;
             return this.roleTokens;
@@ -101,7 +97,6 @@ public class Company {
 
     @JsonGetter(value = "roleTokensHashed")
     private Map<String, String> jsonGetRoleTokensHashed() {
-        System.out.println("jsonGetHashedRoles is called");
         if (this.serializeSensitiveCount < 4) {
             this.serializeSensitiveCount += 1;
             return this.roleTokensHashed;
@@ -155,7 +150,7 @@ public class Company {
         this.subscription = subscription;
     }
 
-    // added mainly for Json
+    // added mainly for correct Json serialization
     private int getSerializeSensitiveCount() {
         return serializeSensitiveCount;
     }

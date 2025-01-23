@@ -1,7 +1,10 @@
 package org.data.entities;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.example.UrlEntity;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
+import org.springframework.security.core.parameters.P;
 import org.utils.CustomGenerator;
 
 import java.util.ArrayList;
@@ -9,11 +12,27 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// this class represents the dataEncoded unit that saves all the information related to company urls
 
 @Document
+@JsonPropertyOrder({"company", "companySiteHash", "dataEncoded", "dataDecoded"})
 public class CompanyUrlData {
+    /*
+    This class is meant to save the Url data for a given Company. The data is used to encode and decode urls
+    used by said company (which means the top-level of each url is assumed to be Company site)
 
+    Fields:
+
+    - Company: company object
+    - companySiteHash: an encoding of the company: saved independently as it will be used for each shorter url
+    - dataEncoded: natural strings -> hashes
+    - dataDecoded: hashes -> natural string , this way both operations are optimized (for the cost of double memory usage)
+
+    - DataEncoded: List[item1, item2, ... ] where each item represents a hash map
+    item_i : {valueType: {map_i}}
+    map_i: represents {string of type: ValueType -> hash}
+    * */
+
+    @DocumentReference
     private Company company;
 
     private String companySiteHash;
@@ -28,42 +47,20 @@ public class CompanyUrlData {
         this.dataDecoded = new ArrayList<>();
     }
 
-    public CompanyUrlData() {
-        this.dataEncoded = new ArrayList<>();
-        this.dataDecoded = new ArrayList<>();
-    }
-
     public Company getCompany() {
         return company;
-    }
-
-    private void setCompany(Company company) {
-        this.company = company;
     }
 
     public String getCompanySiteHash() {
         return companySiteHash;
     }
 
-    private void setCompanySiteHash(String companySiteHash) {
-        this.companySiteHash = companySiteHash;
-    }
-
     public List<HashMap<UrlEntity, HashMap<String, String>>> getDataEncoded() {
         return dataEncoded;
     }
 
-    // if Jackson uses reflection to access the fields, then making the setters private shouldn't be an issue
-    private void setDataEncoded(List<HashMap<UrlEntity, HashMap<String, String>>> dataEncoded) {
-        this.dataEncoded = dataEncoded;
-    }
-
     public List<HashMap<UrlEntity, HashMap<String, String>>> getDataDecoded() {
         return dataDecoded;
-    }
-
-    private void setDataDecoded(List<HashMap<UrlEntity, HashMap<String, String>>> dataDecoded) {
-        this.dataDecoded = dataDecoded;
     }
 
     private HashMap<UrlEntity, HashMap<String, String>> initializeLevel() {
@@ -75,7 +72,12 @@ public class CompanyUrlData {
         return values;
     }
 
-    public Map.Entry<HashMap<String, String>, HashMap<String, String>> getLevelTypeData(int level, UrlEntity valueType) {
+    public Map.Entry<HashMap<String, String>, HashMap<String, String>>
+    getLevelTypeData(int level, UrlEntity valueType) {
+        if (level <= 0) {
+            throw new IllegalArgumentException("The level argument is expected to be 1-indexed !!!");
+        }
+
         // the level is expected to be 1-indexed
         level -= 1;
 
@@ -87,7 +89,8 @@ public class CompanyUrlData {
         }
 
         if (this.dataEncoded.size() + 1 <= level) {
-            throw new RuntimeException("Make sure the levels are added consecutively");
+            throw new IllegalArgumentException("Make sure the levels are added consecutively. " +
+                    "The current maximum level is " + this.dataEncoded.size());
         }
 
         // I use the Map.Entry class here since there is no Pair class in Java
@@ -105,7 +108,7 @@ public class CompanyUrlData {
 
         HashMap<String, String> levelDataEncoded = levelData.getKey();
 
-        // only update the hashmap if the value has not been already saved in the database
+        // only update the hashmap if the value has not been already saved
         if (levelDataEncoded.containsKey(value)) {
             return;
         }
@@ -115,9 +118,29 @@ public class CompanyUrlData {
         int itemsCount = levelData.getKey().size();
         String valueHash = gen.generateId(itemsCount);
 
-
         levelDataEncoded.put(value, valueHash);
         levelDataDecoded.put(valueHash, value);
     }
 
+    // private setters and no-arg constructor added so that Jackson can work properly
+    public CompanyUrlData() {
+        this.dataEncoded = new ArrayList<>();
+        this.dataDecoded = new ArrayList<>();
+    }
+
+    private void setCompany(Company company) {
+        this.company = company;
+    }
+
+    private void setCompanySiteHash(String companySiteHash) {
+        this.companySiteHash = companySiteHash;
+    }
+
+    private void setDataEncoded(List<HashMap<UrlEntity, HashMap<String, String>>> dataEncoded) {
+        this.dataEncoded = dataEncoded;
+    }
+
+    private void setDataDecoded(List<HashMap<UrlEntity, HashMap<String, String>>> dataDecoded) {
+        this.dataDecoded = dataDecoded;
+    }
 }
