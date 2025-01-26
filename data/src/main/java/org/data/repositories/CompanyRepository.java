@@ -7,8 +7,8 @@ import java.util.Optional;
 
 
 
-//@Configuration I still do not understand why it is not necessary to associate the Repository interface
-// with the @Configuration / @Bean annotations. (maybe because it is an interface / abstract class)
+// MongoRepository interface is most likely associated with an annotation that inherits @Bean or @Configuration
+// hence no needed for adding an annotation myself
 public interface CompanyRepository extends MongoRepository<Company, String> {
     Optional<Company> findById(String id);
     Optional<Company> findBySite(String site);

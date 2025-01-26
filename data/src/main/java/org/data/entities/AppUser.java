@@ -79,9 +79,9 @@ public class AppUser {
     @Override
     public String toString() {
         return "AppUser{" +
-                "username='" + username + '\'' +
-                ", company=" + company.getId() +
-                ", role=" + role +
+                "username= '" + username + '\'' +
+                ", company= " + company.getId() +
+                ", role= " + role +
                 '}';
     }
 }
@@ -97,9 +97,6 @@ class UserDetailsImp implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-//        System.out.println("\nListing authorities\n");
-//        this.user.getRole().getAuthorities().forEach(auth -> System.out.println(auth.getAuthority()));
-//        System.out.println("\n");
         return this.user.getRole().getAuthorities();
     }
 
@@ -112,7 +109,6 @@ class UserDetailsImp implements UserDetails {
     public String getPassword() {
         return user.getPassword();
     }
-
 
 }
 

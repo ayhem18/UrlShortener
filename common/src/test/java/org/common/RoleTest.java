@@ -3,7 +3,6 @@
  */
 package org.common;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
 import org.utils.CustomGenerator;
@@ -26,7 +25,6 @@ class RoleTest {
 
 
     @Test
-//    @Disabled
     void roleWorksWithStringIgnoreCase() {
         // make sure the managed returns the correct role for any version of the input string
         for (String orgRole : RoleManager.ROLES_STRING) {
@@ -39,7 +37,6 @@ class RoleTest {
     }
 
     @Test
-//    @Disabled
     void nonRoleStringRaisesException() {
         String randomStr = gen.randomAlphaString(6);
         // make sure it throws an error for any string that does not represent a role

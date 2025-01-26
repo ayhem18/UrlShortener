@@ -109,7 +109,6 @@ public class CompanyController {
             throw new NoCompanyException("There is no company with the given Id");
         }
 
-
         // this function can be called by the Owner user of the company
         AppUser currentUser = this.userRepo.findById(currentUserDetails.getUsername()).get();
 
