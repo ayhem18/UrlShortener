@@ -58,19 +58,15 @@ public class Company {
     public Company() {
     }
 
-    @Override
-    public String toString() {
-        return "Company{" +
-                "site='" + site + '\'' +
-                '}';
-    }
+    ///////////////////////////////// GETTERS /////////////////////////////////////////////
+
     // one trick to serialize fields conditionally is to write a JsonGetter method
     // that checks the condition on the fly, returning Null when the condition is not verified
     @JsonGetter(value = "id")
     private String jsonGetId() {
-        // 4 represents the number of sensitive fields that should be serialized only once:
+        // 5 represents the number of sensitive fields that should be serialized only once:
         // when saved into the database
-        if (serializeSensitiveCount < 4) {
+        if (serializeSensitiveCount < 5) {
             this.serializeSensitiveCount += 1;
             return this.id;
         }
@@ -79,7 +75,7 @@ public class Company {
 
     @JsonGetter(value = "siteId")
     private String jsonGetSiteId() {
-        if (this.serializeSensitiveCount < 4) {
+        if (this.serializeSensitiveCount < 5) {
             this.serializeSensitiveCount += 1;
             return this.siteId;
         }
@@ -88,7 +84,7 @@ public class Company {
 
     @JsonGetter(value = "roleTokens")
     private Map<String, String> jsonGetRoleTokens() {
-        if (this.serializeSensitiveCount < 4) {
+        if (this.serializeSensitiveCount < 5) {
             this.serializeSensitiveCount += 1;
             return this.roleTokens;
         }
@@ -97,28 +93,19 @@ public class Company {
 
     @JsonGetter(value = "roleTokensHashed")
     private Map<String, String> jsonGetRoleTokensHashed() {
-        if (this.serializeSensitiveCount < 4) {
+        if (this.serializeSensitiveCount < 5) {
             this.serializeSensitiveCount += 1;
             return this.roleTokensHashed;
         }
         return null;
     }
 
-
     public String getId() {
         return id;
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getSite() {
-        return site;
-    }
-
-    public void setSite(String site) {
-        this.site = site;
+    private int getSerializeSensitiveCount() {
+        return serializeSensitiveCount;
     }
 
     // changed the name of the getter from the standard java convention so that the Mongodb driver wouldn't use it
@@ -128,6 +115,15 @@ public class Company {
         return this.roleTokensHashed;
     }
 
+    public Subscription getSubscription() {
+        return subscription;
+    }
+
+    public String getSite() {
+        return site;
+    }
+
+    ///////////////////////////////// SETTERS /////////////////////////////////////////////
     public void setTokens(Map<String, String> roleTokens, PasswordEncoder encoder) {
         // the method signature ensures that the hashes are always persistent with the actual tokens
         // set the field
@@ -142,22 +138,37 @@ public class Company {
         }
     }
 
-    public Subscription getSubscription() {
-        return subscription;
+    public void setSite(String site) {
+        this.site = site;
     }
 
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    // the subscription can be changed
     public void setSubscription(Subscription subscription) {
         this.subscription = subscription;
     }
 
-    // added mainly for correct Json serialization
-    private int getSerializeSensitiveCount() {
-        return serializeSensitiveCount;
-    }
-
-    public void setSerializeSensitiveCount(int serializeSensitiveCount) {
+    // add private setters for Jackson serialization (private so they can't be set by the program)
+    private void setSerializeSensitiveCount(int serializeSensitiveCount) {
         this.serializeSensitiveCount = serializeSensitiveCount;
     }
+
+    private void setSiteId(String siteId) {
+        this.siteId = siteId;
+    }
+
+    ///////////////////////////////// OTHER /////////////////////////////////////////////
+
+    @Override
+    public String toString() {
+        return "Company{" +
+                "site='" + site + '\'' +
+                '}';
+    }
+
 }
 
 

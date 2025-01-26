@@ -3,8 +3,8 @@ package org.api.controllers.company;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
+import org.api.exceptions.CompanyUniquenessConstraints;
 import org.api.requests.CompanyRegisterRequest;
-import org.api.exceptions.ExistingCompanyException;
 import org.api.exceptions.NoCompanyException;
 import org.common.RoleManager;
 import org.common.Subscription;
@@ -28,8 +28,6 @@ import org.utils.CustomGenerator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-
-
 
 
 @RestController
@@ -62,12 +60,21 @@ public class CompanyController {
         return om;
     }
 
+
+    private void validateNewCompany(CompanyRegisterRequest req) {
+        if (this.companyRepo.existsById(req.id())) {
+            throw new CompanyUniquenessConstraints.ExistingCompanyException("There is already a company with the given id.");
+        }
+
+        if (this.companyRepo.findBySite(req.site()).isPresent()) {
+            throw new CompanyUniquenessConstraints.ExistingSiteException("There is already a company with the given site");
+        }
+    }
+
     @PostMapping("api/auth/register/company")
     public ResponseEntity<String> registerCompany(@Valid @RequestBody CompanyRegisterRequest req) throws JsonProcessingException {
 
-        if (this.companyRepo.existsById(req.id())) {
-            throw new ExistingCompanyException("There is already a company with the given id.");
-        }
+        validateNewCompany(req);
 
         // create the role tokens
         HashMap<String, String> roleTokens = new HashMap<>();

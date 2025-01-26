@@ -2,7 +2,7 @@ package org.api.controllers.url;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.api.exceptions.ExistingCompanyException;
+import org.api.exceptions.CompanyUniquenessConstraints;
 import org.common.Subscription;
 import org.common.SubscriptionManager;
 import org.data.entities.Company;
@@ -90,7 +90,8 @@ public class UrlController {
         Company userCompany = this.userRepo.findById(username).get().getCompany();
 
         if (! userCompany.getSite().equalsIgnoreCase(userCompanySite))  {
-            throw new ExistingCompanyException.UserCompanyMisalignedException("The url site does not align with the user company site");
+            throw new CompanyUniquenessConstraints.
+                    UserCompanyMisalignedException("The url site does not align with the user company site");
         }
 
         return userCompany;

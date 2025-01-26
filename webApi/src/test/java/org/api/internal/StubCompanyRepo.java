@@ -85,6 +85,18 @@ public class StubCompanyRepo implements CompanyRepository {
         return Optional.empty();
     }
 
+    @Override
+    public <S extends Company> S save(S entity) {
+        for (int i = 0; i < this.db.size(); i++) {
+            if (this.db.get(i).getId().equals(entity.getId())) {
+                this.db.set(i, entity);
+                return entity;
+            }
+        }
+        // if we reached this point, add the new entity to the list
+        this.db.add(entity);
+        return entity;
+    }
 
     // the rest was generated automatically and does not currently (26.01.2024) concern me...
 
@@ -130,11 +142,6 @@ public class StubCompanyRepo implements CompanyRepository {
 
     @Override
     public <S extends Company, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) {
-        return null;
-    }
-
-    @Override
-    public <S extends Company> S save(S entity) {
         return null;
     }
 

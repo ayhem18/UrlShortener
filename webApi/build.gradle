@@ -34,10 +34,21 @@ dependencies {
     // used for mongodb as a database
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
 
+    // used to read json strings
+    // https://github.com/json-path/JsonPath
+    implementation group: 'com.jayway.jsonpath', name: 'json-path', version: '2.9.0'
+
+    // https://joel-costigliola.github.io/assertj/assertj-core-quick-start.html
+    testImplementation "org.assertj:assertj-core:3.11.1"
+
     // testing
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    // used mainly for stubbing and easier unit testing
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.14.2'
+
+    // local projects
     implementation project(':utils') // for id generation
     implementation project(':url') // for the url utilities
     implementation project(':common') // for the Subscription / roles / authorities classes
