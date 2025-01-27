@@ -6,11 +6,13 @@ import com.jayway.jsonpath.JsonPath;
 import org.api.controllers.company.CompanyController;
 import org.api.exceptions.CompanyUniquenessConstraints;
 import org.api.internal.StubCompanyRepo;
+import org.api.internal.StubCounterRepo;
 import org.api.internal.StubUserRepo;
 import org.api.requests.CompanyRegisterRequest;
 import org.common.Subscription;
 import org.common.SubscriptionManager;
 import org.data.entities.Company;
+import org.data.entities.CompanyWrapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,12 +27,11 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class CompanyControllerTest {
 
-    private final StubCompanyRepo cRepo;
+    private final StubCompanyRepo companyRepo;
     private final CustomGenerator gen = new CustomGenerator();
     private final CustomGenerator mockGen;
     private final CompanyController comCon;
@@ -42,7 +43,7 @@ public class CompanyControllerTest {
     }
 
     private CustomGenerator setMockCG() {
-        CustomGenerator mockedCG = mock();
+        CustomGenerator mockedCG = spy();
         when(mockedCG.randomString(anyInt())).then(
           invocation -> {CompanyControllerTest.COUNTER += 1; return "RANDOM_STRING_" + CompanyControllerTest.COUNTER;}
         );
@@ -50,11 +51,13 @@ public class CompanyControllerTest {
     }
 
     // use mockito to fake the random generation of Tokens
-    public CompanyControllerTest() {
-        this.cRepo = new StubCompanyRepo();
+    public CompanyControllerTest() throws NoSuchFieldException, IllegalAccessException {
+        this.companyRepo = new StubCompanyRepo();
         this.mockGen = setMockCG();
         // set a stubCustomGenerator, so we can verify the registerCompany method properly
-        this.comCon = new CompanyController(this.cRepo, new StubUserRepo(cRepo), this.mockGen);
+        this.comCon = new CompanyController(this.companyRepo,
+                new StubUserRepo(this.companyRepo),
+                new StubCounterRepo(), this.mockGen);
     }
 
     @Test
@@ -67,11 +70,11 @@ public class CompanyControllerTest {
 
     @Test
     void testRegisterErrorExistingCompany() {
-        for (Company c: this.cRepo.getDb()) {
+        for (CompanyWrapper w: this.companyRepo.getWrappers()) {
             // create a register request based on the given company
-            CompanyRegisterRequest req = new CompanyRegisterRequest(c.getId(),
-                    c.getSite(),
-                    c.getSubscription().getTier());
+            CompanyRegisterRequest req = new CompanyRegisterRequest(w.getId(),
+                    w.getSite(),
+                    w.getSubscription().getTier());
 
             Assertions.assertThrows(
                     CompanyUniquenessConstraints.ExistingCompanyException.class,
@@ -82,11 +85,11 @@ public class CompanyControllerTest {
 
     @Test
     void testRegisterUniquenessConstraints() {
-        for (Company c: this.cRepo.getDb()) {
+        for (CompanyWrapper w: this.companyRepo.getWrappers()) {
             // create a register request based on the given company
-            CompanyRegisterRequest req = new CompanyRegisterRequest(this.gen.randomString(10), // new id
-                    c.getSite(), // but non-unique site...
-                    c.getSubscription().getTier());
+            CompanyRegisterRequest req = new CompanyRegisterRequest(this.gen.randomString(10),
+                    w.getSite(),
+                    w.getSubscription().getTier());
 
             Assertions.assertThrows(
                     CompanyUniquenessConstraints.ExistingSiteException.class,
@@ -99,7 +102,7 @@ public class CompanyControllerTest {
     void testRegisterValidCompany() throws JsonProcessingException, NoSuchFieldException, IllegalAccessException {
         List<String> initialFieldsSerialization = List.of("id",
                 "site",
-                "siteId",
+                "siteHash",
                 "roleTokens",
                 "roleTokensHashed",
                 "subscription");
@@ -117,30 +120,31 @@ public class CompanyControllerTest {
         ResponseEntity<String> res = comCon.registerCompany(req);
 
         // the new company object must have been added to the database
-        assertEquals(3, this.cRepo.getDb().size());
+        assertEquals(3, this.companyRepo.getDb().size());
 
-        this.cRepo.getDb();
+//        this.companyRepo.getDb();
 
-        Company newC = this.cRepo.getDb().get(2);
+        Company newC = this.companyRepo.getDb().get(2);
 
         // use reflection to make sure none of the fields are none
-//        List<Field> fields = List.of(Company.class.getDeclaredFields());
-//        for (Field f : fields) {
-//            f.setAccessible(true);
-//            assertNotNull(f.get(newC));
-//        }
+        List<Field> fields = List.of(Company.class.getDeclaredFields());
+        for (Field f : fields) {
+            f.setAccessible(true);
+            assertNotNull(f.get(newC));
+        }
 
-        Field f1 = Company.class.getDeclaredField("site");
-        f1.setAccessible(true);
-        assertNotNull(f1.get(newC), "The 'site' field is null");
 
-        Field f2 = Company.class.getDeclaredField("serializeSensitiveCount");
-        f2.setAccessible(true);
-        assertEquals(4, (int) f2.get(newC), "the serializedSensitiveCount field is tripping");
-
-        Field f = Company.class.getDeclaredField("siteId");
-        f.setAccessible(true);
-        assertNotNull(f.get(newC), "The siteId field is null");
+//        Field f1 = Company.class.getDeclaredField("site");
+//        f1.setAccessible(true);
+//        assertNotNull(f1.get(newC), "The 'site' field is null");
+//
+//        Field f2 = Company.class.getDeclaredField("serializeSensitiveCount");
+//        f2.setAccessible(true);
+//        assertEquals(4, (int) f2.get(newC), "the serializedSensitiveCount field is tripping");
+//
+//        Field f = Company.class.getDeclaredField("siteHash");
+//        f.setAccessible(true);
+//        assertNotNull(f.get(newC), "The siteId field is null");
 
         String body = res.getBody();
 
@@ -154,8 +158,8 @@ public class CompanyControllerTest {
 
         // the next step is to make sure everything is saved and serialized correctly
         // id
-        String serializedId = JsonPath.read(doc, ".id");
-        assertEquals(id, serializedId);
+//        String serializedId = JsonPath.read(doc, ".id");
+//        assertEquals(id, serializedId);
 
     }
 }

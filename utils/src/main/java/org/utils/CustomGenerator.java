@@ -27,7 +27,7 @@ public class CustomGenerator {
     }
 
 
-    public int verify_power_26(long number) {
+    private int verify_power_26(long number) {
         int log26 = 0;
         while (number > 0 && number % 26 == 0) {
             number /= 26;

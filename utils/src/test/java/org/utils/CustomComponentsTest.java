@@ -5,6 +5,10 @@ package org.utils;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class CustomComponentsTest {
@@ -14,10 +18,12 @@ class CustomComponentsTest {
     void testCustomGenerateIdOrder1() {
         int asciiOfA = 'a';
 
+        assertEquals("b", customGenerator.generateId(1));
+
         for (int i = 0; i <= 25; i++) {
             char c = (char) (asciiOfA + i);
             String id = customGenerator.generateId(i);
-            assertEquals(Character.toString(c), id, "the id generation does not work for one number from 1 to 25");
+            assertEquals(Character.toString(c), id, "the id generation does not work for one number from 0 to 25");
         }
 
     }
@@ -46,10 +52,13 @@ class CustomComponentsTest {
 
     @Test
     // TODO: make the verify_power_26 private and access it through reflection in the tests...
-    void testCustomerGeneratorPowers26() {
+    void testCustomerGeneratorPowers26() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         for (int i = 1; i <= 6; i++) {
             long power26 = (long) Math.pow(26, i);
-            assertEquals(i, customGenerator.verify_power_26(power26), "The calculation of the logarithm is wrong");
+
+            Method m = customGenerator.getClass().getDeclaredMethod("verify_power_26", long.class);
+            m.setAccessible(true);
+            assertEquals(i , (int) m.invoke(customGenerator, power26));
 
             String id = customGenerator.generateId(power26);
             String realId = "b" + "a".repeat(i);
@@ -58,9 +67,9 @@ class CustomComponentsTest {
     }
 
     @Test
-    @Disabled // the test takes some time to run: however the current implementation passes
+    // the test takes some time to run: however the current implementation passes
     void testIdNumberConversion() {
-        for (long i = 0; i <= (long) Math.pow(26,6); i++) {
+        for (long i = 0; i <= (long) Math.pow(26,3); i++) {
             String id = customGenerator.generateId(i);
             long numberId = customGenerator.orderFromId(id);
             assertEquals(i, numberId);

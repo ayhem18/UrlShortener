@@ -43,6 +43,7 @@ public class CompanyWrapper {
 
         // now we are ready for initializing the company object
         this.company = new Company(id, site, siteId, roleTokens, hashedTokens, sub);
+        System.out.println(this.company);
     }
 
     private Map<String, String> prepareHashedTokens(Map<String, String> roleTokens, PasswordEncoder encoder) {
@@ -71,9 +72,12 @@ public class CompanyWrapper {
     }
 
     public String getSiteId() {
-        return this.company.getSiteId();
+        return this.company.getSiteHash();
     }
 
+    public String getId() {
+        return this.company.getId();
+    }
 
     ///////////////////////////////// SETTERS /////////////////////////////////////////////
     public void setSite(String site) {

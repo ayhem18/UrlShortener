@@ -52,7 +52,6 @@ public class CompanyController {
         this.generator = generator;
         this.counterRepo = counterRepo;
         this.userRepo = userRepo;
-
     }
 
     @Bean("companyControllerEncoder")
@@ -160,18 +159,18 @@ public class CompanyController {
     }
 
 
-    @GetMapping("api/company/{companyId}/users")
-    public ResponseEntity<String> viewUsersInCompany(@PathVariable String companyId) throws JsonProcessingException {
-        Optional<Company> company = this.companyRepo.findById(companyId);
-
-        if (company.isEmpty()) {
-            throw new NoCompanyException("There is no company with the given Id");
-        }
-
-        List<AppUser> companyUsers = this.userRepo.findByCompany(company.get());
-
-        return new ResponseEntity<>(this.objectMapper().writeValueAsString(companyUsers), HttpStatus.OK);
-    }
+//    @GetMapping("api/company/{companyId}/users")
+//    public ResponseEntity<String> viewUsersInCompany(@PathVariable String companyId) throws JsonProcessingException {
+//        Optional<Company> company = this.companyRepo.findById(companyId);
+//
+//        if (company.isEmpty()) {
+//            throw new NoCompanyException("There is no company with the given Id");
+//        }
+//
+//        List<AppUser> companyUsers = this.userRepo.findByCompany(company.get());
+//
+//        return new ResponseEntity<>(this.objectMapper().writeValueAsString(companyUsers), HttpStatus.OK);
+//    }
 
     @GetMapping("api/company/{companyId}/details")
     public ResponseEntity<String> viewCompanyDetails(@PathVariable String companyId) throws JsonProcessingException {

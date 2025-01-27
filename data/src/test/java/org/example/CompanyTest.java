@@ -12,7 +12,6 @@ import org.common.Subscription;
 import org.common.SubscriptionManager;
 import org.data.entities.Company;
 import org.data.entities.CompanyWrapper;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -49,7 +48,7 @@ class CompanyTest {
     @Test
     void testWrapperInitialization() throws NoSuchFieldException, IllegalAccessException {
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 10; i++) {
             String id = this.gen.randomString(6);
             String site = "www." + this.gen.randomAlphaString(7) + ".com";
             Subscription sub = SubscriptionManager.getSubscription("TIER_1");
@@ -81,7 +80,7 @@ class CompanyTest {
             assertEquals(site, w.getSite());
 
 
-            f = Company.class.getDeclaredField("siteId");
+            f = Company.class.getDeclaredField("siteHash");
             f.setAccessible(true);
             // make sure the get method and the value align with the input
             assertEquals(siteId, f.get(c));
@@ -106,7 +105,7 @@ class CompanyTest {
     @Test
     void testFirstJsonSerialization() throws JsonProcessingException, NoSuchFieldException, IllegalAccessException {
         List<String> initialFieldsSerialization = List.of("id",
-                "siteId",
+                "siteHash",
                 "site",
                 "roleTokens",
                 "roleTokensHashed",

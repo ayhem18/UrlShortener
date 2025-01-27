@@ -3,11 +3,11 @@ package org.data.entities;
 import com.fasterxml.jackson.annotation.*;
 import org.common.Subscription;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+
 import java.util.Map;
 
 // make sure to use the Document annotation and not the @Entity since this is not a SQL table...
-@Document("Company")
+//@Document("Company")
 @JsonInclude(JsonInclude.Include.NON_NULL) // a class-wide annotation Making Jackson ignore all null fields
 public class Company {
     public static final String COMPANY_COLLECTION_NAME = "COMPANY";
@@ -17,7 +17,7 @@ public class Company {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String id; // some sort of Company identifier
 
-    private String siteId;
+    private String siteHash;
 
     private String site;
 
@@ -35,12 +35,12 @@ public class Company {
     Company(String id,
 
             String site,
-            String siteId,
+            String siteHash,
             Map<String, String> roleTokens,
             Map<String, String> roleTokensHashed,
             Subscription subscription) {
         this.id = id;
-        this.siteId = siteId;
+        this.siteHash = siteHash;
         this.site = site;
         this.roleTokens = roleTokens;
         this.roleTokensHashed = roleTokensHashed;
@@ -66,11 +66,11 @@ public class Company {
         return null;
     }
 
-    @JsonGetter(value = "siteId")
+    @JsonGetter(value = "siteHash")
     private String jsonGetSiteId() {
         if (this.serializeSensitiveCount < 4) {
             this.serializeSensitiveCount += 1;
-            return this.siteId;
+            return this.siteHash;
         }
         return null;
     }
@@ -122,8 +122,8 @@ public class Company {
         return site;
     }
 
-    String getSiteId() {
-        return this.siteId;
+    String getSiteHash() {
+        return this.siteHash;
     }
 
 
@@ -150,12 +150,12 @@ public class Company {
     }
 
     // add private setters for Jackson serialization (private so they can't be set by the program)
-    private void setSerializeSensitiveCount(int serializeSensitiveCount) {
+    void setSerializeSensitiveCount(int serializeSensitiveCount) {
         this.serializeSensitiveCount = serializeSensitiveCount;
     }
 
-    private void setSiteId(String siteId) {
-        this.siteId = siteId;
+    void setSiteHash(String siteHash) {
+        this.siteHash = siteHash;
     }
 
     ///////////////////////////////// OTHER /////////////////////////////////////////////
