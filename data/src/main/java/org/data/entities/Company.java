@@ -1,9 +1,6 @@
 package org.data.entities;
 
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.*;
 import org.common.Subscription;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -50,20 +47,6 @@ public class Company {
         this.subscription = subscription;
     }
 
-    //    public Company(String id, String site, String siteId, Subscription sub,
-//                   Map<String, String> roleTokens) {
-//        this.id = id;
-//        // generate id uses the 25-based site id
-//        this.siteId = siteId;
-//
-//        this.site = site;
-//
-//        this.setTokens(roleTokens, encoder);
-//
-//        this.subscription = sub;
-//
-//        this.serializeSensitiveCount = 0;
-//    }
 
     public Company() {
     }
@@ -129,13 +112,12 @@ public class Company {
         return serializeSensitiveCount;
     }
 
-    // changed the name of the getter from the standard java convention so that the Mongodb driver wouldn't use it
-    // added the JsonIgnore annotation so that Json would not create a field "tokens" when serializing a Company Object
-
+    @JsonGetter(value = "subscription")
     Subscription getSubscription() {
         return subscription;
     }
 
+    @JsonGetter(value = "site")
     String getSite() {
         return site;
     }
@@ -146,20 +128,6 @@ public class Company {
 
 
     ///////////////////////////////// SETTERS /////////////////////////////////////////////
-//    public void setTokens(Map<String, String> roleTokens, PasswordEncoder encoder) {
-//        // the method signature ensures that the hashes are always persistent with the actual tokens
-//        // set the field
-//        this.roleTokens = roleTokens;
-//
-//        // deep Copy the role Tokens
-//        this.roleTokensHashed = new HashMap<>(this.roleTokens);
-//
-//        // encoder the tokens
-//        for (Map.Entry<String, String> entry : this.roleTokensHashed.entrySet()) {
-//            entry.setValue(encoder.encode(entry.getValue())); // make sure to encode the value !! and not the key !!!
-//        }
-//    }
-
     void setRoleTokens(Map<String, String> roleTokens) {
         this.roleTokens = roleTokens;
     }

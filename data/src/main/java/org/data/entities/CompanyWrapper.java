@@ -47,10 +47,10 @@ public class CompanyWrapper {
 
     private Map<String, String> prepareHashedTokens(Map<String, String> roleTokens, PasswordEncoder encoder) {
         // deep Copy the role Tokens
-        Map<String, String> roleTokensHashed = new HashMap<>(roleTokens);
+        HashMap<String, String> roleTokensHashed = new HashMap<>(roleTokens);
 
         // hash the tokens
-        for (Map.Entry<String, String> entry : roleTokens.entrySet()) {
+        for (Map.Entry<String, String> entry : roleTokensHashed.entrySet()) {
             entry.setValue(encoder.encode(entry.getValue())); // make sure to encode the value !! and not the key !!!
         }
 
@@ -76,20 +76,20 @@ public class CompanyWrapper {
 
 
     ///////////////////////////////// SETTERS /////////////////////////////////////////////
-    void setSite(String site) {
+    public void setSite(String site) {
         this.company.setSite(site);
     }
 
-    void setId(String id) {
+    public void setId(String id) {
         this.company.setId(id);
     }
 
     // the subscription can be changed
-    void setSubscription(Subscription subscription) {
+    public void setSubscription(Subscription subscription) {
         this.company.setSubscription(subscription);
     }
 
-    void setRoleTokens(Map<String,String> roleTokens, PasswordEncoder encoder) {
+    public void setRoleTokens(Map<String,String> roleTokens, PasswordEncoder encoder) {
         Map<String, String> hashedTokens = prepareHashedTokens(roleTokens, encoder);
         this.company.setRoleTokens(roleTokens);
         this.company.setRoleTokensHashed(hashedTokens);

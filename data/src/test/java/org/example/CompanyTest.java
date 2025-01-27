@@ -11,6 +11,8 @@ import org.assertj.core.api.Assertions;
 import org.common.Subscription;
 import org.common.SubscriptionManager;
 import org.data.entities.Company;
+import org.data.entities.CompanyWrapper;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,11 +38,70 @@ class CompanyTest {
                 "registereduser", "ru_token1");
     }
 
-    private Company getCompany() {
-        return new Company("aaa", "www.youtube.com",
-                SubscriptionManager.getSubscription("TIER_1"),
-                getTokens(), this.encoder, this.gen);
+    private Map<String, String> getRandomTokens() {
+        return Map.of("owner", this.gen.randomString(10),
+                "admin", this.gen.randomString(6),
+                "registereduser", this.gen.randomString(6)
+        );
     }
+
+
+    @Test
+    void testWrapperInitialization() throws NoSuchFieldException, IllegalAccessException {
+
+        for (int i = 0; i < 100; i++) {
+            String id = this.gen.randomString(6);
+            String site = "www." + this.gen.randomAlphaString(7) + ".com";
+            Subscription sub = SubscriptionManager.getSubscription("TIER_1");
+
+            String siteId = this.gen.generateId(i);
+
+            Map<String, String> tokens = getRandomTokens();
+            CompanyWrapper w = new CompanyWrapper(id, site, sub, tokens, encoder, gen, i);
+
+            // access the 'company' field via reflection
+            Field fc = CompanyWrapper.class.getDeclaredField("company");
+            fc.setAccessible(true);
+            Company c = (Company) fc.get(w);
+
+
+            Field f;
+
+            f = Company.class.getDeclaredField("subscription");
+            f.setAccessible(true);
+            // make sure the get method and the value align with the input
+            assertEquals(sub, f.get(c));
+            assertEquals(sub, w.getSubscription());
+
+
+            f = Company.class.getDeclaredField("site");
+            f.setAccessible(true);
+            // make sure the get method and the value align with the input
+            assertEquals(site, f.get(c));
+            assertEquals(site, w.getSite());
+
+
+            f = Company.class.getDeclaredField("siteId");
+            f.setAccessible(true);
+            // make sure the get method and the value align with the input
+            assertEquals(siteId, f.get(c));
+            assertEquals(siteId, w.getSiteId());
+
+            f = Company.class.getDeclaredField("roleTokens");
+            f.setAccessible(true);
+            // make sure the get method and the value align with the input
+            assertEquals(tokens, f.get(c));
+
+            // make sure the hashing is done correctly
+            f = Company.class.getDeclaredField("roleTokensHashed");
+            f.setAccessible(true);
+            Map<String, String> hTokens = (Map<String, String>) f.get(c);
+            for (Map.Entry<String, String> entry: hTokens.entrySet()) {
+                assertTrue(this.encoder.matches(tokens.get(entry.getKey()), entry.getValue()));
+            }
+        }
+    }
+
 
     @Test
     void testFirstJsonSerialization() throws JsonProcessingException, NoSuchFieldException, IllegalAccessException {
@@ -53,7 +114,18 @@ class CompanyTest {
 
         // the first time serializing a Company object must contain the following fields:
         // 1. id, siteId, site, roleTokens, roleTokensHashed, subscription
-        Company com = getCompany();
+
+        String id = "aaa";
+        String site = "www." + this.gen.randomAlphaString(7) + ".com";
+        Subscription sub = SubscriptionManager.getSubscription("TIER_1");
+
+        Map<String, String> tokens = getRandomTokens();
+        CompanyWrapper w = new CompanyWrapper(id, site, sub, tokens, encoder, gen, 0);
+
+
+        Field fc = CompanyWrapper.class.getDeclaredField("company");
+        fc.setAccessible(true);
+        Company com = (Company) fc.get(w);
 
         // before serializing the object; make sure none of the fields are Null
         for (Field f : com.getClass().getDeclaredFields()) {
@@ -62,7 +134,9 @@ class CompanyTest {
         }
 
         // serialization
-        String comJson = this.om.writeValueAsString(com);
+        String comJson = w.serialize(this.om);
+
+        com = (Company) fc.get(w);
 
         // after serializing the object; make sure none of the fields are Null
         for (Field f : com.getClass().getDeclaredFields()) {
@@ -76,22 +150,32 @@ class CompanyTest {
         f.setAccessible(true);
         assertEquals(4, (int) f.get(com));
 
-
         Object doc = Configuration.defaultConfiguration().jsonProvider().parse(comJson);
         Set<String> keys = JsonPath.read(doc, "keys()");
         Assertions.assertThat(keys).hasSameElementsAs(initialFieldsSerialization);
 
     }
 
-
     @Test
     void testJsonSerialization() throws JsonProcessingException, NoSuchFieldException, IllegalAccessException {
         List<String> serializationFields2 = List.of("site", "subscription");
 
-        Company com = getCompany();
+        String id = "aaa";
+        String site = "www." + this.gen.randomAlphaString(7) + ".com";
+        Subscription sub = SubscriptionManager.getSubscription("TIER_1");
+
+        Map<String, String> tokens = getRandomTokens();
+        CompanyWrapper w = new CompanyWrapper(id, site, sub, tokens, encoder, gen, 0);
+
+
+        Field fc = CompanyWrapper.class.getDeclaredField("company");
+        fc.setAccessible(true);
+
 
         // first serialization: increase the "serializeSensitiveCount" field to "4"
-        this.om.writeValueAsString(com);
+        w.serialize(this.om);
+        Company com = (Company) fc.get(w);
+
         Field f = Company.class.getDeclaredField("serializeSensitiveCount");
         f.setAccessible(true);
         // make sure the field used to condition the serialization is updated correctly
@@ -106,7 +190,8 @@ class CompanyTest {
         String comJson;
         Object doc;
         for (int i = 0; i < 100; i++) {
-            comJson = this.om.writeValueAsString(com);
+            comJson = w.serialize(this.om);
+            com = (Company) fc.get(w);
             assertEquals(4, (int) f.get(com));
 
             doc = Configuration.defaultConfiguration().jsonProvider().parse(comJson);
@@ -116,14 +201,24 @@ class CompanyTest {
 
     }
 
-
     @Test
-    void testSetTokens() {
-        Company com = getCompany();
-        // let's see how the setTokens function works
-        Map<String, String> tokens = getTokens();
+    void testSetTokens() throws NoSuchFieldException, IllegalAccessException {
 
-        Map<String, String> hashedTokens = com.getTokens();
+        List<String> serializationFields2 = List.of("site", "subscription");
+
+        String id = "aaa";
+        String site = "www." + this.gen.randomAlphaString(7) + ".com";
+        Subscription sub = SubscriptionManager.getSubscription("TIER_1");
+
+        Map<String, String> tokens = getRandomTokens();
+        CompanyWrapper w = new CompanyWrapper(id, site, sub, tokens, encoder, gen, 0);
+
+        Field fc = CompanyWrapper.class.getDeclaredField("company");
+        fc.setAccessible(true);
+
+        Company com = (Company) fc.get(w);
+
+        Map<String, String> hashedTokens = w.getTokens();
 
         for (Map.Entry<String, String> entry : hashedTokens.entrySet()) {
             String key = entry.getKey();
@@ -134,9 +229,9 @@ class CompanyTest {
                 "admin", "new_admin_t",
                 "registereduser", "new_ru_t");
 
-        com.setTokens(newTokens, this.encoder);
+        w.setRoleTokens(newTokens, this.encoder);
 
-        hashedTokens = com.getTokens();
+        hashedTokens = w.getTokens();
 
         for (Map.Entry<String, String> entry : hashedTokens.entrySet()) {
             String key = entry.getKey();
