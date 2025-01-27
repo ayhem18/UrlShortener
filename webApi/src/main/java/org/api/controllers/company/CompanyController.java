@@ -10,8 +10,11 @@ import org.common.RoleManager;
 import org.common.Subscription;
 import org.common.SubscriptionManager;
 import org.data.entities.AppUser;
+import org.data.entities.CollectionCounter;
 import org.data.entities.Company;
+import org.data.entities.CompanyWrapper;
 import org.data.repositories.CompanyRepository;
+import org.data.repositories.CounterRepository;
 import org.data.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -38,13 +41,16 @@ public class CompanyController {
     private final CompanyRepository companyRepo;
     private final CustomGenerator generator;
     private final UserRepository userRepo;
+    private final CounterRepository counterRepo;
 
     @Autowired
     public CompanyController(CompanyRepository companyRepo,
                           UserRepository userRepo,
+                          CounterRepository counterRepo,
                           CustomGenerator generator) {
         this.companyRepo = companyRepo;
         this.generator = generator;
+        this.counterRepo = counterRepo;
         this.userRepo = userRepo;
 
     }
@@ -74,10 +80,28 @@ public class CompanyController {
         }
     }
 
+    private long getCompanyCount() {
+        String id = Company.COMPANY_COLLECTION_NAME;
+        if (! this.counterRepo.existsById(id)) {
+            CollectionCounter c = new CollectionCounter(id);
+            this.counterRepo.save(c);
+            // first object created
+            c.setCount(1);
+            return c.getCount();
+        }
+        CollectionCounter c = this.counterRepo.findById("COMPANY").get();
+        c.setCount(c.getCount() + 1);
+        this.counterRepo.save(c);
+        return c.getCount();
+    }
+
+
     @PostMapping("api/auth/register/company")
     public ResponseEntity<String> registerCompany(@Valid @RequestBody CompanyRegisterRequest req) throws JsonProcessingException {
-
+        // check the uniqueness constraints
         validateNewCompany(req);
+        // the new company is valid: get its creation order
+        long companyOrder = this.getCompanyCount();
 
         // create the role tokens
         HashMap<String, String> roleTokens = new HashMap<>();
@@ -94,16 +118,14 @@ public class CompanyController {
         // get the subscription from the SubscriptionManager
         Subscription sub = SubscriptionManager.getSubscription(req.subscription());
 
-        // build the company object
-        // pass the password encoder and the custom generator fields to properly initialize the Company object
-        Company newCompany = new Company(req.id(), req.site(), sub, roleTokens, this.encoder(), this.generator);
 
+        // build the company object
+        CompanyWrapper wrapper = new CompanyWrapper(req.id(), req.site(), sub, roleTokens, this.encoder(), this.generator, companyOrder);
         // make sure to call the serialize first, so that the "serializeSensitiveCount" field will be saved as "4"
         // in the database preventing the serialization of sensitive information beyond the very first time
-        String companySerialized = this.objectMapper().writeValueAsString(newCompany);
+        String companySerialized = wrapper.serialize(this.objectMapper());
 
-        // save it to the database
-        this.companyRepo.save(newCompany);
+        wrapper.save(this.companyRepo);
 
         return new ResponseEntity<>(companySerialized,
                 HttpStatus.CREATED);
