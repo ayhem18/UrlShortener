@@ -37,9 +37,9 @@ class CompanyTest {
     }
 
     private Company getCompany() {
-        Subscription sub = SubscriptionManager.getSubscription("TIER_1");
-
-        return new Company("aaa", "www.youtube.com", sub, getTokens(), this.encoder, this.gen);
+        return new Company("aaa", "www.youtube.com",
+                SubscriptionManager.getSubscription("TIER_1"),
+                getTokens(), this.encoder, this.gen);
     }
 
     @Test
@@ -54,17 +54,33 @@ class CompanyTest {
         // the first time serializing a Company object must contain the following fields:
         // 1. id, siteId, site, roleTokens, roleTokensHashed, subscription
         Company com = getCompany();
+
+        // before serializing the object; make sure none of the fields are Null
+        for (Field f : com.getClass().getDeclaredFields()) {
+            f.setAccessible(true);
+            assertNotNull(f.get(com));
+        }
+
+        // serialization
         String comJson = this.om.writeValueAsString(com);
+
+        // after serializing the object; make sure none of the fields are Null
+        for (Field f : com.getClass().getDeclaredFields()) {
+            f.setAccessible(true);
+            assertNotNull(f.get(com));
+        }
+
+        // make sure the field used to condition the serialization is updated correctly
+        // Otherwise, the serialization subsequently wouldn't work as intended
+        Field f = Company.class.getDeclaredField("serializeSensitiveCount");
+        f.setAccessible(true);
+        assertEquals(4, (int) f.get(com));
+
+
         Object doc = Configuration.defaultConfiguration().jsonProvider().parse(comJson);
         Set<String> keys = JsonPath.read(doc, "keys()");
         Assertions.assertThat(keys).hasSameElementsAs(initialFieldsSerialization);
 
-        Field f = Company.class.getDeclaredField("serializeSensitiveCount");
-        f.setAccessible(true);
-
-        // make sure the field used to condition the serialization is updated correctly
-        // Otherwise, the serialization wouldn't work
-        assertEquals(4, (int) f.get(com));
     }
 
 

@@ -62,6 +62,9 @@ public class CompanyController {
 
 
     private void validateNewCompany(CompanyRegisterRequest req) {
+        // any new company must satisfy the uniqueness constraints:
+        // unique id and unique site
+
         if (this.companyRepo.existsById(req.id())) {
             throw new CompanyUniquenessConstraints.ExistingCompanyException("There is already a company with the given id.");
         }

@@ -15,7 +15,7 @@ import java.util.Map;
 
 // make sure to use the Document annotation and not the @Entity since this is not a SQL table...
 @Document("Company")
-@JsonInclude(JsonInclude.Include.NON_NULL) // a class-wide annotation ignoring all null fields
+@JsonInclude(JsonInclude.Include.NON_NULL) // a class-wide annotation Making Jackson ignore all null fields
 public class Company {
     private static long COMPANY_COUNT = 0;
 
@@ -56,6 +56,10 @@ public class Company {
     }
 
     public Company() {
+        CustomGenerator gen = new CustomGenerator();
+        this.siteId = gen.generateId(COMPANY_COUNT);
+        // make sure to increment the count
+        COMPANY_COUNT += 1;
     }
 
     ///////////////////////////////// GETTERS /////////////////////////////////////////////
@@ -64,9 +68,9 @@ public class Company {
     // that checks the condition on the fly, returning Null when the condition is not verified
     @JsonGetter(value = "id")
     private String jsonGetId() {
-        // 5 represents the number of sensitive fields that should be serialized only once:
+        // 4 represents the number of sensitive fields that should be serialized only once:
         // when saved into the database
-        if (serializeSensitiveCount < 5) {
+        if (serializeSensitiveCount < 4) {
             this.serializeSensitiveCount += 1;
             return this.id;
         }
@@ -75,7 +79,7 @@ public class Company {
 
     @JsonGetter(value = "siteId")
     private String jsonGetSiteId() {
-        if (this.serializeSensitiveCount < 5) {
+        if (this.serializeSensitiveCount < 4) {
             this.serializeSensitiveCount += 1;
             return this.siteId;
         }
@@ -84,7 +88,7 @@ public class Company {
 
     @JsonGetter(value = "roleTokens")
     private Map<String, String> jsonGetRoleTokens() {
-        if (this.serializeSensitiveCount < 5) {
+        if (this.serializeSensitiveCount < 4) {
             this.serializeSensitiveCount += 1;
             return this.roleTokens;
         }
@@ -93,7 +97,7 @@ public class Company {
 
     @JsonGetter(value = "roleTokensHashed")
     private Map<String, String> jsonGetRoleTokensHashed() {
-        if (this.serializeSensitiveCount < 5) {
+        if (this.serializeSensitiveCount < 4) {
             this.serializeSensitiveCount += 1;
             return this.roleTokensHashed;
         }
@@ -122,6 +126,11 @@ public class Company {
     public String getSite() {
         return site;
     }
+
+    public String getSiteId() {
+        return this.siteId;
+    }
+
 
     ///////////////////////////////// SETTERS /////////////////////////////////////////////
     public void setTokens(Map<String, String> roleTokens, PasswordEncoder encoder) {
@@ -157,8 +166,9 @@ public class Company {
     }
 
     private void setSiteId(String siteId) {
-        this.siteId = siteId;
+        this.siteId = new CustomGenerator().generateId(COMPANY_COUNT);
     }
+
 
     ///////////////////////////////// OTHER /////////////////////////////////////////////
 

@@ -119,7 +119,7 @@ public class CompanyControllerTest {
         // the new company object must have been added to the database
         assertEquals(3, this.cRepo.getDb().size());
 
-        this.cRepo.getDb()
+        this.cRepo.getDb();
 
         Company newC = this.cRepo.getDb().get(2);
 
