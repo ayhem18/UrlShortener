@@ -112,14 +112,19 @@ public class Company {
         return serializeSensitiveCount;
     }
 
+
     @JsonGetter(value = "subscription")
-    Subscription getSubscription() {
-        return subscription;
+    String getSub() {
+        return subscription.getTier();
     }
 
     @JsonGetter(value = "site")
     String getSite() {
         return site;
+    }
+
+    Subscription getSubscription() {
+        return subscription;
     }
 
     String getSiteHash() {

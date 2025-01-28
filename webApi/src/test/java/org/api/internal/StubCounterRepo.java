@@ -28,7 +28,7 @@ public class StubCounterRepo implements CounterRepository {
 //    public void addUserCollect() {
 //        this.db.add(new CollectionCounter(Company.COMPANY_COLLECTION_NAME));
 //    }
-//
+
 
     @Override
     public Optional<CollectionCounter> findById(String id) {
@@ -49,6 +49,19 @@ public class StubCounterRepo implements CounterRepository {
         }
         return false;
     }
+
+    @Override
+    public <S extends CollectionCounter> S save(S entity) {
+        for (int i = 0; i < this.db.size(); i++) {
+            if (this.db.get(i).getCollectionName().equals(entity.getCollectionName())) {
+                this.db.set(i, entity);
+            }
+        }
+        // at this point just add the entity
+        this.db.add(entity);
+        return entity;
+    }
+
 
     @Override
     public <S extends CollectionCounter> S insert(S entity) {
@@ -95,10 +108,6 @@ public class StubCounterRepo implements CounterRepository {
         return null;
     }
 
-    @Override
-    public <S extends CollectionCounter> S save(S entity) {
-        return null;
-    }
 
     @Override
     public <S extends CollectionCounter> List<S> saveAll(Iterable<S> entities) {

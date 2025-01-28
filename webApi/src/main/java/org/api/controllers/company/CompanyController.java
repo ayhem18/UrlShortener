@@ -29,7 +29,6 @@ import org.springframework.web.bind.annotation.*;
 import org.utils.CustomGenerator;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Optional;
 
 
@@ -69,7 +68,6 @@ public class CompanyController {
     private void validateNewCompany(CompanyRegisterRequest req) {
         // any new company must satisfy the uniqueness constraints:
         // unique id and unique site
-
         if (this.companyRepo.existsById(req.id())) {
             throw new CompanyUniquenessConstraints.ExistingCompanyException("There is already a company with the given id.");
         }
@@ -86,12 +84,12 @@ public class CompanyController {
             this.counterRepo.save(c);
             // first object created
             c.setCount(1);
-            return c.getCount();
+            return 0;
         }
-        CollectionCounter c = this.counterRepo.findById("COMPANY").get();
+        CollectionCounter c = this.counterRepo.findById(id).get();
         c.setCount(c.getCount() + 1);
         this.counterRepo.save(c);
-        return c.getCount();
+        return c.getCount() - 1;
     }
 
 
@@ -116,7 +114,6 @@ public class CompanyController {
 
         // get the subscription from the SubscriptionManager
         Subscription sub = SubscriptionManager.getSubscription(req.subscription());
-
 
         // build the company object
         CompanyWrapper wrapper = new CompanyWrapper(req.id(), req.site(), sub, roleTokens, this.encoder(), this.generator, companyOrder);
