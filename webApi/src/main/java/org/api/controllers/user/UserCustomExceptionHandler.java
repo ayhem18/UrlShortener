@@ -12,9 +12,9 @@ import org.utils.CustomErrorMessage;
 
 @ControllerAdvice
 public class UserCustomExceptionHandler extends CustomExceptionHandler {
-    @ExceptionHandler(UserWithNoCompanyException.class)
+    @ExceptionHandler(UserExceptions.UserWithNoCompanyException.class)
     public ResponseEntity<CustomErrorMessage> handleInvalidUrlException(
-            UserWithNoCompanyException e, WebRequest request) {
+            UserExceptions.UserWithNoCompanyException e, WebRequest request) {
         return handle(e, request, HttpStatus.BAD_REQUEST);
     }
 
@@ -25,21 +25,21 @@ public class UserCustomExceptionHandler extends CustomExceptionHandler {
         return handle(e, request, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(IncorrectRoleTokenException.class)
+    @ExceptionHandler(UserExceptions.IncorrectRoleTokenException.class)
     public ResponseEntity<CustomErrorMessage> handleIncorrectRoleTokenException(
-            IncorrectRoleTokenException e, WebRequest request) {
+            UserExceptions.IncorrectRoleTokenException e, WebRequest request) {
         return handle(e, request, HttpStatus.FORBIDDEN);
     }
 
-    @ExceptionHandler(UserBeforeOwnerException.class)
+    @ExceptionHandler(UserExceptions.UserBeforeOwnerException.class)
     public ResponseEntity<CustomErrorMessage> handleUserBeforeOwnerException(
-            UserBeforeOwnerException e, WebRequest request) {
+            UserExceptions.UserBeforeOwnerException e, WebRequest request) {
         return handle(e, request, HttpStatus.FORBIDDEN);
     }
 
-    @ExceptionHandler(AlreadyExistingUserException.class)
+    @ExceptionHandler(UserExceptions.AlreadyExistingUserException.class)
     public ResponseEntity<CustomErrorMessage> handleAlreadyExistingUserException(
-            AlreadyExistingUserException e, WebRequest request) {
+            UserExceptions.AlreadyExistingUserException e, WebRequest request) {
         return handle(e, request, HttpStatus.FORBIDDEN);
     }
 

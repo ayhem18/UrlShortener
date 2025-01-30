@@ -46,6 +46,10 @@ public class CompanyWrapper {
         System.out.println(this.company);
     }
 
+    public CompanyWrapper(Company company) {
+        this.company = company;
+    }
+
     private Map<String, String> prepareHashedTokens(Map<String, String> roleTokens, PasswordEncoder encoder) {
         // deep Copy the role Tokens
         HashMap<String, String> roleTokensHashed = new HashMap<>(roleTokens);

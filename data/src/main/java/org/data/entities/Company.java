@@ -32,8 +32,9 @@ public class Company {
     private Subscription subscription;
 
     // the constructor is only meant to be called through a CompanyWrapper object
+    // this is enforced by the default visibility value
+    // the constructor can be called only from other files within the same package as Company.java
     Company(String id,
-
             String site,
             String siteHash,
             Map<String, String> roleTokens,
@@ -48,7 +49,7 @@ public class Company {
     }
 
 
-    public Company() {
+    private Company() {
     }
 
     ///////////////////////////////// JSON GETTERS /////////////////////////////////////////////

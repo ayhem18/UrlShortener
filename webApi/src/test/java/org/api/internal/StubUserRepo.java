@@ -2,19 +2,14 @@ package org.api.internal;
 
 import org.common.Role;
 import org.common.RoleManager;
-import org.common.SubscriptionManager;
 import org.data.entities.AppUser;
 import org.data.entities.Company;
-import org.data.repositories.CompanyRepository;
 import org.data.repositories.UserRepository;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.FluentQuery;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.utils.CustomGenerator;
 
 import java.util.*;
 import java.util.function.Function;
@@ -23,11 +18,21 @@ import java.util.function.Function;
 public class StubUserRepo implements UserRepository {
 
     private final StubCompanyRepo companyRepo;
-    private final Map<String, List<AppUser>> db;
+    private final Map<String, List<AppUser>> roleDb;
+    private final List<AppUser> db;
 
     public StubUserRepo(StubCompanyRepo companyRepo) {
         this.companyRepo = companyRepo;
-        this.db = new HashMap<>();
+        this.db = new ArrayList<>();
+        this.roleDb = new HashMap<>();
+    }
+
+    public Map<String, List<AppUser>> getRoleDb() {
+        return roleDb;
+    }
+
+    public List<AppUser> getDb() {
+        return db;
     }
 
     public void addOwners() {
@@ -38,7 +43,8 @@ public class StubUserRepo implements UserRepository {
         AppUser ownerC1 = new AppUser("ownerC1", "o_password1", c1, RoleManager.getRole("owner"));
         AppUser ownerC2 = new AppUser("ownerC2", "o_password2", c2, RoleManager.getRole("owner"));
 
-        this.db.put("owner", List.of(ownerC1, ownerC2));
+        this.roleDb.put("owner", List.of(ownerC1, ownerC2));
+        this.db.addAll(List.of(ownerC1, ownerC2));
     }
 
     public void addAdmins() {
@@ -49,17 +55,54 @@ public class StubUserRepo implements UserRepository {
         AppUser adminC1 = new AppUser("adminC1", "a_password1", c1, RoleManager.getRole("admin"));
         AppUser adminC2 = new AppUser("adminC2", "a_password2", c2, RoleManager.getRole("admin"));
 
-        this.db.put("admin", List.of(adminC1, adminC2));
+        this.roleDb.put("admin", List.of(adminC1, adminC2));
+        this.db.addAll(List.of(adminC1, adminC2));
     }
+
+
+    @Override
+    public boolean existsById(String id) {
+        for (AppUser u : this.db) {
+            if (u.getUsername().equals(id)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public <S extends AppUser> S save(S entity) {
+        for (int i = 0; i < this.db.size(); i++) {
+            if (this.db.get(i).getUsername().equals(entity.getUsername())) {
+                this.db.set(i, entity);
+                return entity;
+            }
+        }
+        // at this point just add the entity
+        this.db.add(entity);
+        this.roleDb.computeIfAbsent(entity.getRole().toString(), k -> new ArrayList<>());
+
+        List<AppUser> currentMap = new ArrayList<>(this.roleDb.get(entity.getRole().toString()));
+        currentMap.add(entity);
+        this.roleDb.put(entity.getRole().toString(), currentMap);
+        return entity;
+    }
+
+    @Override
+    public void deleteAll(Iterable<? extends AppUser> entities) {
+        this.db.clear();
+        this.roleDb.clear();
+    }
+
+    @Override
+    public <S extends AppUser> long count(Example<S> example) {
+        return this.db.size();
+    }
+
 
     @Override
     public Optional<AppUser> findById(String id) {
         return Optional.empty();
-    }
-
-    @Override
-    public boolean existsById(String s) {
-        return false;
     }
 
     @Override
@@ -112,10 +155,6 @@ public class StubUserRepo implements UserRepository {
         return null;
     }
 
-    @Override
-    public <S extends AppUser> long count(Example<S> example) {
-        return 0;
-    }
 
     @Override
     public <S extends AppUser> boolean exists(Example<S> example) {
@@ -124,11 +163,6 @@ public class StubUserRepo implements UserRepository {
 
     @Override
     public <S extends AppUser, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) {
-        return null;
-    }
-
-    @Override
-    public <S extends AppUser> S save(S entity) {
         return null;
     }
 
@@ -149,7 +183,7 @@ public class StubUserRepo implements UserRepository {
 
     @Override
     public long count() {
-        return 0;
+        return this.db.size();
     }
 
     @Override
@@ -167,14 +201,11 @@ public class StubUserRepo implements UserRepository {
 
     }
 
-    @Override
-    public void deleteAll(Iterable<? extends AppUser> entities) {
-
-    }
 
     @Override
     public void deleteAll() {
-
+        this.db.clear();
+        this.roleDb.clear();
     }
 
     @Override
