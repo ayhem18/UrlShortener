@@ -112,7 +112,13 @@ public class StubUserRepo implements UserRepository {
 
     @Override
     public List<AppUser> findByCompanyAndRole(Company company, Role role) {
-        return List.of();
+        List<AppUser> users = new ArrayList<>();
+        for (AppUser user: this.db) {
+            if (user.getCompany().equals(company) && user.getRole() == role) {
+                users.add(user);
+            }
+        }
+        return users;
     }
 
     @Override

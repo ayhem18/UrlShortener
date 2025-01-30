@@ -116,7 +116,6 @@ public class StubCompanyRepo implements CompanyRepository {
     }
 
 
-
     @Override
     public Optional<Company> findBySite(String site) {
         for (Company c : this.db) {
@@ -166,6 +165,8 @@ public class StubCompanyRepo implements CompanyRepository {
         this.db.add(entity);
         return entity;
     }
+
+
 
     // the rest was generated automatically and does not currently (26.01.2024) concern me...
 
@@ -231,7 +232,7 @@ public class StubCompanyRepo implements CompanyRepository {
 
     @Override
     public long count() {
-        return 0;
+        return this.db.size();
     }
 
     @Override
@@ -256,7 +257,7 @@ public class StubCompanyRepo implements CompanyRepository {
 
     @Override
     public void deleteAll() {
-
+        this.db.clear();
     }
 
     @Override
