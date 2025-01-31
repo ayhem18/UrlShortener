@@ -3,6 +3,7 @@ package org.api.controllers.user;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
+import org.api.exceptions.CompanyAndUserExceptions;
 import org.api.exceptions.UserExceptions;
 import org.api.requests.UserRegisterRequest;
 import org.common.Role;
@@ -80,11 +81,11 @@ public class UserController {
 
 
         if (companyOwner.isEmpty() && ! claimedRoleStr.equalsIgnoreCase(RoleManager.OWNER_ROLE)) {
-            throw new UserExceptions.UserBeforeOwnerException("No user can be created before creating the OWNER user!!");
+            throw new CompanyAndUserExceptions.UserBeforeOwnerException("No user can be created before creating the OWNER user!!");
         }
 
         if ((!companyOwner.isEmpty()) && claimedRoleStr.equalsIgnoreCase(RoleManager.OWNER_ROLE)) {
-            throw new UserExceptions.MultipleOwnersException("The user for the given company was already created");
+            throw new CompanyAndUserExceptions.MultipleOwnersException("The user for the given company was already created");
         }
 
         // make sure the user is authenticated: has the right token for the right role:

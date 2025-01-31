@@ -4,8 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import org.api.controllers.company.CompanyController;
-import org.api.exceptions.CompanyUniquenessConstraints;
-import org.api.exceptions.NoCompanyException;
+import org.api.exceptions.CompanyExceptions;
 import org.api.internal.StubCompanyRepo;
 import org.api.internal.StubCounterRepo;
 import org.api.internal.StubUserRepo;
@@ -91,7 +90,7 @@ public class CompanyControllerTest {
                     w.getSubscription().getTier());
 
             Assertions.assertThrows(
-                    CompanyUniquenessConstraints.ExistingCompanyException.class,
+                    CompanyExceptions.ExistingCompanyException.class,
                     () -> this.comCon.registerCompany(req)
             );
         }
@@ -106,7 +105,7 @@ public class CompanyControllerTest {
                     w.getSubscription().getTier());
 
             Assertions.assertThrows(
-                    CompanyUniquenessConstraints.ExistingSiteException.class,
+                    CompanyExceptions.ExistingSiteException.class,
                     () -> this.comCon.registerCompany(req)
             );
         }
@@ -203,7 +202,7 @@ public class CompanyControllerTest {
     void testViewNoExistingCompany() {
         for (int i = 0; i <= 100; i++) {
             String NoId = this.gen.randomString(100);
-            assertThrows(NoCompanyException.class, () -> this.comCon.viewCompanyDetails(NoId));
+            assertThrows(CompanyExceptions.NoCompanyException.class, () -> this.comCon.viewCompanyDetails(NoId));
         }
     }
 

@@ -49,6 +49,7 @@ public class Company {
     }
 
 
+    // a private constructor for Jackson serialization
     private Company() {
     }
 

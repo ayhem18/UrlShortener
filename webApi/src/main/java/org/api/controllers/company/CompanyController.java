@@ -3,9 +3,8 @@ package org.api.controllers.company;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
-import org.api.exceptions.CompanyUniquenessConstraints;
+import org.api.exceptions.CompanyExceptions;
 import org.api.requests.CompanyRegisterRequest;
-import org.api.exceptions.NoCompanyException;
 import org.common.RoleManager;
 import org.common.Subscription;
 import org.common.SubscriptionManager;
@@ -46,7 +45,7 @@ public class CompanyController {
     public CompanyController(CompanyRepository companyRepo,
                           UserRepository userRepo,
                           CounterRepository counterRepo,
-                          CustomGenerator generator) {
+                          CustomGenerator generator ) {
         this.companyRepo = companyRepo;
         this.generator = generator;
         this.counterRepo = counterRepo;
@@ -69,11 +68,11 @@ public class CompanyController {
         // any new company must satisfy the uniqueness constraints:
         // unique id and unique site
         if (this.companyRepo.existsById(req.id())) {
-            throw new CompanyUniquenessConstraints.ExistingCompanyException("There is already a company with the given id.");
+            throw new CompanyExceptions.ExistingCompanyException("There is already a company with the given id.");
         }
 
         if (this.companyRepo.findBySite(req.site()).isPresent()) {
-            throw new CompanyUniquenessConstraints.ExistingSiteException("There is already a company with the given site");
+            throw new CompanyExceptions.ExistingSiteException("There is already a company with the given site");
         }
     }
 
@@ -134,7 +133,7 @@ public class CompanyController {
         Optional<Company> company = this.companyRepo.findById(companyId);
 
         if (company.isEmpty()) {
-            throw new NoCompanyException("There is no company with the given Id");
+            throw new CompanyExceptions.NoCompanyException("There is no company with the given Id");
         }
 
         // this function can be called by the Owner user of the company
@@ -173,7 +172,7 @@ public class CompanyController {
         Optional<Company> company = this.companyRepo.findById(companyId);
 
         if (company.isEmpty()) {
-            throw new NoCompanyException("There is no company with the given Id");
+            throw new CompanyExceptions.NoCompanyException("There is no company with the given Id");
         }
 
         return new ResponseEntity<>(this.objectMapper().writeValueAsString(company.get()), HttpStatus.OK);

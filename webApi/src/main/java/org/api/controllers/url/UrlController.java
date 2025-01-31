@@ -2,6 +2,7 @@ package org.api.controllers.url;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.api.exceptions.CompanyAndUserExceptions;
 import org.api.exceptions.CompanyUniquenessConstraints;
 import org.common.Subscription;
 import org.common.SubscriptionManager;
@@ -90,7 +91,7 @@ public class UrlController {
         CompanyWrapper companyWrapper = new CompanyWrapper(userCompany);
 
         if (! companyWrapper.getSite().equalsIgnoreCase(userCompanySite))  {
-            throw new CompanyUniquenessConstraints.
+            throw new CompanyAndUserExceptions.
                     UserCompanyMisalignedException("The url site does not align with the user company site");
         }
 

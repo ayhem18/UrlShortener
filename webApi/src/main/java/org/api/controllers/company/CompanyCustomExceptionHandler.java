@@ -1,8 +1,7 @@
 package org.api.controllers.company;
 
 import org.api.controllers.CustomExceptionHandler;
-import org.api.exceptions.CompanyUniquenessConstraints;
-import org.api.exceptions.NoCompanyException;
+import org.api.exceptions.CompanyExceptions;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -13,16 +12,15 @@ import org.utils.CustomErrorMessage;
 @ControllerAdvice
 public class CompanyCustomExceptionHandler extends CustomExceptionHandler {
 
-    @ExceptionHandler(CompanyUniquenessConstraints.ExistingCompanyException.class)
+    @ExceptionHandler(CompanyExceptions.ExistingCompanyException.class)
     public ResponseEntity<CustomErrorMessage> handleExistingCompanyException(
-            CompanyUniquenessConstraints.ExistingCompanyException e, WebRequest request) {
+            CompanyExceptions.ExistingCompanyException e, WebRequest request) {
         return handle(e, request, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(NoCompanyException.class)
+    @ExceptionHandler(CompanyExceptions.NoCompanyException.class)
     public ResponseEntity<CustomErrorMessage> handleNoCompanyException(
-            NoCompanyException e, WebRequest request) {
+            CompanyExceptions.NoCompanyException e, WebRequest request) {
         return handle(e, request, HttpStatus.BAD_REQUEST);
     }
-
 }

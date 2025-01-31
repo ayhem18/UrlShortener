@@ -1,6 +1,7 @@
 package org.api.controllers.user;
 
 import org.api.controllers.CustomExceptionHandler;
+import org.api.exceptions.CompanyAndUserExceptions;
 import org.api.exceptions.UserExceptions;
 import org.common.RoleManager;
 import org.springframework.http.HttpStatus;
@@ -32,9 +33,9 @@ public class UserCustomExceptionHandler extends CustomExceptionHandler {
         return handle(e, request, HttpStatus.FORBIDDEN);
     }
 
-    @ExceptionHandler(UserExceptions.UserBeforeOwnerException.class)
+    @ExceptionHandler(CompanyAndUserExceptions.UserBeforeOwnerException.class)
     public ResponseEntity<CustomErrorMessage> handleUserBeforeOwnerException(
-            UserExceptions.UserBeforeOwnerException e, WebRequest request) {
+            CompanyAndUserExceptions.UserBeforeOwnerException e, WebRequest request) {
         return handle(e, request, HttpStatus.FORBIDDEN);
     }
 
