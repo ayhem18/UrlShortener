@@ -1,8 +1,7 @@
 package org.api.unitsTests.Controllers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.api.controllers.user.UserController;
-import org.api.controllers.user.UserExceptions;
+import org.api.exceptions.UserExceptions;
 import org.api.internal.StubCompanyRepo;
 import org.api.internal.StubUserRepo;
 import org.api.requests.UserRegisterRequest;
@@ -10,10 +9,10 @@ import org.common.RoleManager;
 import org.data.entities.AppUser;
 import org.data.entities.Company;
 import org.data.entities.CompanyWrapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.util.Assert;
 import org.utils.CustomGenerator;
 
 import java.lang.reflect.Field;
@@ -34,6 +33,7 @@ public class UserControllerTest {
 
 
     @BeforeEach
+    @AfterEach
     void clearUsers() {
         this.userRepo.deleteAll();
     }
@@ -132,7 +132,7 @@ public class UserControllerTest {
     }
 
     @Test
-    void testRegisterValidUser() throws NoSuchFieldException, IllegalAccessException, JsonProcessingException {
+    void testRegisterValidUser() throws NoSuchFieldException, IllegalAccessException {
         Assertions.assertEquals(0, this.userRepo.count());
 
         Company c = this.companyRepo.getDb().getFirst();
@@ -151,8 +151,8 @@ public class UserControllerTest {
                 RoleManager.getRole("owner").toString(),
                 tokens.get("owner"));
 
-        UserRegisterRequest finalReq1 = req;
-        Assertions.assertDoesNotThrow(() -> this.con.registerUser(finalReq1));
+        UserRegisterRequest finalReq = req;
+        Assertions.assertDoesNotThrow(() -> this.con.registerUser(finalReq));
 
         Assertions.assertEquals(1, this.userRepo.count());
 
@@ -167,9 +167,20 @@ public class UserControllerTest {
                 RoleManager.getRole("admin").toString(),
                 tokens.get("admin"));
 
-        // trying to add a non-owner use to a company with no owner should raise an error
-        UserRegisterRequest finalReq = req;
-        Assertions.assertThrows(UserExceptions.UserBeforeOwnerException.class, ()  -> this.con.registerUser(finalReq));
+        // trying to add a non-owner user to a company with no owner should raise an error
+        UserRegisterRequest finalReq1 = req;
+        Assertions.assertThrows(UserExceptions.UserBeforeOwnerException.class, ()  -> this.con.registerUser(finalReq1));
+
+        req = new UserRegisterRequest(
+                id,
+                "username",
+                "password",
+                RoleManager.getRole("registereduser").toString(),
+                tokens.get("registereduser"));
+
+        // trying to add a non-owner user to a company with no owner should raise an error
+        UserRegisterRequest finalReq2 = req;
+        Assertions.assertThrows(UserExceptions.UserBeforeOwnerException.class, ()  -> this.con.registerUser(finalReq2));
     }
 
     @Test

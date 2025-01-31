@@ -1,6 +1,7 @@
 package org.api.controllers.user;
 
 import org.api.controllers.CustomExceptionHandler;
+import org.api.exceptions.UserExceptions;
 import org.common.RoleManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

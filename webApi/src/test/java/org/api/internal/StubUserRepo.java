@@ -207,7 +207,6 @@ public class StubUserRepo implements UserRepository {
 
     }
 
-
     @Override
     public void deleteAll() {
         this.db.clear();

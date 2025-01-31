@@ -3,6 +3,7 @@ package org.api.controllers.user;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
+import org.api.exceptions.UserExceptions;
 import org.api.requests.UserRegisterRequest;
 import org.common.Role;
 import org.common.RoleManager;
@@ -26,8 +27,6 @@ import java.util.List;
 @RestController
 @Validated
 public class UserController {
-    private static final int ROLE_TOKEN_LENGTH = 32;
-
     private final CompanyRepository companyRepo;
     private final UserRepository userRepo;
 

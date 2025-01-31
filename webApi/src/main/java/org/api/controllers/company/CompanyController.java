@@ -152,7 +152,6 @@ public class CompanyController {
         this.companyRepo.deleteById(companyId);
 
         return new ResponseEntity<>("Company and users deleted successfully", HttpStatus.NO_CONTENT);
-
     }
 
 

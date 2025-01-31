@@ -80,6 +80,8 @@ public class CompanyControllerTest {
         }
     }
 
+    //////////////////////// register a company ////////////////////////
+
     @Test
     void testRegisterErrorExistingCompany() {
         for (CompanyWrapper w: this.companyRepo.getWrappers()) {
@@ -196,6 +198,7 @@ public class CompanyControllerTest {
     }
 
 
+    //////////////////////// view company details  ////////////////////////
     @Test
     void testViewNoExistingCompany() {
         for (int i = 0; i <= 100; i++) {
@@ -245,4 +248,8 @@ public class CompanyControllerTest {
             assertEquals(fSite.get(c), serializedSite);
         }
     }
+
+    //////////////////////// delete a company  ////////////////////////
+
+
 }

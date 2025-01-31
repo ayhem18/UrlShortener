@@ -1,4 +1,4 @@
-package org.api.controllers.user;
+package org.api.exceptions;
 
 
 public class UserExceptions {
