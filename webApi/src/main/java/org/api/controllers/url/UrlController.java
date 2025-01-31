@@ -3,7 +3,6 @@ package org.api.controllers.url;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.api.exceptions.CompanyAndUserExceptions;
-import org.api.exceptions.CompanyUniquenessConstraints;
 import org.common.Subscription;
 import org.common.SubscriptionManager;
 import org.data.entities.Company;

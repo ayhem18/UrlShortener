@@ -1,6 +1,7 @@
 package org.api.unitsTests.Controllers;
 
 import org.api.controllers.user.UserController;
+import org.api.exceptions.CompanyAndUserExceptions;
 import org.api.exceptions.UserExceptions;
 import org.api.internal.StubCompanyRepo;
 import org.api.internal.StubUserRepo;
@@ -169,7 +170,7 @@ public class UserControllerTest {
 
         // trying to add a non-owner user to a company with no owner should raise an error
         UserRegisterRequest finalReq1 = req;
-        Assertions.assertThrows(UserExceptions.UserBeforeOwnerException.class, ()  -> this.con.registerUser(finalReq1));
+        Assertions.assertThrows(CompanyAndUserExceptions.UserBeforeOwnerException.class, ()  -> this.con.registerUser(finalReq1));
 
         req = new UserRegisterRequest(
                 id,
@@ -180,7 +181,7 @@ public class UserControllerTest {
 
         // trying to add a non-owner user to a company with no owner should raise an error
         UserRegisterRequest finalReq2 = req;
-        Assertions.assertThrows(UserExceptions.UserBeforeOwnerException.class, ()  -> this.con.registerUser(finalReq2));
+        Assertions.assertThrows(CompanyAndUserExceptions.UserBeforeOwnerException.class, ()  -> this.con.registerUser(finalReq2));
     }
 
     @Test
@@ -204,7 +205,7 @@ public class UserControllerTest {
                 RoleManager.getRole("owner").toString(),
                 tokens.get("owner"));
 
-        Assertions.assertThrows(UserExceptions.MultipleOwnersException.class,
+        Assertions.assertThrows(CompanyAndUserExceptions.MultipleOwnersException.class,
                 () -> this.con.registerUser(req));
 
         this.userRepo.deleteAll();

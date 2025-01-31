@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.utils.CustomGenerator;
 
 @Configuration
 public class UtilsConfig {
@@ -31,4 +32,8 @@ public class UtilsConfig {
         return new UrlValidator();
     }
 
+    @Bean
+    public CustomGenerator customGenerator() {
+        return new CustomGenerator();
+    }
 }

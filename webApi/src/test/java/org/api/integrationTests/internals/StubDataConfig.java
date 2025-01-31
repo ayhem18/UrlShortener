@@ -6,8 +6,10 @@ import org.api.internal.StubUserRepo;
 import org.data.repositories.CompanyRepository;
 import org.data.repositories.CounterRepository;
 import org.data.repositories.UserRepository;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 @Configuration
 public class StubDataConfig {
@@ -19,12 +21,15 @@ public class StubDataConfig {
     }
 
     @Bean
+    @Primary // adding this annotation discards the private stub repository bean declared below
     public CompanyRepository stubCompanyRepository() throws NoSuchFieldException, IllegalAccessException {
         return new StubCompanyRepo();
     }
 
+    // beans cannot be private !!!
     @Bean
-    private StubCompanyRepo privateStubCompanyRepo() throws NoSuchFieldException, IllegalAccessException {
+    @Qualifier("privateStubCompanyRepo")
+    public StubCompanyRepo privateStubCompanyRepo() throws NoSuchFieldException, IllegalAccessException {
         return new StubCompanyRepo();
     }
 
