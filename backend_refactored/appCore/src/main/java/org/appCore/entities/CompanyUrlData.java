@@ -1,9 +1,9 @@
-package org.data.entities;
+package org.appCore.entities;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import org.example.UrlEntity;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
+import org.url.UrlEntity;
 import org.utils.CustomGenerator;
 
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package org.core.entities;
+package org.appCore.entities;
 
 import com.fasterxml.jackson.annotation.*;
 import org.access.Subscription;
@@ -27,6 +27,8 @@ public class Company {
 
     private Subscription subscription;
 
+    private boolean verified;
+
     // the constructor is only meant to be called through a CompanyWrapper object
     // this is enforced by the default visibility value
     // the constructor can be called only from other files within the same package as Company.java
@@ -42,6 +44,7 @@ public class Company {
             this.domainHash = domainHash;
             this.subscription = subscription;
             this.emailDomain = emailDomain;
+            this.verified = false;
     }
 
     // create a constructor that would set the emailDomain to null
@@ -78,7 +81,7 @@ public class Company {
     }
 
 
-    private String getId() {
+    public String getId() {
         return id;
     }
 
@@ -127,6 +130,13 @@ public class Company {
 
     private void setDomainHash(String domainHash) {
         this.domainHash = domainHash;
+    }
+
+    public void setVerified() {
+        if (this.verified) {
+            throw new IllegalStateException("Company is already verified");
+        }
+        this.verified = true;
     }
 
     ///////////////////////////////// OTHER /////////////////////////////////////////////

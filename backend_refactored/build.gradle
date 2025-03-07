@@ -29,8 +29,7 @@ dependencies {
 	implementation project(':utils')
 	implementation project(':urlUtils')
 	implementation project(':access')
-	 implementation project(':core')
-	// implementation project(':webApi')
+	 implementation project(':appCore')
 
 }
 
