@@ -1,8 +1,8 @@
-rootProject.name = 'url_shortener'
+    rootProject.name = 'url_shortener'
 
-include ('url')
-include ('utils')
-include ('common')
-include ('data')
-include ('webApi')
-include ('src')
+    include ('url')
+    include ('utils')
+    include ('common')
+    include ('data')
+    include ('webApi')
+    include ('src')
