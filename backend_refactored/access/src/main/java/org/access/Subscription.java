@@ -25,31 +25,36 @@ public interface Subscription {
             default -> this.getMaxQueryParameters();
         };
     }
+
+    // constraints on the number of admins and employees    
+    Integer getMaxAdmins();
+
+    Integer getMaxEmployees();
+
+    // constraints on the size of the history
+    Integer getMaxHistorySize();
+
 }
 
 
+class Free implements Subscription {
+    private static Free singleton;
 
-// each tier class will be implemented using the Singleton Design Pattern
-class TierOne implements Subscription {
-
-    private static TierOne singleton;
-
-    public static TierOne getInstance() {
+    public static Free getInstance() {
         if (singleton == null) {
-            singleton = new TierOne();
+            singleton = new Free();
         }
         return singleton;
     }
 
-    private TierOne() {};
-
+    private Free() {};
 
     @Override
     public String getTier() {
-        return "TIER_1";
+        return "FREE";
     }
 
-    // all methods below return "3" just to ease testing !!
+    // constraints on url encoding
 
     @Override
     public Integer getMaxNumLevels() {
@@ -75,7 +80,86 @@ class TierOne implements Subscription {
     public Integer getMaxQueryValues() {
         return 3;
     }
+
+    @Override
+    public Integer getMaxAdmins() {
+        return 1;
+    }
+
+    @Override
+    public Integer getMaxEmployees() {
+        return 2;
+    }
+    
+    @Override
+    public Integer getMaxHistorySize() {
+        return 0;
+    }
 }
+
+
+
+// each tier class will be implemented using the Singleton Design Pattern
+class TierOne implements Subscription {
+
+    private static TierOne singleton;
+
+    public static TierOne getInstance() {
+        if (singleton == null) {
+            singleton = new TierOne();
+        }
+        return singleton;
+    }
+
+    private TierOne() {};
+
+
+    @Override
+    public String getTier() {
+        return "TIER_1";
+    }
+
+    @Override
+    public Integer getMaxNumLevels() {
+        return 10;
+    }
+
+    @Override
+    public Integer getMaxLevelNames() {
+        return 10;
+    }
+
+    @Override
+    public Integer getMaxPathVariables() {
+        return 10;
+    }
+
+    @Override
+    public Integer getMaxQueryParameters() {
+        return 10;
+    }
+
+    @Override
+    public Integer getMaxQueryValues() {
+        return 10;
+    }
+
+    @Override
+    public Integer getMaxAdmins() {
+        return 2;
+    }
+
+    @Override
+    public Integer getMaxEmployees() {
+        return 6;
+    }
+
+    @Override
+    public Integer getMaxHistorySize() {
+        return 10;
+    }
+}
+
 
 class TierInfinity implements Subscription {
 
@@ -121,5 +205,20 @@ class TierInfinity implements Subscription {
     @Override
     public Integer getMaxQueryValues() {
         return null;
+    }
+
+    @Override
+    public Integer getMaxAdmins() {
+        return 3;
+    }
+
+    @Override
+    public Integer getMaxEmployees() {
+        return 10;
+    }
+
+    @Override
+    public Integer getMaxHistorySize() {
+        return 100;
     }
 }

@@ -1,9 +1,9 @@
 rootProject.name = 'url_shortener'
 
 include ('utils')
+include ('urlUtils')
 include ('access')
-include ('url')
-
+include ('core')
 // include ('common')
 // include ('data')
 // include ('webApi')

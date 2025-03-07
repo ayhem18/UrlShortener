@@ -27,10 +27,9 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
 	implementation project(':utils')
-	implementation project(':url')
+	implementation project(':urlUtils')
 	implementation project(':access')
-	// implementation project(':common')
-	// implementation project(':data')
+	 implementation project(':core')
 	// implementation project(':webApi')
 
 }

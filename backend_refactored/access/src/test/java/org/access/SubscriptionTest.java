@@ -14,7 +14,7 @@ public class SubscriptionTest {
     @Test
     void subscriptionWorksWithStringIgnoreCase() {
         // make sure the managed returns the correct role for any version of the input string
-        List<String> subs = List.of("TIER_INFINITY", "TIER_1");
+        List<String> subs = List.of("TIER_INFINITY", "TIER_1", "FREE");
 
         for (String subStr: subs) {
             String s;
@@ -28,7 +28,7 @@ public class SubscriptionTest {
     @Test
     void throwsErrorForInvalidString(){
         // make sure the managed returns the correct role for any version of the input string
-        List<String> subs = List.of("TIER_INFINITY", "TIER_1");
+        List<String> subs = List.of("TIER_INFINITY", "TIER_1", "FREE");
         String randomStr;
         for (String subStr: subs) {
             for (int i = 0; i <= 100; i++) {
@@ -66,7 +66,16 @@ public class SubscriptionTest {
         Subscription sub = SubscriptionManager.getSubscription("TIER_1");
         for (int i = 0; i <= 10; i++) {
             Subscription anotherSub = SubscriptionManager.getSubscription("TIER_1");
-            assertSame(sub, anotherSub); // make sure to use assertSame rather than assertEquals...
+            assertSame(sub, anotherSub);
+        }
+    }
+
+    @Test
+    void testFreeSingletonObj() {
+        Subscription sub = SubscriptionManager.getSubscription("FREE");
+        for (int i = 0; i <= 10; i++) {
+            Subscription anotherSub = SubscriptionManager.getSubscription("FREE");
+            assertSame(sub, anotherSub);
         }
     }
 
@@ -75,7 +84,27 @@ public class SubscriptionTest {
         Subscription sub = SubscriptionManager.getSubscription("TIER_INFINITY");
         for (int i = 0; i <= 10; i++) {
             Subscription anotherSub = SubscriptionManager.getSubscription("TIER_INFINITY");
-            assertSame(sub, anotherSub); // make sure to use assertSame rather than assertEquals...
+            assertSame(sub, anotherSub);
         }
+    }
+
+    @Test
+    void testTierOneLimits() {
+        Subscription sub = SubscriptionManager.getSubscription("TIER_1");
+        assertEquals(10, sub.getMaxNumLevels());
+        assertEquals(10, sub.getMaxLevelNames());
+        assertEquals(10, sub.getMaxPathVariables());
+        assertEquals(10, sub.getMaxQueryParameters());
+        assertEquals(10, sub.getMaxQueryValues());
+    }
+
+    @Test
+    void testFreeLimits() {
+        Subscription sub = SubscriptionManager.getSubscription("FREE");
+        assertEquals(3, sub.getMaxNumLevels());
+        assertEquals(3, sub.getMaxLevelNames());
+        assertEquals(3, sub.getMaxPathVariables());
+        assertEquals(3, sub.getMaxQueryParameters());
+        assertEquals(3, sub.getMaxQueryValues());
     }
 }
