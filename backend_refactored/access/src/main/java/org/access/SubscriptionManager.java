@@ -98,8 +98,10 @@ public class SubscriptionManager {
     private static final Map<String, Subscription> STRING_SUB_MAP = new HashMap<>();
     public static final String TIER1_SUB = "TIER_1";
     public static final String TIER_INF_SUB = "TIER_INFINITY";
+    public static final String FREE_SUB  = "FREE";
 
     static {
+        STRING_SUB_MAP.put(FREE_SUB.toLowerCase(), FreeTier.getInstance());
         STRING_SUB_MAP.put(TIER1_SUB.toLowerCase(), TierOne.getInstance());
         STRING_SUB_MAP.put(TIER_INF_SUB.toLowerCase(), TierInfinity.getInstance());
     }

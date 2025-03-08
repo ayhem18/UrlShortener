@@ -11,8 +11,8 @@ public record CompanyRegisterRequest (
     String id,
 
     @NotBlank
-    @Pattern(regexp = "(www\\.)*[a-zA-Z0-9]+\\.[a-zA-Z]{2,}", message = "the domain is in the wrong format")
     String domain,
+    @Pattern(regexp = "(www\\.)*[a-zA-Z0-9]+\\.[a-zA-Z]{2,}", message = "the domain is in the wrong format")
 
     @NotBlank
     String subscription) {};

@@ -37,17 +37,17 @@ public interface Subscription {
 }
 
 
-class Free implements Subscription {
-    private static Free singleton;
+class FreeTier implements Subscription {
+    private static FreeTier singleton;
 
-    public static Free getInstance() {
+    public static FreeTier getInstance() {
         if (singleton == null) {
-            singleton = new Free();
+            singleton = new FreeTier();
         }
         return singleton;
     }
 
-    private Free() {};
+    private FreeTier() {};
 
     @Override
     public String getTier() {

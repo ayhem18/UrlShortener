@@ -1,4 +1,4 @@
-package org.appCore.expections;
+package org.appCore.exceptions;
 
 public class CompanyExceptions {
     public static class ExistingCompanyException extends RuntimeException{

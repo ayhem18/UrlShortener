@@ -122,23 +122,28 @@ public class CompanyUrlData {
     }
 
     // private setters and no-arg constructor added so that Jackson can work properly
-    public CompanyUrlData() {
+    @SuppressWarnings("unused")
+    private CompanyUrlData() {
         this.dataEncoded = new ArrayList<>();
         this.dataDecoded = new ArrayList<>();
     }
 
+    @SuppressWarnings("unused")
     private void setCompany(Company company) {
         this.company = company;
     }
 
+    @SuppressWarnings("unused")
     private void setCompanySiteHash(String companySiteHash) {
         this.companySiteHash = companySiteHash;
     }
 
+    @SuppressWarnings("unused")
     private void setDataEncoded(List<HashMap<UrlEntity, HashMap<String, String>>> dataEncoded) {
         this.dataEncoded = dataEncoded;
     }
 
+    @SuppressWarnings("unused")
     private void setDataDecoded(List<HashMap<UrlEntity, HashMap<String, String>>> dataDecoded) {
         this.dataDecoded = dataDecoded;
     }

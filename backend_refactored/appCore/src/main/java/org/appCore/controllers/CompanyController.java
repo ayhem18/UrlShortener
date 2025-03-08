@@ -21,7 +21,7 @@ import org.access.SubscriptionManager;
 import org.appCore.entities.CollectionCounter;
 import org.appCore.entities.Company;
 import org.appCore.entities.Token;
-import org.appCore.expections.CompanyExceptions;
+import org.appCore.exceptions.CompanyExceptions;
 import org.appCore.repositories.CompanyRepository;
 import org.appCore.repositories.CounterRepository;
 import org.appCore.repositories.TokenRepository;

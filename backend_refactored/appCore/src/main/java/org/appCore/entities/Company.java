@@ -53,6 +53,7 @@ public class Company {
     }
 
     // a private constructor for Jackson serialization
+    @SuppressWarnings("unused")
     private Company() {
     }
 
@@ -85,6 +86,7 @@ public class Company {
         return id;
     }
 
+    @SuppressWarnings("unused")
     private int getSerializeSensitiveCount() {
         return serializeSensitiveCount;
     }
@@ -124,10 +126,12 @@ public class Company {
     }
 
     // add private setters for Jackson serialization (private so they can't be set by the program)
+    @SuppressWarnings("unused")
     private void setSerializeSensitiveCount(int serializeSensitiveCount) {
         this.serializeSensitiveCount = serializeSensitiveCount;
     }
 
+    @SuppressWarnings("unused")
     private void setDomainHash(String domainHash) {
         this.domainHash = domainHash;
     }

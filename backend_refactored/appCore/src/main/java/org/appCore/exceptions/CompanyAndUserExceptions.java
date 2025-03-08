@@ -1,4 +1,4 @@
-package org.appCore.expections;
+package org.appCore.exceptions;
 
 public class CompanyAndUserExceptions {
     public static class UserCompanyMisalignedException extends RuntimeException{

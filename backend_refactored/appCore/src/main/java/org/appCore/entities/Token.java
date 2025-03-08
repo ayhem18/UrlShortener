@@ -40,6 +40,7 @@ public class Token {
     private Company company;
 
     // Private no-argument constructor
+    @SuppressWarnings("unused")
     private Token() {
     }
 
@@ -99,40 +100,49 @@ public class Token {
     }
 
     // Add getter for serializeSensitiveCount
+    @SuppressWarnings("unused")
     private int getSerializeSensitiveCount() {
         return serializeSensitiveCount;
     }
 
     // Add private setter for serializeSensitiveCount for Jackson serialization
+    @SuppressWarnings("unused")
     private void setSerializeSensitiveCount(int serializeSensitiveCount) {
         this.serializeSensitiveCount = serializeSensitiveCount;
     }
 
     // Private setters
+    @SuppressWarnings("unused")
     private void setId(String id) {
         this.id = id;
     }
 
+    @SuppressWarnings("unused")
     private void setToken(String token) {
         this.token = token;
     }
 
+    @SuppressWarnings("unused")
     private void setTokenHash(String tokenHash) {
         this.tokenHash = tokenHash;
     }
 
+    @SuppressWarnings("unused")
     private void setCompany(Company company) {
         this.company = company;
     }
 
+    @SuppressWarnings("unused")
     private void setRole(Role role) {
         this.role = role;
     }
 
+    @SuppressWarnings("unused")
     private void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }   
 
+    @SuppressWarnings("unused")
     private void setExpiresAt(LocalDateTime expiresAt) {
         this.expiresAt = expiresAt;
     }

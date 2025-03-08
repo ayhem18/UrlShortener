@@ -2,19 +2,9 @@ package org.appCore.entities;
 
 import org.access.Role;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.appCore.repositories.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.stereotype.Component;
-
-
-import java.util.Collection;
 
 
 @Document()
@@ -41,6 +31,8 @@ public class AppUser {
         this.role = role;
     }
 
+    // the no-argument constructor is needed for Jackson de/serialization
+    @SuppressWarnings("unused")
     private AppUser() {
     }
 
@@ -83,51 +75,5 @@ public class AppUser {
                 ", company= " + company.getId() +
                 ", role= " + role +
                 '}';
-    }
-}
-
-
-class UserDetailsImp implements UserDetails {
-
-    private final AppUser user;
-
-    public UserDetailsImp(AppUser user) {
-        this.user = user;
-    }
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return this.user.getRole().getAuthorities();
-    }
-
-    @Override
-    public String getUsername() {
-        return user.getUsername();
-    }
-
-    @Override
-    public String getPassword() {
-        return user.getPassword();
-    }
-
-}
-
-
-
-@Component
-class AppUserDetailService implements UserDetailsService {
-    private final UserRepository userRepo;
-
-    @Autowired
-    public AppUserDetailService(UserRepository userRepo) {
-        this.userRepo = userRepo;
-    }
-
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        AppUser user = userRepo.findByUsername(username).orElseThrow(
-                () -> new UsernameNotFoundException("There is no user with the username: " + username)
-        );
-        return new UserDetailsImp(user);
     }
 }
