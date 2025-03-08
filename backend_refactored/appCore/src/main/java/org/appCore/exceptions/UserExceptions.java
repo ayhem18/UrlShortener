@@ -1,4 +1,4 @@
-package org.api.exceptions;
+package org.appCore.exceptions;
 
 
 public class UserExceptions {

@@ -7,8 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 
-// MongoRepository interface is most likely associated with an annotation that inherits @Bean or @Configuration
-// hence no needed for adding an annotation myself
+
 @Repository
 public interface CompanyRepository extends MongoRepository<Company, String> {
     @SuppressWarnings("null")

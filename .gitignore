@@ -34,5 +34,6 @@ out/
 
 *.db
 
+backend_refactored/src/main/resources/application.properties
 
 
