@@ -18,7 +18,5 @@ public class subProjectsConfig {
     @Bean
     public CustomGenerator customGenerator() {
         return new CustomGenerator();
-    }
-
-    
+    }    
 }

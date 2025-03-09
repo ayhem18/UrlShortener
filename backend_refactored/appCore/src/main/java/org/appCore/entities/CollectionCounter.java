@@ -19,7 +19,7 @@ public class CollectionCounter {
         this.count = 0;
     }
 
-    public CollectionCounter() {
+    private CollectionCounter() {
 
     }
 

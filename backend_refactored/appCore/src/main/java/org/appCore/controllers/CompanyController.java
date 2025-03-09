@@ -101,26 +101,31 @@ public class CompanyController {
     @PostMapping("api/auth/register/company")
     public ResponseEntity<String> registerCompany(@Valid @RequestBody CompanyRegisterRequest req) throws JsonProcessingException {
         // registering a company is done through the following steps: 
-        // 1. check the uniqueness constraints 
+        // 1. check the uniqueness constraints x
 
-        // check the uniqueness constraints
         validateNewCompany(req);
-        // hash the domain
+        // 2. hash the domain
         String hashedDomain = this.encoder().encode(req.domain()); 
 
+        // 3. get the subscription
         Subscription subscription = SubscriptionManager.getSubscription(req.subscription());
 
+        // 4. create the company
         Company company = new Company(req.id(), req.domain(), hashedDomain, subscription);
 
-        // save the company 
+        // 5. save the company 
         this.companyRepo.save(company);
 
-        // create the owner role token
-        // get the counter of the token
+        // 6. create the owner role token
         String ownerTokenId = this.generator.generateId(this.getCount(Token.TOKEN_COLLECTION_NAME));
 
+        // Todo: use safer token generation mechanism
         String ownerTokenString = this.generator.randomString(ROLE_TOKEN_LENGTH);
+
+        // 7. hash the owner token
         String ownerTokenHash = this.encoder().encode(ownerTokenString);
+
+        // 8. create the owner token
         Token ownerToken = new Token(ownerTokenId, ownerTokenString, ownerTokenHash, company,
                 RoleManager.getRole(RoleManager.OWNER_ROLE), LocalDateTime.now(), null);
 
@@ -128,8 +133,7 @@ public class CompanyController {
         this.tokenRepo.save(ownerToken);
 
         // both the company and the owner token are saved, they both need to be serialized
-        // the company is serialized first, so that the "serializeSensitiveCount" field will be saved as "4"
-        // in the database preventing the serialization of sensitive information beyond the very first time
+
         HashMap<String, Object> serialized = new HashMap<>();
         serialized.put("company", company);
         serialized.put("ownerToken", ownerToken);
