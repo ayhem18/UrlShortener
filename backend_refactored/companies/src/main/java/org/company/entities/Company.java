@@ -1,4 +1,4 @@
-package org.appCore.entities;
+package org.company.entities;
 
 import com.fasterxml.jackson.annotation.*;
 import org.access.Subscription;
@@ -15,13 +15,11 @@ public class Company {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String id; // some sort of Company identifier
 
-    private String topLevelDomain;
-
     private String domainHash;
 
     private String emailDomain;
 
-    // written but never read...
+    // write only 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private int serializeSensitiveCount = 0;
 
@@ -29,27 +27,20 @@ public class Company {
 
     private boolean verified;
 
-    // the constructor is only meant to be called through a CompanyWrapper object
-    // this is enforced by the default visibility value
-    // the constructor can be called only from other files within the same package as Company.java
 
     public Company(String id,
-                String topLevelDomain,
-                String domainHash,
                 Subscription subscription,
                 String emailDomain) {
 
             this.id = id;
-            this.topLevelDomain = topLevelDomain;
-            this.domainHash = domainHash;
             this.subscription = subscription;
             this.emailDomain = emailDomain;
             this.verified = false;
     }
 
     // create a constructor that would set the emailDomain to null
-    public Company(String id, String topLevelDomain, String domainHash, Subscription subscription) {
-        this(id, topLevelDomain, domainHash, subscription, null);
+    public Company(String id, Subscription subscription) {
+        this(id, subscription, null);
     }
 
     // a private constructor for Jackson serialization
@@ -99,7 +90,7 @@ public class Company {
 
     @JsonGetter(value = "domain")
     String getDomain() {
-        return topLevelDomain;
+        return emailDomain;
     }
 
     Subscription getSubscription() {
@@ -112,10 +103,6 @@ public class Company {
 
 
     ///////////////////////////////// SETTERS /////////////////////////////////////////////
-    void setDomain(String domain) {
-        this.topLevelDomain = domain;
-    }
-
     void setId(String id) {
         this.id = id;
     }
@@ -136,20 +123,11 @@ public class Company {
         this.domainHash = domainHash;
     }
 
-    public void setVerified() {
+    public void verify() {
         if (this.verified) {
-            throw new IllegalStateException("Company is already verified");
+            throw new IllegalStateException("The company is already verified");
         }
         this.verified = true;
-    }
-
-    ///////////////////////////////// OTHER /////////////////////////////////////////////
-
-    @Override
-    public String toString() {
-        return "Company{" +
-                "domain='" + topLevelDomain + '\'' +
-                '}';
     }
 
 }

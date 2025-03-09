@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.LocalDateTime;
 
 @Document("Token")
-@JsonInclude(JsonInclude.Include.NON_NULL) // a class-wide annotation Making Jackson ignore all null fields
+@JsonInclude(JsonInclude.Include.NON_NULL) // a class-wide annotation to make Jackson ignore all null fields
 public class Token {
     public static final String TOKEN_COLLECTION_NAME = "TOKEN";
 
@@ -37,6 +37,7 @@ public class Token {
     private LocalDateTime expiresAt;
 
     @DocumentReference
+    // using @DocumentReference would save the company id instead of the entire document
     private Company company;
 
     // Private no-argument constructor

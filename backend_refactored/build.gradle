@@ -17,7 +17,6 @@ repositories {
 	mavenCentral()
 }
 
-
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -31,9 +30,11 @@ dependencies {
 	implementation project(':utils')
 	implementation project(':urlUtils')
 	implementation project(':access')
-	 implementation project(':appCore')
-
+	implementation project(':companies')
+//	implementation project(':tokens')
+	implementation project(':appCore')
 }
+
 
 
 springBoot {

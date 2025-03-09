@@ -22,14 +22,12 @@ dependencies {
     // for jackarta validation
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: '3.4.2'
 
-    // for some web stuff
+    // for Rest Controllers...
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '3.4.2'
 
     // for security
-
     implementation group: 'org.springframework.security', name: 'spring-security-web', version: '6.4.1'
     implementation group: 'org.springframework.security', name: 'spring-security-core', version: '6.4.2'
-
     implementation group: 'org.springframework.security', name: 'spring-security-config', version: '6.4.2'
 
     // add spring boot mail dependency
@@ -38,6 +36,7 @@ dependencies {
     implementation project(':utils')
     implementation project(':urlUtils')
     implementation project(':access')
+    implementation project(':companies')
 
 
 

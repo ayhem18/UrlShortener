@@ -1,6 +1,7 @@
 package org.appCore.entities;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import org.company.entities.Company;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import org.url.UrlEntity;

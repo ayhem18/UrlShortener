@@ -3,4 +3,6 @@ rootProject.name = 'url_shortener'
 include ('utils')
 include ('urlUtils')
 include ('access')
+include ('companies')
+//include ('tokens')
 include ('appCore')
