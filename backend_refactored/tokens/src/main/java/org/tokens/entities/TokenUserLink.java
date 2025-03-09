@@ -1,4 +1,4 @@
-package org.tokens;
+package org.tokens.entities;
 
 import java.util.Random;
 import java.time.LocalDateTime;
@@ -7,19 +7,22 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.springframework.data.annotation.ReferenceDocument;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
+import org.user.entities.AppUser;
 
 @Document("user_token_links")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TokenUserLink {
+    public final static String TOKEN_USER_LINK_CLASS_NAME = "TOKEN_USER_LINK";
+
     @Id
     private String id;
 
-    @ReferenceDocument
+    @DocumentReference
     private Token token;
 
-    @ReferenceDocument
-    private User user;
+    @DocumentReference
+    private AppUser user;
 
     private LocalDateTime activationTime;
 
@@ -38,7 +41,7 @@ public class TokenUserLink {
         return token;
     }
     
-    public User getUser() {
+    public AppUser getUser() {
         return user;
     }
     
@@ -59,7 +62,7 @@ public class TokenUserLink {
         this.token = token;
     }
     
-    private void setUser(User user) {
+    private void setUser(AppUser user) {
         this.user = user;
     }
     

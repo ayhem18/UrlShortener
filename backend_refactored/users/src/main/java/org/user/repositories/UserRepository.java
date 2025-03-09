@@ -1,12 +1,12 @@
-package org.appCore.repositories;
+package org.user.repositories;
 
 // need userRepository class to save the application users
 
 import org.access.Role;
-import org.appCore.entities.AppUser;
-import org.appCore.entities.Company;
+import org.company.entities.Company;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
+import org.user.entities.AppUser;
 
 import java.util.List;
 import java.util.Optional;

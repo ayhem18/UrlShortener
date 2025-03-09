@@ -1,15 +1,15 @@
-package org.appCore.configurations;
+package org.user.configurations;
 
 import java.util.Collection;
 
-import org.appCore.entities.AppUser;
-import org.appCore.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
+import org.user.entities.AppUser;
+import org.user.repositories.UserRepository;
 
 class UserDetailsImp implements UserDetails {
 

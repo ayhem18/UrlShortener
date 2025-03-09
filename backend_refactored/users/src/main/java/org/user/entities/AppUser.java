@@ -1,4 +1,4 @@
-package org.appCore.entities;
+package org.user.entities;
 
 import org.access.Role;
 import com.fasterxml.jackson.annotation.JsonProperty;

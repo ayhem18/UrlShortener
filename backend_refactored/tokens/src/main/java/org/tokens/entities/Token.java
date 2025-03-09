@@ -1,4 +1,4 @@
-package org.tokens;
+package org.tokens.entities;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -9,6 +9,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Document("tokens")
 public class Token {
+    public final static String TOKEN_CLASS_NAME = "Token";
+
     public enum TokenState {
         ACTIVE,
         INACTIVE,
@@ -23,8 +25,16 @@ public class Token {
     private String tokenHash;
 
     private TokenState tokenState;
-    
+
+
+    public Token(String tokenId, String tokenHash) {
+        this.tokenId = tokenId;
+        this.tokenHash = tokenHash;
+        this.tokenState = TokenState.ACTIVE;
+    }
+
     // Private no-argument constructor
+    @SuppressWarnings("unused")
     private Token() {
     }
     

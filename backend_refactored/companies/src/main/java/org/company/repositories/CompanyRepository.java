@@ -12,5 +12,4 @@ import java.util.Optional;
 public interface CompanyRepository extends MongoRepository<Company, String> {
     @SuppressWarnings("null")
     Optional<Company> findById(String id);
-    Optional<Company> findByTopLevelDomain(String topLevelDomain);
 }

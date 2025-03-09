@@ -15,9 +15,9 @@ public class Company {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String id; // some sort of Company identifier
 
-    private String domainHash;
-
     private String emailDomain;
+
+    private String ownerEmail; 
 
     // write only 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
@@ -27,21 +27,18 @@ public class Company {
 
     private boolean verified;
 
-
+    // Updated constructor to include ownerEmail
     public Company(String id,
                 Subscription subscription,
-                String emailDomain) {
-
+                String emailDomain,
+                String ownerEmail) {
             this.id = id;
             this.subscription = subscription;
             this.emailDomain = emailDomain;
+            this.ownerEmail = ownerEmail;
             this.verified = false;
     }
 
-    // create a constructor that would set the emailDomain to null
-    public Company(String id, Subscription subscription) {
-        this(id, subscription, null);
-    }
 
     // a private constructor for Jackson serialization
     @SuppressWarnings("unused")
@@ -63,16 +60,6 @@ public class Company {
         return null;
     }
 
-    @JsonGetter(value = "domainHash")
-    private String jsonGetDomainHash() {
-        if (this.serializeSensitiveCount < 2) {
-            this.serializeSensitiveCount += 1;
-            return this.domainHash;
-        }
-        return null;
-    }
-
-
     public String getId() {
         return id;
     }
@@ -81,7 +68,6 @@ public class Company {
     private int getSerializeSensitiveCount() {
         return serializeSensitiveCount;
     }
-
 
     @JsonGetter(value = "subscription")
     String getSub() {
@@ -93,14 +79,15 @@ public class Company {
         return emailDomain;
     }
 
+    // Add getter for ownerEmail
+    @JsonGetter(value = "ownerEmail")
+    public String getOwnerEmail() {
+        return ownerEmail;
+    }
+
     Subscription getSubscription() {
         return subscription;
     }
-
-    String getDomainHash() {
-        return this.domainHash;
-    }
-
 
     ///////////////////////////////// SETTERS /////////////////////////////////////////////
     void setId(String id) {
@@ -111,16 +98,22 @@ public class Company {
     void setSubscription(Subscription subscription) {
         this.subscription = subscription;
     }
+    
+    // Add setter for ownerEmail
+    void setOwnerEmail(String ownerEmail) {
+        this.ownerEmail = ownerEmail;
+    }
 
     // add private setters for Jackson serialization (private so they can't be set by the program)
     @SuppressWarnings("unused")
     private void setSerializeSensitiveCount(int serializeSensitiveCount) {
         this.serializeSensitiveCount = serializeSensitiveCount;
     }
-
+    
+    // Add Jackson-specific setter with SuppressWarnings
     @SuppressWarnings("unused")
-    private void setDomainHash(String domainHash) {
-        this.domainHash = domainHash;
+    private void setEmailDomain(String emailDomain) {
+        this.emailDomain = emailDomain;
     }
 
     public void verify() {
@@ -129,7 +122,6 @@ public class Company {
         }
         this.verified = true;
     }
-
 }
 
 

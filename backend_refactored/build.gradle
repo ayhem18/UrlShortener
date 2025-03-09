@@ -31,7 +31,8 @@ dependencies {
 	implementation project(':urlUtils')
 	implementation project(':access')
 	implementation project(':companies')
-//	implementation project(':tokens')
+	implementation project(':users')
+	implementation project(':tokens')
 	implementation project(':appCore')
 }
 

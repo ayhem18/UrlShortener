@@ -27,8 +27,8 @@ dependencies {
     // for jackson validation
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.18.2'
 
-    // for mongodb as a database
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-mongodb', version: '3.4.1'
+    // the mongodb core dependency is needed (not only the started dependency)
+    implementation group: 'org.springframework.data', name: 'spring-data-mongodb', version: '4.4.2'
 
 
     // for tests: no need to import the entire spring boot toolkit
@@ -36,6 +36,8 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+
+    implementation project(':companies')
     implementation project(':users')
 }
 
