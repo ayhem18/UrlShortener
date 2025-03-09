@@ -2,6 +2,7 @@ package org.tokens.repositories;
 
 import org.tokens.entities.Token;
 import org.tokens.entities.Token.TokenState;
+import org.company.entities.Company;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
@@ -16,4 +17,6 @@ public interface TokenRepository extends MongoRepository<Token, String> {
     Optional<Token> findByTokenId(String tokenId);
     
     List<Token> findByTokenState(TokenState tokenState);
+
+    List<Token> findByCompany(Company company);
 } 

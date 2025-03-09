@@ -6,9 +6,10 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.utils.CustomErrorMessage;
+import org.appCore.exceptions.CompanyExceptions;
 
 @ControllerAdvice
-public class CompanyCustomExceptionHandler extends CustomExceptionHandler {
+public class CompanyExceptionHandler extends CustomExceptionHandler {
 
     @ExceptionHandler(CompanyExceptions.ExistingCompanyException.class)
     public ResponseEntity<CustomErrorMessage> handleExistingCompanyException(

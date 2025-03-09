@@ -1,5 +1,6 @@
 package org.appCore.requests;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -19,7 +20,10 @@ public record UserRegisterRequest (
         String password,
 
         @NotBlank
+        @Email(message = "Please provide a valid email address")
+        String email,
 
+        @NotBlank
         String role,
 
         @NotBlank

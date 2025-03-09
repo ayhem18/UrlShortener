@@ -75,7 +75,7 @@ public class Company {
     }
 
     @JsonGetter(value = "domain")
-    String getDomain() {
+    public String getEmailDomain() {
         return emailDomain;
     }
 
@@ -85,8 +85,12 @@ public class Company {
         return ownerEmail;
     }
 
-    Subscription getSubscription() {
+    public Subscription getSubscription() {
         return subscription;
+    }
+
+    public boolean getVerified() {
+        return verified;
     }
 
     ///////////////////////////////// SETTERS /////////////////////////////////////////////

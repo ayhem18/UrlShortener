@@ -8,8 +8,8 @@ public class UserExceptions {
         }
     }
 
-    public static class IncorrectRoleTokenException extends RuntimeException {
-        public IncorrectRoleTokenException(String message) {
+    public static class MissingTokenException extends RuntimeException {
+        public MissingTokenException(String message) {
             super(message);
         }
     }

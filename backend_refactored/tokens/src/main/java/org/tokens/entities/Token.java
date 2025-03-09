@@ -37,7 +37,16 @@ public class Token {
     @SuppressWarnings("unused")
     private Token() {
     }
+
     
+    public void activate() {
+        if (this.tokenState != TokenState.INACTIVE) {
+            throw new IllegalStateException("Only inactive tokens can be activated");
+        }
+        this.tokenState = TokenState.ACTIVE;
+    }
+
+
     // Getters
     public String getTokenId() {
         return tokenId;

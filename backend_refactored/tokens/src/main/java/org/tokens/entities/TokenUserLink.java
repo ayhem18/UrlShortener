@@ -28,6 +28,14 @@ public class TokenUserLink {
 
     private LocalDateTime deactivationTime;
     
+
+    public TokenUserLink(Token token, AppUser user) {
+        this.token = token;
+        this.user = user;
+        this.activationTime = LocalDateTime.now();
+        this.deactivationTime = null;
+    }
+
     // Private no-argument constructor
     private TokenUserLink() {
     }

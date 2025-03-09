@@ -46,9 +46,9 @@ POST /api/auth/verify-company
 ### Implementation 
 
 1. the company must exist, and be unverified. 
-2. the email must match the owner_email in the company object.  
-3. there should be only one token object with the same companyId in the database.
-4. the passed token must match the token in the database.
+2. there should be only one token object with the same companyId in the database.
+3. the passed token must match the token in the database.
+4. the email must match the owner_email in the company object.  
 5. update the company object to set the verified field to true. 
 6. Link the owner to the token. 
 7. return the company serialized. 
@@ -80,7 +80,7 @@ POST /api/auth/register/user
 1. if the company does not exist, return a 400 error 
 
 2. at this point, we know the company exists.
-    - if the company is not verified, the role cannot be `owner`. The token must exist, valid and cannot be linked to another user. 
+    - if the company is verified, the role cannot be `owner`. The token must exist, valid and cannot be linked to another user. 
     - otherwise, the role must be `owner` and the email must match the owner_email in the company object. If these conditions are not met, raise an error.
         otherwise, send an email to the owner with the token to verify the company.
 

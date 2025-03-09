@@ -105,7 +105,7 @@ public class CompanyController {
     private void sendCompanyVerificationEmail(String ownerEmail, String ownerToken) {
         // send an email to the owner
         String subject = "Company Verification";
-        String body = "Here is your company verification token: " + ownerToken + "\nThe token expires in 1 hour.";
+        String body = "Here is your company verification token:\n" + ownerToken + "\nThe token expires in 1 hour.";
         this.emailService.sendEmail(ownerEmail, subject, body);  
     }
 
@@ -137,7 +137,7 @@ public class CompanyController {
         // 6. create the owner role token
         String ownerTokenId = this.generator.generateId(this.counterRepo.getCount(Token.TOKEN_CLASS_NAME));
 
-        // Todo: use safer token generation mechanism
+        // Todo: use a safer token generation mechanism
         String ownerTokenString = this.generator.randomString(ROLE_TOKEN_LENGTH);
 
         // 7. send the owner token to the owner via email
@@ -158,6 +158,8 @@ public class CompanyController {
         return new ResponseEntity<>(companySerialized,
                 HttpStatus.CREATED);
     }
+
+    
 
 
 //    @PostMapping("api/auth/register/company")

@@ -11,7 +11,10 @@ import org.springframework.data.mongodb.core.mapping.DocumentReference;
 @Document()
 public class AppUser {
 
+
     @Id
+    private String email;
+
     private String username;
 
     // the password should be written :Json to obj, but not read: obj to json
@@ -25,7 +28,8 @@ public class AppUser {
     // the role the user plays in this company (determines the authorities !!)
     private Role role;
 
-    public AppUser(String userName, String password, Company company, Role role) {
+    public AppUser(String email, String userName, String password, Company company, Role role) {
+        this.email = email;
         this.username = userName;
         this.password = password;
         this.company = company;
