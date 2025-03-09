@@ -22,8 +22,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMethodMappingNamingStrategy;
-import org.tokens.entities.Token;
+import org.tokens.entities.AppToken;
 import org.tokens.entities.TokenUserLink;
 import org.tokens.repositories.TokenRepository;
 import org.user.entities.AppUser;
@@ -89,7 +88,7 @@ public class UserController {
         // at this point, we know the company exists and the username does not exist
         // we need to check if the email matches the owner email
         if (!req.email().equals(this.companyRepo.findById(req.companyId()).get().getOwnerEmail())) {
-            throw new CompanyAndUserExceptions.CompanyUserMailMisalignmentException("The email does not match the owner email");
+            throw new CompanyAndUserExceptions.UserCompanyMisalignedException("The passed email does not match the saved owner email");
         }
 
         // make sure the company is not verified
@@ -111,14 +110,21 @@ public class UserController {
         return owner;
     }
 
-    private Token verifyToken(UserRegisterRequest req, Company company) {
-        // 3. make sure the roleToken is correct
-        List<Token> tokens = this.tokenRepo.findByCompany(company);
+    private AppToken verifyToken(UserRegisterRequest req, Company company) {
+        // Get the role from the request
+        Role requestedRole = RoleManager.getRole(req.role());
+        
+        // Find tokens for this company and role
+        List<AppToken> tokens = this.tokenRepo.findByCompanyAndRole(company, requestedRole);
+
+        if (tokens.isEmpty()) {
+            throw new TokenAndUserExceptions.TokenNotFoundForRoleException("No token found for role " + req.role() + " in this company");
+        }
 
         // iterate through the tokens and check if the roleToken is correct
-        Token matchingToken = null;
+        AppToken matchingToken = null;
         
-        for (Token token : tokens) {
+        for (AppToken token : tokens) {
             if (encoder().matches(req.roleToken(), token.getTokenHash())) {
                 matchingToken = token; 
                 break;
@@ -126,24 +132,23 @@ public class UserController {
         }
 
         if (matchingToken == null) {
-            throw new TokenAndUserExceptions.InvalidTokenException("The passed token does not match any token for this specific company");
+            throw new TokenAndUserExceptions.InvalidTokenException("The passed token does not match any token for this specific role and company");
         }
 
-        if (matchingToken.getTokenState() == Token.TokenState.EXPIRED) {
+        if (matchingToken.getTokenState() == AppToken.TokenState.EXPIRED) {
             throw new TokenAndUserExceptions.TokenExpiredException("The token is expired");
         }
 
-        if (matchingToken.getTokenState() == Token.TokenState.ACTIVE) {
+        if (matchingToken.getTokenState() == AppToken.TokenState.ACTIVE) {
             throw new TokenAndUserExceptions.TokenAlreadyUsedException("The token is already used by another user");
         }
 
-        // 4. make sure the token is not linked to another user
+        // make sure the token is not linked to another user
         if (this.tokenUserLinkRepo.existsById(matchingToken.getTokenId())) {
             throw new TokenAndUserExceptions.TokenAlreadyUsedException("The token is already used by another user");
         }
 
         return matchingToken;
-       
     }
 
 
@@ -162,9 +167,8 @@ public class UserController {
         String emailDomain = req.email().substring(req.email().indexOf('@') + 1);
        
         if (!emailDomain.equals(company.getEmailDomain())) {
-            throw new CompanyAndUserExceptions.CompanyUserMailMisalignmentException("The email domain does not match the company domain");
+            throw new CompanyAndUserExceptions.UserCompanyMisalignedException("The use email domain does not match the company domain");
         }
-
 
         // 5. create the user
         AppUser user = new AppUser(req.email(),
@@ -176,7 +180,7 @@ public class UserController {
         this.userRepo.save(user);
 
         // link the user to the token
-        Token matchingToken = verifyToken(req, company);
+        AppToken matchingToken = verifyToken(req, company);
         // set the matching token to active
         matchingToken.activate();
         this.tokenRepo.save(matchingToken);

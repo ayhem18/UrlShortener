@@ -37,6 +37,7 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
 
+    implementation project(':access')
     implementation project(':companies')
     implementation project(':users')
 }

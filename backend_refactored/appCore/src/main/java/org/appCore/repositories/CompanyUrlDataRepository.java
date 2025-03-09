@@ -1,8 +1,8 @@
 package org.appCore.repositories;
 
-import org.appCore.entities.Company;
 import org.appCore.entities.CompanyUrlData;
 import org.bson.types.ObjectId;
+import org.company.entities.Company;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

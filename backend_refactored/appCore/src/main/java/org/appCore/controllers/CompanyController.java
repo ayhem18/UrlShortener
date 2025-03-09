@@ -1,9 +1,8 @@
 package org.appCore.controllers;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
-
 import org.appCore.exceptions.CompanyAndUserExceptions;
+import org.appCore.exceptions.CompanyExceptions;
+import org.appCore.exceptions.TokenAndUserExceptions;
 import org.company.entities.Company;
 import org.company.entities.TopLevelDomain;
 import org.company.repositories.CompanyRepository;
@@ -14,20 +13,24 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.tokens.entities.Token;
+import org.tokens.entities.AppToken;
+import org.tokens.entities.TokenUserLink;
 import org.tokens.repositories.TokenRepository;
+import org.tokens.repositories.TokenUserLinkRepository;
+
+import java.time.LocalDateTime;
+
 import org.access.Subscription;
-import org.access.RoleManager;
 import org.access.SubscriptionManager;
 import org.appCore.configurations.EmailService;
-import org.appCore.entities.CollectionCounter;
 import org.appCore.repositories.CounterRepository;
 import org.appCore.requests.CompanyRegisterRequest;
+import org.appCore.requests.CompanyVerifyRequest;
+import org.user.entities.AppUser;
 import org.user.repositories.UserRepository;
 import org.utils.CustomGenerator;
 
@@ -36,6 +39,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.validation.Valid;
 
+import org.access.Role;
+import org.access.RoleManager;
+
+import java.util.List;
 
 @RestController
 @Validated
@@ -49,153 +56,219 @@ public class CompanyController {
     private final UserRepository userRepo;
     private final TopLevelDomainRepository topLevelDomainRepo;
     private final EmailService emailService;
-        
-    @Autowired
-    public CompanyController(
-            CompanyRepository companyRepo,
-            TopLevelDomainRepository topLevelDomainRepo,
-            UserRepository userRepo,
-            CounterRepository counterRepo,
-            TokenRepository tokenRepo,
-            CustomGenerator generator, 
-            EmailService emailService
-    ) {
-        this.companyRepo = companyRepo;
-        this.topLevelDomainRepo = topLevelDomainRepo;
-        this.generator = generator;
-        this.counterRepo = counterRepo;
-        this.userRepo = userRepo;
-        this.tokenRepo = tokenRepo;
-        this.emailService = emailService;
-    }
-
-    @Bean("companyControllerEncoder")
-    public PasswordEncoder encoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    private ObjectMapper objectMapper() {
-        ObjectMapper om = new ObjectMapper();
-        om.writerWithDefaultPrettyPrinter();
-        return om;
-    }
-
-
-    private void validateNewCompany(CompanyRegisterRequest req) {
-        // any new company must satisfy the uniqueness constraints:
-        // unique id and unique site
-        if (this.companyRepo.existsById(req.id())) {
-            throw new CompanyAndUserExceptions.ExistingCompanyException("There is already a company with the given id.");
+    private final TokenUserLinkRepository tokenUserLinkRepo;
+            
+        @Autowired
+        public CompanyController(
+                CompanyRepository companyRepo,
+                TopLevelDomainRepository topLevelDomainRepo,
+                UserRepository userRepo,
+                CounterRepository counterRepo,
+                TokenRepository tokenRepo,
+                TokenUserLinkRepository tokenUserLinkRepo,
+                CustomGenerator generator, 
+                EmailService emailService
+        ) {
+            this.companyRepo = companyRepo;
+            this.topLevelDomainRepo = topLevelDomainRepo;
+            this.counterRepo = counterRepo;
+            this.userRepo = userRepo;
+            this.tokenRepo = tokenRepo;
+            this.tokenUserLinkRepo = tokenUserLinkRepo;
+            this.generator = generator;
+            this.emailService = emailService;
+        }
+    
+        @Bean("companyControllerEncoder")
+        public PasswordEncoder encoder() {
+            return new BCryptPasswordEncoder();
+        }
+    
+        private ObjectMapper objectMapper() {
+            ObjectMapper om = new ObjectMapper();
+            om.writerWithDefaultPrettyPrinter();
+            return om;
+        }
+    
+    
+        private void validateNewCompany(CompanyRegisterRequest req) {
+            // any new company must satisfy the uniqueness constraints:
+            // unique id and unique site
+            if (this.companyRepo.existsById(req.id())) {
+                throw new CompanyExceptions.ExistingCompanyException("There is already a company with the given id.");
+            }
+    
+            if (this.topLevelDomainRepo.findByDomain(req.topLevelDomain()).isPresent()) {
+                throw new CompanyExceptions.ExistingTopLevelDomainException("There is already a company with the given top level domain");
+            }
+    
+            // a user can belong to only one company: make sure the "ownerEmail" is not already in the database
+            if (this.userRepo.existsById(req.ownerEmail())) {
+                throw new CompanyAndUserExceptions.MultipleOwnersException("There is already a user with the given email.");
+            }
+    
+            // make sure the user email matches the main domain
+            if (req.mailDomain() != null && !req.ownerEmail().endsWith(req.mailDomain())) {
+                throw new CompanyAndUserExceptions.UserCompanyMisalignedException("The email does not match the company domain");
+            }
         }
 
-        if (this.topLevelDomainRepo.findByDomain(req.topLevelDomain()).isPresent()) {
-            throw new CompanyAndUserExceptions.ExistingSiteException("There is already a company with the given top level domain");
+
+        private void validateOwnerToken(Company company) {
+            // find the owner token
+            Role ownerRole = RoleManager.getRole(RoleManager.OWNER_ROLE);
+            List<AppToken> companyTokens = this.tokenRepo.findByCompanyAndRole(company, ownerRole);
+
+            if (! companyTokens.isEmpty()) {
+                throw new CompanyAndUserExceptions.MultipleOwnersException("Multiple tokens found for company verification");
+            }            
         }
-
-        if (this.userRepo.existsById(req.ownerEmail())) {
-            throw new CompanyAndUserExceptions.MultipleOwnersException("There is already a user with the given email.");
-        }
-
-        // make sure the user email matches the main domain
-        if (req.mailDomain() != null && !req.ownerEmail().endsWith(req.mailDomain())) {
-            throw new CompanyAndUserExceptions.CompanyUserMailMisalignmentException("The email does not match the main domain");
-        }
-    }
-
-    private void sendCompanyVerificationEmail(String ownerEmail, String ownerToken) {
-        // send an email to the owner
-        String subject = "Company Verification";
-        String body = "Here is your company verification token:\n" + ownerToken + "\nThe token expires in 1 hour.";
-        this.emailService.sendEmail(ownerEmail, subject, body);  
-    }
-
-
-    @PostMapping("api/auth/register/company")
-    public ResponseEntity<String> registerCompany(@Valid @RequestBody CompanyRegisterRequest req) throws JsonProcessingException {
-        // registering a company is done through the following steps: 
-        // 1. check the uniqueness constraints x
-        validateNewCompany(req);
-
-        // 2. hash the domain
-        String hashedDomain = this.encoder().encode(req.topLevelDomain()); 
-
-        // 3. get the subscription
-        Subscription subscription = SubscriptionManager.getSubscription(req.subscription());
-
-        // 4. create the company
-        Company company = new Company(req.id(), subscription, req.mailDomain(), req.ownerEmail());
-
-        this.companyRepo.save(company);
-
-        // 5. create the top level domain
-        long topLevelDomainId = this.counterRepo.getCount(TopLevelDomain.TOP_LEVEL_DOMAIN_CLASS_NAME);
-        TopLevelDomain topLevelDomain = new TopLevelDomain(this.generator.generateId(topLevelDomainId), req.topLevelDomain(), hashedDomain, company);
-
-        // 6. save the top level domain
-        this.topLevelDomainRepo.save(topLevelDomain);
-
-        // 6. create the owner role token
-        String ownerTokenId = this.generator.generateId(this.counterRepo.getCount(Token.TOKEN_CLASS_NAME));
-
-        // Todo: use a safer token generation mechanism
-        String ownerTokenString = this.generator.randomString(ROLE_TOKEN_LENGTH);
-
-        // 7. send the owner token to the owner via email
-        this.sendCompanyVerificationEmail(req.ownerEmail(), ownerTokenString);
-
-        // 8. hash the owner token
-        String ownerTokenHash = this.encoder().encode(ownerTokenString);
-
-        // 8. create the owner token
-        Token ownerToken = new Token(ownerTokenId, ownerTokenHash);
-        // save the owner token
-        this.tokenRepo.save(ownerToken);
-
-        // both the company and the owner token are saved, they both need to be serialized
-
-        String companySerialized = this.objectMapper().writeValueAsString(company);
-        
-        return new ResponseEntity<>(companySerialized,
-                HttpStatus.CREATED);
-    }
-
     
 
+        private void sendCompanyVerificationEmail(String ownerEmail, String ownerToken) {
+            String subject = "Company Verification";
+            String body = "Here is your company verification token:\n" + ownerToken + "\nThe token expires in 1 hour.";
+            this.emailService.sendEmail(ownerEmail, subject, body);  
+        }
+    
+    
+        @PostMapping("api/auth/register/company")
+        public ResponseEntity<String> registerCompany(@Valid @RequestBody CompanyRegisterRequest req) throws JsonProcessingException {
+            // registering a company is done through the following steps: 
+            // 1. check the uniqueness constraints
+            validateNewCompany(req);
+    
+            // 2. get the subscription
+            Subscription subscription = SubscriptionManager.getSubscription(req.subscription());
+    
+            // 3. create the company
+            Company company = new Company(req.id(), subscription, req.mailDomain(), req.ownerEmail());
+    
+            this.companyRepo.save(company);
+    
+            // 4. validate the owner token
+            this.validateOwnerToken(company);
 
-//    @PostMapping("api/auth/register/company")
-//    public ResponseEntity<String> registerCompany(@Valid @RequestBody CompanyRegisterRequest req) throws JsonProcessingException {
-//        // check the uniqueness constraints
-//        validateNewCompany(req);
-//        // the new company is valid: get its creation order
-//        long companyOrder = this.getCompanyCount();
-//
-//        // create the role tokens
-//        HashMap<String, String> roleTokens = new HashMap<>();
-//
-//        // add the owner role token
-//        roleTokens.put(RoleManager.OWNER_ROLE, this.generator.randomString(ROLE_TOKEN_LENGTH));
-//
-//        // add the admin role token
-//        roleTokens.put(RoleManager.ADMIN_ROLE, this.generator.randomString(ROLE_TOKEN_LENGTH));
-//
-//        // add the registeredUser role token
-//        roleTokens.put(RoleManager.EMPLOYEE_ROLE, this.generator.randomString(ROLE_TOKEN_LENGTH));
-//
-//        // get the subscription from the SubscriptionManager
-//        Subscription sub = SubscriptionManager.getSubscription(req.subscription());
-//
-//        // build the company object
-//        CompanyWrapper wrapper = new CompanyWrapper(req.id(), req.site(), sub, roleTokens, this.encoder(), this.generator, companyOrder);
-//        // make sure to call the serialize first, so that the "serializeSensitiveCount" field will be saved as "4"
-//        // in the database preventing the serialization of sensitive information beyond the very first time
-//        String companySerialized = wrapper.serialize(this.objectMapper());
-//
-//        wrapper.save(this.companyRepo);
-//
-//        return new ResponseEntity<>(companySerialized,
-//                HttpStatus.CREATED);
-//    }
+            // 5. create the top level domain
+            long topLevelDomainId = this.counterRepo.getCount(TopLevelDomain.TOP_LEVEL_DOMAIN_CLASS_NAME);
+            TopLevelDomain topLevelDomain = new TopLevelDomain(this.generator.generateId(topLevelDomainId), req.topLevelDomain(), this.encoder().encode(req.topLevelDomain()), company);
+            this.topLevelDomainRepo.save(topLevelDomain);
+    
+            // 6. create the owner role token
+            String ownerTokenId = this.generator.generateId(this.counterRepo.getCount(AppToken.TOKEN_CLASS_NAME));
+    
+            // Todo: use a safer token generation mechanism
+            String ownerTokenString = this.generator.randomString(ROLE_TOKEN_LENGTH);
+    
+            // 7. send the owner token to the owner via email
+            this.sendCompanyVerificationEmail(req.ownerEmail(), ownerTokenString);
+    
+            // 8. create the owner token
+            AppToken ownerToken = new AppToken(ownerTokenId, 
+                                    this.encoder().encode(ownerTokenString), 
+                                    company, 
+                                    RoleManager.getRole(RoleManager.OWNER_ROLE)
+                                    );
+            
+            this.tokenRepo.save(ownerToken);
 
+            // 9. serialize the company
+            String companySerialized = this.objectMapper().writeValueAsString(company);
+            
+            return new ResponseEntity<>(companySerialized,
+                    HttpStatus.CREATED);
+        }
+    
+    
+        private Company validateCompanyVerificationRequest(CompanyVerifyRequest req) {
+            // 1. Check if the company exists
+            if (!this.companyRepo.existsById(req.companyId())) {
+                throw new CompanyExceptions.NoCompanyException("Company with ID " + req.companyId() + " not found");
+            }
+            
+            Company company = this.companyRepo.findById(req.companyId()).get();
+            
+            // 2. check if the email matches the owner email: which means the company was registered with this email
+            if (!req.email().equals(company.getOwnerEmail())) {
+                throw new CompanyAndUserExceptions.UserCompanyMisalignedException("The provided email does not match the company owner email");
+            }
+    
+            // 3. Check if the company is already verified
+            if (company.getVerified()) {
+                throw new CompanyExceptions.CompanyAlreadyVerifiedException("Company is already verified");
+            }
+            
+            // 4. there should be a user registered with the owner email
+            if (!this.userRepo.existsById(req.email())) {
+                throw new CompanyAndUserExceptions.UserBeforeOwnerException("User with email " + req.email() + " not found");
+            }
+            
+            return company;
+        }
+        
+        private AppToken verifyTokenMatch(CompanyVerifyRequest req, Company company) {
+            // Find tokens for this company with owner role
+            Role ownerRole = RoleManager.getRole(RoleManager.OWNER_ROLE);
+            List<AppToken> companyTokens = this.tokenRepo.findByCompanyAndRole(company, ownerRole);
+
+            if (companyTokens.isEmpty()) {
+                throw new TokenAndUserExceptions.MissingTokenException("No token found for company verification");
+            }
+
+            if (companyTokens.size() > 1) {
+                throw new CompanyAndUserExceptions.MultipleOwnersException("Multiple tokens found for company verification");
+            }
+            
+            // Find a matching token
+            AppToken ownerToken = null;
+            for (AppToken token : companyTokens) {
+                if (this.encoder().matches(req.token(), token.getTokenHash())) {
+                    ownerToken = token;
+                    break;
+                }
+            }
+            
+            if (ownerToken == null) {
+                throw new TokenAndUserExceptions.InvalidTokenException("Invalid verification token");
+            }
+            
+            // Check expiration
+            if (ownerToken.getExpirationTime() != null && ownerToken.getExpirationTime().isBefore(LocalDateTime.now())) {
+                ownerToken.expire();
+                this.tokenRepo.save(ownerToken);
+                throw new TokenAndUserExceptions.TokenExpiredException("Verification token has expired");
+            }
+            
+            return ownerToken;
+        }
+        
+        @PostMapping("api/auth/register/company/verify")
+        public ResponseEntity<String> verifyCompany(@Valid @RequestBody CompanyVerifyRequest req) throws JsonProcessingException {
+            // 1. Validate the verification request
+            Company company = this.validateCompanyVerificationRequest(req);
+            
+            // 2. Verify token match and status
+            AppToken ownerToken = this.verifyTokenMatch(req, company);
+            
+            // 3. Verify the company
+            company.verify();
+            this.companyRepo.save(company);
+            
+            // 4. Mark the token as active
+            ownerToken.activate();
+            this.tokenRepo.save(ownerToken);
+            
+            // 5. create a link between the owner and the token
+            AppUser ownerUser = this.userRepo.findById(req.email()).get();
+    
+            TokenUserLink tokenUserLink = new TokenUserLink(ownerToken, ownerUser);
+            this.tokenUserLinkRepo.save(tokenUserLink);
+
+            // 6. Return the serialized company
+            return ResponseEntity.ok(this.objectMapper().writeValueAsString(company));
+        }
+
+    
     // @DeleteMapping("api/company/{companyId}")
     // public ResponseEntity<String> deleteCompany(@PathVariable String companyId,
     //                                             @AuthenticationPrincipal UserDetails currentUserDetails) throws RuntimeException{

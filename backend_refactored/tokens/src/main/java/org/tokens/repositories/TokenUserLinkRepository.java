@@ -1,6 +1,6 @@
 package org.tokens.repositories;
 
-import org.tokens.entities.Token;
+import org.tokens.entities.AppToken;
 import org.tokens.entities.TokenUserLink;
 import org.user.entities.AppUser;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -17,9 +17,9 @@ public interface TokenUserLinkRepository extends MongoRepository<TokenUserLink, 
     
     List<TokenUserLink> findByUser(AppUser user);
     
-    List<TokenUserLink> findByToken(Token token);
+    List<TokenUserLink> findByToken(AppToken token);
     
-    Optional<TokenUserLink> findByUserAndToken(AppUser user, Token token);
+    Optional<TokenUserLink> findByUserAndToken(AppUser user, AppToken token);
     
     List<TokenUserLink> findByActivationTimeBefore(LocalDateTime dateTime);
     

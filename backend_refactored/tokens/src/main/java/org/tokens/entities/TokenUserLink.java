@@ -1,6 +1,5 @@
 package org.tokens.entities;
 
-import java.util.Random;
 import java.time.LocalDateTime;
 
 import org.springframework.data.annotation.Id;
@@ -19,7 +18,7 @@ public class TokenUserLink {
     private String id;
 
     @DocumentReference
-    private Token token;
+    private AppToken token;
 
     @DocumentReference
     private AppUser user;
@@ -29,7 +28,7 @@ public class TokenUserLink {
     private LocalDateTime deactivationTime;
     
 
-    public TokenUserLink(Token token, AppUser user) {
+    public TokenUserLink(AppToken token, AppUser user) {
         this.token = token;
         this.user = user;
         this.activationTime = LocalDateTime.now();
@@ -45,7 +44,7 @@ public class TokenUserLink {
         return id;
     }
     
-    public Token getToken() {
+    public AppToken getToken() {
         return token;
     }
     
@@ -66,7 +65,7 @@ public class TokenUserLink {
         this.id = id;
     }
     
-    private void setToken(Token token) {
+    private void setToken(AppToken token) {
         this.token = token;
     }
     

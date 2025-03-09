@@ -18,28 +18,4 @@ public class CompanyAndUserExceptions {
             super(message);
         }
     }
-
-    public static class ExistingCompanyException extends RuntimeException{
-        public ExistingCompanyException(String message) {
-            super(message);
-        }
-    }
-
-    public static class ExistingSiteException extends RuntimeException{
-        public ExistingSiteException(String message) {
-            super(message);
-        }
-    }
-
-    public static class NoCompanyException extends RuntimeException {
-        public NoCompanyException(String message) {
-            super(message);
-        }
-    }
-
-    public static class CompanyUserMailMisalignmentException extends RuntimeException {
-        public CompanyUserMailMisalignmentException(String message) {
-            super(message);
-        }
-    }
 }
