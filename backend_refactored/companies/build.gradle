@@ -26,6 +26,8 @@ dependencyManagement {
 dependencies {
     // for jackson serialization
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.18.2'
+    // for jackson time serialization
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.18.2'
 
     // for jackarta validation
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: '3.4.2'
@@ -33,11 +35,17 @@ dependencies {
     // for mongodb as a database
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-mongodb', version: '3.4.1'
 
+    // for jsonpath: verifying and querying Json strings / objects
+    implementation group: 'com.jayway.jsonpath', name: 'json-path', version: '2.9.0'
+
+
 
     // for junit: https://docs.gradle.org/current/userguide/java_testing.html
+    testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.11.1'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+//    implementation project(':utils')
     implementation project(':access')
 
 }

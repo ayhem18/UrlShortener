@@ -3,6 +3,7 @@ package org.company.entities;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
 
@@ -16,10 +17,12 @@ public class TopLevelDomain {
     }
 
     @Id
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String id;
 
     private String domain;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String hashedDomain;
 
     @DocumentReference

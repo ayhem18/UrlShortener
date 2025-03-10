@@ -12,7 +12,6 @@ public class Company {
 
     // all ids should be read-only
     @Id
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String id; // some sort of Company identifier
 
     private String emailDomain;
@@ -51,7 +50,7 @@ public class Company {
     // that checks the condition on the fly, returning Null when the condition is not verified
     @JsonGetter(value = "id")
     private String jsonGetId() {
-        // 4 represents the number of sensitive fields that should be serialized only once:
+        // 2 represents the number of sensitive fields that should be serialized only once:
         // when saved into the database
         if (serializeSensitiveCount < 2) {
             this.serializeSensitiveCount += 1;
@@ -60,27 +59,32 @@ public class Company {
         return null;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    @SuppressWarnings("unused")
-    private int getSerializeSensitiveCount() {
-        return serializeSensitiveCount;
+    @JsonGetter(value = "ownerEmail")
+    private String jsonGetEmailOwner() {
+        // 2 represents the number of sensitive fields that should be serialized only once:
+        // when saved into the database
+        if (serializeSensitiveCount < 2) {
+            this.serializeSensitiveCount += 1;
+            return this.ownerEmail;
+        }
+        return null;
     }
 
     @JsonGetter(value = "subscription")
-    String getSub() {
+    public String getSub() {
         return subscription.getTier();
     }
 
-    @JsonGetter(value = "domain")
+
+    @JsonGetter(value = "emailDomain")
     public String getEmailDomain() {
         return emailDomain;
     }
 
-    // Add getter for ownerEmail
-    @JsonGetter(value = "ownerEmail")
+    public String getId() {
+        return id;
+    }
+
     public String getOwnerEmail() {
         return ownerEmail;
     }
@@ -91,6 +95,11 @@ public class Company {
 
     public boolean getVerified() {
         return verified;
+    }
+
+    @SuppressWarnings("unused")
+    private int getSerializeSensitiveCount() {
+        return serializeSensitiveCount;
     }
 
     ///////////////////////////////// SETTERS /////////////////////////////////////////////

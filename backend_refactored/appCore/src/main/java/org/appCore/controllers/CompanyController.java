@@ -206,7 +206,7 @@ public class CompanyController {
             return company;
         }
         
-        private AppToken verifyTokenMatch(CompanyVerifyRequest req, Company company) {
+        private AppToken validateTokenMatch(CompanyVerifyRequest req, Company company) {
             // Find tokens for this company with owner role
             Role ownerRole = RoleManager.getRole(RoleManager.OWNER_ROLE);
             List<AppToken> companyTokens = this.tokenRepo.findByCompanyAndRole(company, ownerRole);
@@ -248,7 +248,7 @@ public class CompanyController {
             Company company = this.validateCompanyVerificationRequest(req);
             
             // 2. Verify token match and status
-            AppToken ownerToken = this.verifyTokenMatch(req, company);
+            AppToken ownerToken = this.validateTokenMatch(req, company);
             
             // 3. Verify the company
             company.verify();
