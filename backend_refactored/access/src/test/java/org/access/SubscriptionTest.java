@@ -3,6 +3,8 @@ package org.access;
 import org.url.UrlEntity;
 import org.junit.jupiter.api.Test;
 import org.utils.CustomGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
@@ -106,5 +108,40 @@ public class SubscriptionTest {
         assertEquals(3, sub.getMaxPathVariables());
         assertEquals(3, sub.getMaxQueryParameters());
         assertEquals(3, sub.getMaxQueryValues());
+    }
+
+    @Test
+    void testSubscriptionSerialization() throws JsonProcessingException {
+        // Create an ObjectMapper for serialization
+        ObjectMapper om = new ObjectMapper();
+        
+        // Test serialization of each subscription type
+        FreeTier freeSub = (FreeTier) SubscriptionManager.getSubscription("FREE");
+        TierOne tier1Sub = (TierOne) SubscriptionManager.getSubscription("TIER_1");
+        TierInfinity infinitySub = (TierInfinity) SubscriptionManager.getSubscription("TIER_INFINITY");
+        
+        // Verify FREE subscription serializes to just the string "FREE"
+        String freeJson = om.writeValueAsString(freeSub);
+        assertEquals("\"FREE\"", freeJson);
+        
+        // Verify TIER_1 subscription serializes to just the string "TIER_1"
+        String tier1Json = om.writeValueAsString(tier1Sub);
+        assertEquals("\"TIER_1\"", tier1Json);
+        
+        // Verify TIER_INFINITY subscription serializes to just the string "TIER_INFINITY"
+        String infinityJson = om.writeValueAsString(infinitySub);
+        assertEquals("\"TIER_INFINITY\"", infinityJson);
+    
+        // might need to change the code if deserialization is needed
+
+        // // Verify deserialization works as expected (if needed)
+        // FreeTier deserializedFree = om.readValue(freeJson, FreeTier.class);
+        // assertEquals(freeSub.getTier(), deserializedFree.getTier());
+
+        // TierOne deserializedTier1 = om.readValue(tier1Json, TierOne.class);
+        // assertEquals(tier1Sub.getTier(), deserializedTier1.getTier());
+
+        // TierInfinity deserializedInfinity = om.readValue(infinityJson, TierInfinity.class);
+        // assertEquals(infinitySub.getTier(), deserializedInfinity.getTier());
     }
 }

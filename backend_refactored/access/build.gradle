@@ -22,6 +22,8 @@ dependencyManagement {
 dependencies {
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '3.4.1'
 
+    // for jackson
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.18.2'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

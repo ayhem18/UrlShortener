@@ -40,8 +40,8 @@ dependencies {
 
 
 
-    // for junit: https://docs.gradle.org/current/userguide/java_testing.html
     testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.11.1'
+    // for junit: https://docs.gradle.org/current/userguide/java_testing.html
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 

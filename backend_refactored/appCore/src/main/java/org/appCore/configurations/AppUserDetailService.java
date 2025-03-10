@@ -1,4 +1,4 @@
-package org.user.configurations;
+package org.appCore.configurations;
 
 import java.util.Collection;
 

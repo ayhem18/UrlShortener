@@ -1,10 +1,12 @@
 package org.access;
 
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.url.UrlEntity;
 
 public interface Subscription {
 
+    @JsonValue
     String getTier();
 
     Integer getMaxNumLevels();

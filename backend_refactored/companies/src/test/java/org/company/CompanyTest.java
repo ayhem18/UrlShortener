@@ -89,7 +89,10 @@ class CompanyTest {
         Object doc = Configuration.defaultConfiguration().jsonProvider().parse(comJson);
         Set<String> keys = JsonPath.read(doc, "keys()");
         Assertions.assertThat(keys).hasSameElementsAs(initialFieldsSerialization);
-
+        
+        // Verify subscription is serialized as the tier string
+        String subscriptionValue = JsonPath.read(doc, "$.subscription");
+        assertEquals("TIER_1", subscriptionValue);
     }
 
     @Test
@@ -101,7 +104,12 @@ class CompanyTest {
 
         Company com = new Company(id,  sub,  "example.com", "test@example.com");
 
-        this.om.writeValueAsString(com);
+        String firstJson = this.om.writeValueAsString(com);
+        
+        // Verify subscription in first serialization
+        Object firstDoc = Configuration.defaultConfiguration().jsonProvider().parse(firstJson);
+        String firstSubscriptionValue = JsonPath.read(firstDoc, "$.subscription");
+        assertEquals("TIER_1", firstSubscriptionValue);
 
         Field f = Company.class.getDeclaredField("serializeSensitiveCount");
         f.setAccessible(true);
@@ -122,6 +130,10 @@ class CompanyTest {
             doc = Configuration.defaultConfiguration().jsonProvider().parse(comJson);
             Set<String> keys = JsonPath.read(doc, "keys()");
             Assertions.assertThat(keys).hasSameElementsAs(serializationFields2);
+            
+            // Verify subscription in subsequent serializations
+            String subscriptionValue = JsonPath.read(doc, "$.subscription");
+            assertEquals("TIER_1", subscriptionValue);
         }
     }
 
@@ -174,5 +186,32 @@ class CompanyTest {
             assertThrows(IllegalStateException.class, com::verify);
         }
 
+    }
+
+    @Test
+    void testDifferentSubscriptionTiers() throws JsonProcessingException {
+        // Test FREE tier
+        Company freeCompany = new Company("free123", SubscriptionManager.getSubscription("FREE"), 
+                                          "example.com", "free@example.com");
+        String freeJson = this.om.writeValueAsString(freeCompany);
+        Object freeDoc = Configuration.defaultConfiguration().jsonProvider().parse(freeJson);
+        String freeSubscription = JsonPath.read(freeDoc, "$.subscription");
+        assertEquals("FREE", freeSubscription);
+        
+        // Test TIER_1
+        Company tier1Company = new Company("tier1123", SubscriptionManager.getSubscription("TIER_1"), 
+                                          "example.com", "tier1@example.com");
+        String tier1Json = this.om.writeValueAsString(tier1Company);
+        Object tier1Doc = Configuration.defaultConfiguration().jsonProvider().parse(tier1Json);
+        String tier1Subscription = JsonPath.read(tier1Doc, "$.subscription");
+        assertEquals("TIER_1", tier1Subscription);
+        
+        // Test TIER_INFINITY
+        Company infinityCompany = new Company("inf123", SubscriptionManager.getSubscription("TIER_INFINITY"), 
+                                          "example.com", "infinity@example.com");
+        String infinityJson = this.om.writeValueAsString(infinityCompany);
+        Object infinityDoc = Configuration.defaultConfiguration().jsonProvider().parse(infinityJson);
+        String infinitySubscription = JsonPath.read(infinityDoc, "$.subscription");
+        assertEquals("TIER_INFINITY", infinitySubscription);
     }
 }

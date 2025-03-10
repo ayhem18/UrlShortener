@@ -1,6 +1,8 @@
 package org.user.entities;
 
 import org.access.Role;
+
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.company.entities.Company;
 import org.springframework.data.annotation.Id;
@@ -10,8 +12,6 @@ import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 @Document()
 public class AppUser {
-
-
     @Id
     private String email;
 
@@ -41,6 +41,15 @@ public class AppUser {
     private AppUser() {
     }
 
+    @JsonGetter("role")
+    private String jsonGetRole() {
+        return role.toString();
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
     public String getUsername() {
         return username;
     }
@@ -61,12 +70,15 @@ public class AppUser {
         return company;
     }
 
-    public void setCompany(Company company) {
-        this.company = company;
-    }
-
     public Role getRole() {
         return role;
+    }
+
+    // private setters for jackson
+
+    @SuppressWarnings("unused")
+    private void setCompany(Company company) {
+        this.company = company;
     }
 
     public void setRole(Role role) {

@@ -31,9 +31,11 @@ dependencies {
 
     // for spring security test
     implementation group: 'org.springframework.security', name: 'spring-security-test', version: '6.1.1'
-    
-    
 
+    // for jsonpath: verifying and querying Json strings / objects
+    implementation group: 'com.jayway.jsonpath', name: 'json-path', version: '2.9.0'
+
+    testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.11.1'
     // for junit: https://docs.gradle.org/current/userguide/java_testing.html
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

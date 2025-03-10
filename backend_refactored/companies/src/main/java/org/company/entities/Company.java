@@ -70,10 +70,10 @@ public class Company {
         return null;
     }
 
-    @JsonGetter(value = "subscription")
-    public String getSub() {
-        return subscription.getTier();
-    }
+    // @JsonGetter(value = "subscription")
+    // public String getSub() {
+    //     return subscription.getTier();
+    // }
 
 
     @JsonGetter(value = "emailDomain")
