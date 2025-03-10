@@ -3,15 +3,23 @@ package org.access;
 
 import org.springframework.security.core.GrantedAuthority;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 import java.util.List;
+
 
 
 public interface Role {
     List<GrantedAuthority> getAuthorities();
+    
+    @JsonValue
+    String role();
 }
 
 
-class Owner implements Role {
+class Owner implements Role {   
+    private static final String ROLE_NAME = "OWNER";
+
     @Override
     public List<GrantedAuthority> getAuthorities() {
         return List.of(
@@ -26,17 +34,20 @@ class Owner implements Role {
     );
     }
 
-    public static String role() {
-        return "Owner".toLowerCase();
+    @Override
+    public String role() {
+        return ROLE_NAME;
     }
 
     @Override
     public String toString() {
-        return "owner";
+        return ROLE_NAME.toLowerCase();
     }
 }
 
 class Admin implements Role {
+    private static final String ROLE_NAME = "ADMIN";
+
     @Override
     public List<GrantedAuthority> getAuthorities() {
         return List.of(
@@ -46,18 +57,21 @@ class Admin implements Role {
         );
     }
 
-    public static String role() {
-        return "Admin".toLowerCase();
+    @Override
+    public String role() {
+        return ROLE_NAME;
     }
 
     @Override
     public String toString() {
-        return "admin";
+        return ROLE_NAME.toLowerCase();
     }
 
 }
 
 class Employee implements Role {
+    private static final String ROLE_NAME = "EMPLOYEE";
+
     @Override
     public List<GrantedAuthority> getAuthorities() {
         return List.of(
@@ -66,12 +80,13 @@ class Employee implements Role {
                 new CanViewSubscription());
     }
 
-    public static String role() {
-        return "Employee".toLowerCase();
+    @Override
+    public String role() {
+        return ROLE_NAME;
     }
 
     @Override
     public String toString() {
-        return "employee";
+        return ROLE_NAME.toLowerCase();
     }
 }

@@ -19,6 +19,7 @@ public class CompanyExceptions {
         }
     }
 
+
     public static class CompanyAlreadyVerifiedException extends RuntimeException {
         public CompanyAlreadyVerifiedException(String message) {
             super(message);

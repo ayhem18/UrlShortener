@@ -78,7 +78,7 @@ public class UserController {
         Role claimedRole = RoleManager.getRole(claimedRoleStr);
 
         if (claimedRole != RoleManager.getRole(RoleManager.OWNER_ROLE) && req.roleToken() == null) {
-            throw new UserExceptions.MissingTokenException("The role token is missing");
+            throw new TokenAndUserExceptions.MissingTokenException("The role token is missing");
         }
 
         return claimedRole;

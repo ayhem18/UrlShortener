@@ -62,6 +62,12 @@ public class TopLevelDomain {
         if (this.domainState == DomainState.DEPRECATED) {
             throw new IllegalStateException("Domain is already deprecated");
         }
+
+        // if the domain is active, set the deactivation time as well
+        if (this.domainState == DomainState.ACTIVE) {
+            this.deactivationTime = LocalDateTime.now();
+        }
+
         this.domainState = DomainState.DEPRECATED;
     }
     

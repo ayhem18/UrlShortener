@@ -23,6 +23,7 @@ public class AppToken {
     }
 
     @Id
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String tokenId;
 
     // write only property  

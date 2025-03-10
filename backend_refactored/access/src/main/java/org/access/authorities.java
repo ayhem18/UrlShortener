@@ -2,8 +2,6 @@ package org.access;
 
 import org.springframework.security.core.GrantedAuthority;
 
-import java.util.List;
-
 class CanUpdateDomainName implements GrantedAuthority {
     private static final String AUTHORITY = "CAN_UPDATE_DOMAIN_NAME";
     private static volatile CanUpdateDomainName instance;

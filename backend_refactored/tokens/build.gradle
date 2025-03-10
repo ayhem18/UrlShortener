@@ -24,13 +24,18 @@ dependencyManagement {
 }
 
 dependencies {
-    // for jackson validation
+    // for jackson serialization
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.18.2'
+    // for jackson time serialization
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.18.2'
 
     // the mongodb core dependency is needed (not only the started dependency)
     implementation group: 'org.springframework.data', name: 'spring-data-mongodb', version: '4.4.2'
 
+    // for jsonpath: verifying and querying Json strings / objects
+    implementation group: 'com.jayway.jsonpath', name: 'json-path', version: '2.9.0'
 
+    testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.11.1'
     // for tests: no need to import the entire spring boot toolkit
     // for junit: https://docs.gradle.org/current/userguide/java_testing.html
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'

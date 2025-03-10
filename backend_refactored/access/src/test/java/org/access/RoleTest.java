@@ -91,4 +91,34 @@ class RoleTest {
                 hasSameElementsAs(expected.stream().map(GrantedAuthority::getAuthority).toList());
     }
 
+    @Test
+    void testRoleSerialization() throws com.fasterxml.jackson.core.JsonProcessingException {
+        // Create an ObjectMapper for serialization tests
+        com.fasterxml.jackson.databind.ObjectMapper om = new com.fasterxml.jackson.databind.ObjectMapper();
+        
+        // Get all role types
+        Role ownerRole = RoleManager.getRole(RoleManager.OWNER_ROLE);
+        Role adminRole = RoleManager.getRole(RoleManager.ADMIN_ROLE);
+        Role employeeRole = RoleManager.getRole(RoleManager.EMPLOYEE_ROLE);
+        
+        // Test owner role serialization
+        String ownerJson = om.writeValueAsString(ownerRole);
+        assertEquals("\"OWNER\"", ownerJson);
+        
+        // Test admin role serialization
+        String adminJson = om.writeValueAsString(adminRole);
+        assertEquals("\"ADMIN\"", adminJson);
+        
+        // Test employee role serialization
+        String employeeJson = om.writeValueAsString(employeeRole);
+        assertEquals("\"EMPLOYEE\"", employeeJson);
+                
+        // Test that the same Role object serializes consistently
+        for (int i = 0; i < 5; i++) {
+            assertEquals("\"OWNER\"", om.writeValueAsString(ownerRole));
+            assertEquals("\"ADMIN\"", om.writeValueAsString(adminRole));
+            assertEquals("\"EMPLOYEE\"", om.writeValueAsString(employeeRole));
+        }
+    }
+
 }

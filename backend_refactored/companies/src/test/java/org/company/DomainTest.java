@@ -122,6 +122,11 @@ class DomainTest {
         // Verify state changed to DEPRECATED
         assertEquals(TopLevelDomain.DomainState.DEPRECATED, domainStateField.get(domain));
         
+        // Verify deactivationTime is now set
+        Field deactivationTimeField = TopLevelDomain.class.getDeclaredField("deactivationTime");
+        deactivationTimeField.setAccessible(true);
+        assertNotNull(deactivationTimeField.get(domain));
+    
         // Test that calling deprecate on an already deprecated domain throws exception
         for (int i = 0; i < 5; i++) {
             assertThrows(IllegalStateException.class, domain::deprecate);

@@ -58,12 +58,26 @@ class AppUserTest {
 
     @Test
     void testJsonSerialization() throws JsonProcessingException {
+        // Test serialization with all available roles
+        testUserSerializationWithRole(RoleManager.OWNER_ROLE);
+        testUserSerializationWithRole(RoleManager.ADMIN_ROLE);
+        testUserSerializationWithRole(RoleManager.EMPLOYEE_ROLE);
+    }
+
+    /**
+     * Helper method to test user serialization with a specific role
+     */
+    private void testUserSerializationWithRole(String roleName) throws JsonProcessingException {
         // Create necessary dependencies
         Company company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "example.com", "admin@example.com");
-        Role role = RoleManager.getRole(RoleManager.OWNER_ROLE);
+        Role role = RoleManager.getRole(roleName);
         
-        // Create the user
-        AppUser user = new AppUser("user@example.com", "testuser", "password123", company, role);
+        // Create the user with the specified role
+        AppUser user = new AppUser(roleName.toLowerCase() + "@example.com", 
+                                  roleName.toLowerCase() + "User", 
+                                  "password123", 
+                                  company, 
+                                  role);
         
         // Serialize the user
         String userJson = this.om.writeValueAsString(user);
@@ -79,10 +93,9 @@ class AppUserTest {
         // Verify password is NOT included (due to @JsonProperty annotation)
         assertFalse(keys.contains("password"));
         
-        // Verify role is serialized as a string
+        // Verify role is serialized as a string and matches the expected role
         String serializedRole = JsonPath.read(doc, "$.role");
-        assertEquals(RoleManager.OWNER_ROLE, serializedRole);
+        assertEquals(roleName.toLowerCase(), serializedRole.toLowerCase());
+        
     }
-
-
 } 

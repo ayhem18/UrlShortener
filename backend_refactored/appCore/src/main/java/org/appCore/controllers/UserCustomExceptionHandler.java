@@ -26,12 +26,6 @@ public class UserCustomExceptionHandler extends CustomExceptionHandler {
         return handle(e, request, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(UserExceptions.IncorrectRoleTokenException.class)
-    public ResponseEntity<CustomErrorMessage> handleIncorrectRoleTokenException(
-            UserExceptions.IncorrectRoleTokenException e, WebRequest request) {
-        return handle(e, request, HttpStatus.FORBIDDEN);
-    }
-
     @ExceptionHandler(CompanyAndUserExceptions.UserBeforeOwnerException.class)
     public ResponseEntity<CustomErrorMessage> handleUserBeforeOwnerException(
             CompanyAndUserExceptions.UserBeforeOwnerException e, WebRequest request) {
@@ -43,5 +37,4 @@ public class UserCustomExceptionHandler extends CustomExceptionHandler {
             UserExceptions.AlreadyExistingUserException e, WebRequest request) {
         return handle(e, request, HttpStatus.FORBIDDEN);
     }
-
 }
