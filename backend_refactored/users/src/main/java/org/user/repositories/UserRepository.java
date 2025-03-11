@@ -18,10 +18,10 @@ public interface UserRepository extends MongoRepository<AppUser, String> {
 
     Optional<AppUser> findByUsername(String username);
 
-    List<AppUser> findByCompanyAndRole(Company company, Role role);
-
-    List<AppUser> findByCompany(Company company);
-
-    // deletes all users of a given company
-    void deleteByCompany(Company company);
+//    List<AppUser> findByCompanyAndRole(Company company, Role role);
+//
+//    List<AppUser> findByCompany(Company company);
+//
+//    // deletes all users of a given company
+//    void deleteByCompany(Company company);
 }

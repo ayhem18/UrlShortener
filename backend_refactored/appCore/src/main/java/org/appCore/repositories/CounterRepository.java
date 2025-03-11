@@ -13,6 +13,9 @@ public interface CounterRepository extends MongoRepository<CollectionCounter, St
     @SuppressWarnings("null")
     Optional<CollectionCounter> findById(String id);
 
+    @SuppressWarnings("null")
+    boolean existsById(String id);
+
     // since the counter is usually used to determine ids of new objects,
     // it should be treated as a transactional operation
     @Transactional

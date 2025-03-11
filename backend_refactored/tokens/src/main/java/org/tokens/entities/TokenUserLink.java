@@ -31,9 +31,9 @@ public class TokenUserLink {
     private LocalDateTime linkDeactivationTime;
     
 
-    public TokenUserLink(AppToken token, AppUser user) {
+    public TokenUserLink(String id, AppToken token, AppUser user) {
         // few checks to make sure the link is valid
-        // 1. the token must be activate
+        // 1. the token must be active
         // 2. the role of the token and the role of the user must match
         // 3. the token company id must match the user company id
         if (!token.getTokenState().equals(AppToken.TokenState.ACTIVE)) {
@@ -48,6 +48,7 @@ public class TokenUserLink {
             throw new IllegalStateException("Token and user must be from the same company");
         }
 
+        this.id = id;
         this.token = token;
         this.user = user; 
 

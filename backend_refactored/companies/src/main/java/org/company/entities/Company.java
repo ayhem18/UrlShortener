@@ -29,13 +29,19 @@ public class Company {
     // Updated constructor to include ownerEmail
     public Company(String id,
                 Subscription subscription,
-                String emailDomain,
-                String ownerEmail) {
-            this.id = id;
-            this.subscription = subscription;
-            this.emailDomain = emailDomain;
-            this.ownerEmail = ownerEmail;
-            this.verified = false;
+                String ownerEmail,
+                String emailDomain
+                ) {
+        // make sure the email domain matches the owner email
+        if (emailDomain != null && !ownerEmail.endsWith(emailDomain)) {
+            throw new IllegalArgumentException("The email domain does not match the company domain");
+        }
+
+        this.id = id;
+        this.subscription = subscription;
+        this.ownerEmail = ownerEmail;
+        this.emailDomain = emailDomain;
+        this.verified = false;
     }
 
 

@@ -115,9 +115,7 @@ public class CompanyController {
 
 
         private void validateOwnerToken(Company company) {
-            // find the owner token
-            Role ownerRole = RoleManager.getRole(RoleManager.OWNER_ROLE);
-            List<AppToken> companyTokens = this.tokenRepo.findByCompanyAndRole(company, ownerRole);
+            List<AppToken> companyTokens = this.tokenRepo.findByCompany(company);
 
             if (! companyTokens.isEmpty()) {
                 throw new CompanyAndUserExceptions.MultipleOwnersException("Multiple tokens found for company verification");
@@ -136,13 +134,13 @@ public class CompanyController {
         public ResponseEntity<String> registerCompany(@Valid @RequestBody CompanyRegisterRequest req) throws JsonProcessingException {
             // registering a company is done through the following steps: 
             // 1. check the uniqueness constraints
-            validateNewCompany(req);
+            this.validateNewCompany(req);
     
             // 2. get the subscription
             Subscription subscription = SubscriptionManager.getSubscription(req.subscription());
     
             // 3. create the company
-            Company company = new Company(req.id(), subscription, req.mailDomain(), req.ownerEmail());
+            Company company = new Company(req.id(), subscription, req.ownerEmail(), req.mailDomain());
     
             this.companyRepo.save(company);
     
@@ -161,8 +159,10 @@ public class CompanyController {
             String ownerTokenString = this.generator.randomString(ROLE_TOKEN_LENGTH);
     
             // 7. send the owner token to the owner via email
-            this.sendCompanyVerificationEmail(req.ownerEmail(), ownerTokenString);
-    
+            if (this.emailService != null) {
+                this.sendCompanyVerificationEmail(req.ownerEmail(), ownerTokenString);
+            }
+
             // 8. create the owner token
             AppToken ownerToken = new AppToken(ownerTokenId, 
                                     this.encoder().encode(ownerTokenString), 
@@ -206,6 +206,7 @@ public class CompanyController {
             return company;
         }
         
+
         private AppToken validateTokenMatch(CompanyVerifyRequest req, Company company) {
             // Find tokens for this company with owner role
             Role ownerRole = RoleManager.getRole(RoleManager.OWNER_ROLE);
@@ -242,6 +243,7 @@ public class CompanyController {
             return ownerToken;
         }
         
+
         @PostMapping("api/auth/register/company/verify")
         public ResponseEntity<String> verifyCompany(@Valid @RequestBody CompanyVerifyRequest req) throws JsonProcessingException {
             // 1. Validate the verification request
@@ -261,7 +263,9 @@ public class CompanyController {
             // 5. create a link between the owner and the token
             AppUser ownerUser = this.userRepo.findById(req.email()).get();
     
-            TokenUserLink tokenUserLink = new TokenUserLink(ownerToken, ownerUser);
+            // Generate a random ID for the token-user link
+            String tokenUserLinkId = this.generator.generateId(this.counterRepo.getCount(TokenUserLink.TOKEN_USER_LINK_CLASS_NAME));
+            TokenUserLink tokenUserLink = new TokenUserLink(tokenUserLinkId, ownerToken, ownerUser);
             this.tokenUserLinkRepo.save(tokenUserLink);
 
             // 6. Return the serialized company

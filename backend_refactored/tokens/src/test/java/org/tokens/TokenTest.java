@@ -40,7 +40,7 @@ public class TokenTest {
     @BeforeEach
     void setUp() {
         // Create common dependencies for tests
-        this.company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "example.com", "admin@example.com");
+        this.company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "admin@example.com", "example.com");
         this.role = RoleManager.getRole(RoleManager.OWNER_ROLE);
     }
     

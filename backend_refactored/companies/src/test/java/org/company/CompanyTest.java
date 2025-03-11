@@ -23,7 +23,7 @@ class CompanyTest {
 
     @Test
     void testInitialization() throws NoSuchFieldException, IllegalAccessException {
-        Company company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "example.com", "test@example.com");
+        Company company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "admin@example.com", "example.com");
         
         // use reflection to get the private field "serializeSensitiveCount"
         Field field = Company.class.getDeclaredField("serializeSensitiveCount");
@@ -43,7 +43,7 @@ class CompanyTest {
         // use reflection to get the private field "ownerEmail" 
         Field field4 = Company.class.getDeclaredField("ownerEmail");
         field4.setAccessible(true);
-        assertEquals("test@example.com", field4.get(company));
+        assertEquals("admin@example.com", field4.get(company));
         
         // use reflection to get the private field "verified"
         Field field5 = Company.class.getDeclaredField("verified");
@@ -64,7 +64,7 @@ class CompanyTest {
         String id = "aaa";
         Subscription sub = SubscriptionManager.getSubscription("TIER_1");
 
-        Company com = new Company(id, sub, "example.com", "test@example.com");
+        Company com = new Company(id, sub, "admin@example.com", "example.com");
 
         // before serializing the object; make sure none of the fields are Null
         for (Field f : com.getClass().getDeclaredFields()) {
@@ -102,7 +102,7 @@ class CompanyTest {
         String id = "aaa";
         Subscription sub = SubscriptionManager.getSubscription("TIER_1");
 
-        Company com = new Company(id,  sub,  "example.com", "test@example.com");
+        Company com = new Company(id, sub, "admin@example.com", "example.com");
 
         String firstJson = this.om.writeValueAsString(com);
         
@@ -144,7 +144,7 @@ class CompanyTest {
         String id = "aaa";
         Subscription sub = SubscriptionManager.getSubscription("TIER_1");
 
-        Company com = new Company(id,  sub,  null, "test@example.com");
+        Company com = new Company(id, sub, "admin@example.com", null);
 
         this.om.writeValueAsString(com);
 
@@ -174,7 +174,7 @@ class CompanyTest {
     void testVerified() {
         String id = "aaa";
         Subscription sub = SubscriptionManager.getSubscription("TIER_1");
-        Company com = new Company(id,  sub,  null, "test@example.com");
+        Company com = new Company(id, sub, "admin@example.com", null);
 
         assertFalse(com.getVerified());
 
@@ -192,7 +192,7 @@ class CompanyTest {
     void testDifferentSubscriptionTiers() throws JsonProcessingException {
         // Test FREE tier
         Company freeCompany = new Company("free123", SubscriptionManager.getSubscription("FREE"), 
-                                          "example.com", "free@example.com");
+                                          "free@example.com", "example.com");
         String freeJson = this.om.writeValueAsString(freeCompany);
         Object freeDoc = Configuration.defaultConfiguration().jsonProvider().parse(freeJson);
         String freeSubscription = JsonPath.read(freeDoc, "$.subscription");
@@ -200,7 +200,7 @@ class CompanyTest {
         
         // Test TIER_1
         Company tier1Company = new Company("tier1123", SubscriptionManager.getSubscription("TIER_1"), 
-                                          "example.com", "tier1@example.com");
+                                          "tier1@example.com", "example.com");
         String tier1Json = this.om.writeValueAsString(tier1Company);
         Object tier1Doc = Configuration.defaultConfiguration().jsonProvider().parse(tier1Json);
         String tier1Subscription = JsonPath.read(tier1Doc, "$.subscription");
@@ -208,7 +208,7 @@ class CompanyTest {
         
         // Test TIER_INFINITY
         Company infinityCompany = new Company("inf123", SubscriptionManager.getSubscription("TIER_INFINITY"), 
-                                          "example.com", "infinity@example.com");
+                                          "infinity@example.com", "example.com");
         String infinityJson = this.om.writeValueAsString(infinityCompany);
         Object infinityDoc = Configuration.defaultConfiguration().jsonProvider().parse(infinityJson);
         String infinitySubscription = JsonPath.read(infinityDoc, "$.subscription");

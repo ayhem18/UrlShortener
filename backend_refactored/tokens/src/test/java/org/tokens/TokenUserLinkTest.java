@@ -19,9 +19,9 @@ import org.user.entities.AppUser;
 
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -44,7 +44,7 @@ public class TokenUserLinkTest {
     @BeforeEach
     void setUp() {
         // Create common dependencies for tests
-        this.company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "example.com", "admin@example.com");
+        this.company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "admin@example.com", "example.com");
         this.role = RoleManager.getRole(RoleManager.OWNER_ROLE);
         this.user = new AppUser("admin@example.com", "admin", "password123", company, role);
         this.token = new AppToken("token-123", "hashed-token-456", company, role);
@@ -55,8 +55,9 @@ public class TokenUserLinkTest {
     
     @Test
     void testInitialization() throws NoSuchFieldException, IllegalAccessException {
-        // Create a TokenUserLink
-        TokenUserLink link = new TokenUserLink(token, user);
+        // Create a TokenUserLink with a random ID
+        String randomId = UUID.randomUUID().toString();
+        TokenUserLink link = new TokenUserLink(randomId, token, user);
         
         // Test token field
         Field tokenField = TokenUserLink.class.getDeclaredField("token");
@@ -84,9 +85,12 @@ public class TokenUserLinkTest {
         // Create a token but don't activate it
         AppToken inactiveToken = new AppToken("token-inactive", "hash-inactive", company, role);
         
+        // Generate a random ID
+        String randomId = UUID.randomUUID().toString();
+        
         // Verify that creating a link with inactive token throws IllegalStateException
         IllegalStateException exception = assertThrows(IllegalStateException.class, 
-            () -> new TokenUserLink(inactiveToken, user));
+            () -> new TokenUserLink(randomId, inactiveToken, user));
         assertEquals("Token is not active", exception.getMessage());
     }
     
@@ -97,29 +101,36 @@ public class TokenUserLinkTest {
         AppToken adminToken = new AppToken("token-admin", "hash-admin", company, adminRole);
         adminToken.activate();
         
+        // Generate a random ID
+        String randomId = UUID.randomUUID().toString();
+        
         // User has owner role from setUp, so roles don't match
         IllegalStateException exception = assertThrows(IllegalStateException.class, 
-            () -> new TokenUserLink(adminToken, user));
+            () -> new TokenUserLink(randomId, adminToken, user));
         assertEquals("Role of the token and the role of the user do not match", exception.getMessage());
     }
     
     @Test
     void testValidationCompanyMismatch() {
         // Create a token for a different company
-        Company otherCompany = new Company("456", SubscriptionManager.getSubscription("TIER_1"), "other.com", "admin@other.com");
+        Company otherCompany = new Company("456", SubscriptionManager.getSubscription("TIER_1"), "admin@other.com", "other.com");
         AppToken otherCompanyToken = new AppToken("token-other", "hash-other", otherCompany, role);
         otherCompanyToken.activate();
         
+        // Generate a random ID
+        String randomId = UUID.randomUUID().toString();
+        
         // User has different company from setUp
         IllegalStateException exception = assertThrows(IllegalStateException.class, 
-            () -> new TokenUserLink(otherCompanyToken, user));
+            () -> new TokenUserLink(randomId, otherCompanyToken, user));
         assertEquals("Token and user must be from the same company", exception.getMessage());
     }
     
     @Test
     void testDeactivate() throws NoSuchFieldException, IllegalAccessException {
-        // Create a TokenUserLink
-        TokenUserLink link = new TokenUserLink(token, user);
+        // Create a TokenUserLink with a random ID
+        String randomId = UUID.randomUUID().toString();
+        TokenUserLink link = new TokenUserLink(randomId, token, user);
         
         // Verify linkDeactivationTime is null initially
         Field deactivationTimeField = TokenUserLink.class.getDeclaredField("linkDeactivationTime");
@@ -140,8 +151,9 @@ public class TokenUserLinkTest {
     
     @Test
     void testLinkSerialization() throws JsonProcessingException {
-        // Create a TokenUserLink
-        TokenUserLink link = new TokenUserLink(token, user);
+        // Create a TokenUserLink with a random ID
+        String randomId = UUID.randomUUID().toString();
+        TokenUserLink link = new TokenUserLink(randomId, token, user);
         
         // Serialize the link
         String linkJson = om.writeValueAsString(link);
@@ -188,9 +200,11 @@ public class TokenUserLinkTest {
                 RoleManager.getRole(RoleManager.ADMIN_ROLE));
         adminToken.activate();
         
-        // Create links with matching roles
-        TokenUserLink ownerLink = new TokenUserLink(ownerToken, ownerUser);
-        TokenUserLink adminLink = new TokenUserLink(adminToken, adminUser);
+        // Create links with matching roles and random IDs
+        String ownerLinkId = UUID.randomUUID().toString();
+        String adminLinkId = UUID.randomUUID().toString();
+        TokenUserLink ownerLink = new TokenUserLink(ownerLinkId, ownerToken, ownerUser);
+        TokenUserLink adminLink = new TokenUserLink(adminLinkId, adminToken, adminUser);
         
         // Serialize both links
         String ownerLinkJson = om.writeValueAsString(ownerLink);

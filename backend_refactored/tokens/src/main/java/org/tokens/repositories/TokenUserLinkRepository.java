@@ -20,10 +20,4 @@ public interface TokenUserLinkRepository extends MongoRepository<TokenUserLink, 
     List<TokenUserLink> findByToken(AppToken token);
     
     Optional<TokenUserLink> findByUserAndToken(AppUser user, AppToken token);
-    
-    List<TokenUserLink> findByActivationTimeBefore(LocalDateTime dateTime);
-    
-    List<TokenUserLink> findByDeactivationTimeIsNull();
-    
-    List<TokenUserLink> findByUserAndDeactivationTimeIsNull(AppUser user);
-} 
+}

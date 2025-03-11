@@ -24,7 +24,7 @@ class AppUserTest {
     @Test
     void testInitialization() throws NoSuchFieldException, IllegalAccessException {
         // Create necessary dependencies
-        Company company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "example.com", "admin@example.com");
+        Company company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "admin@example.com", "example.com");
         Role role = RoleManager.getRole(RoleManager.OWNER_ROLE);
         
         // Create the user
@@ -69,7 +69,7 @@ class AppUserTest {
      */
     private void testUserSerializationWithRole(String roleName) throws JsonProcessingException {
         // Create necessary dependencies
-        Company company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "example.com", "admin@example.com");
+        Company company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "admin@example.com", "example.com");
         Role role = RoleManager.getRole(roleName);
         
         // Create the user with the specified role

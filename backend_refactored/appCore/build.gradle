@@ -19,19 +19,24 @@ dependencies {
     // for jackson
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.18.2'
 
+    // for jsonpath: verifying and querying Json strings / objects
+    implementation group: 'com.jayway.jsonpath', name: 'json-path', version: '2.9.0'
+
     // for jackarta validation
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: '3.4.2'
 
     // for Rest Controllers...
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '3.4.2'
 
+    // add spring boot mail dependency
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-mail', version: '3.4.2'
+
     // for security
     implementation group: 'org.springframework.security', name: 'spring-security-web', version: '6.4.1'
     implementation group: 'org.springframework.security', name: 'spring-security-core', version: '6.4.2'
     implementation group: 'org.springframework.security', name: 'spring-security-config', version: '6.4.2'
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.15.2'
 
-    // add spring boot mail dependency
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-mail', version: '3.4.2'    
 
     implementation project(':utils')
     implementation project(':urlUtils')

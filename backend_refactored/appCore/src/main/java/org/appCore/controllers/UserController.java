@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import org.appCore.exceptions.CompanyAndUserExceptions;
 import org.appCore.exceptions.TokenAndUserExceptions;
 import org.appCore.exceptions.UserExceptions;
+import org.appCore.repositories.CounterRepository;
 import org.appCore.requests.UserRegisterRequest;
 
 import java.util.List;
@@ -27,6 +28,7 @@ import org.tokens.entities.TokenUserLink;
 import org.tokens.repositories.TokenRepository;
 import org.user.entities.AppUser;
 import org.user.repositories.UserRepository;
+import org.utils.CustomGenerator;
 import org.tokens.repositories.TokenUserLinkRepository;
 
 @RestController
@@ -36,16 +38,22 @@ public class UserController {
     private final UserRepository userRepo;
     private final TokenRepository tokenRepo;
     private final TokenUserLinkRepository tokenUserLinkRepo;
+    private final CustomGenerator generator;
+    private final CounterRepository counterRepo;
 
     @Autowired
     public UserController(CompanyRepository companyRepo,
                           UserRepository userRepo,
                           TokenRepository tokenRepo,
-                          TokenUserLinkRepository tokenUserLinkRepo) {
+                          TokenUserLinkRepository tokenUserLinkRepo,
+                          CustomGenerator generator,
+                          CounterRepository counterRepo) {
         this.companyRepo = companyRepo;
         this.userRepo = userRepo;
         this.tokenRepo = tokenRepo;
         this.tokenUserLinkRepo = tokenUserLinkRepo;
+        this.generator = generator;
+        this.counterRepo = counterRepo;
     }
 
     @Bean("userControllerEncoder")
@@ -165,7 +173,7 @@ public class UserController {
 
         // 2. make sure the email matches the domain of the company if any
         String emailDomain = req.email().substring(req.email().indexOf('@') + 1);
-       
+
         if (!emailDomain.equals(company.getEmailDomain())) {
             throw new CompanyAndUserExceptions.UserCompanyMisalignedException("The use email domain does not match the company domain");
         }
@@ -185,7 +193,9 @@ public class UserController {
         matchingToken.activate();
         this.tokenRepo.save(matchingToken);
 
-        TokenUserLink tokenUserLink = new TokenUserLink(matchingToken, user);
+        // Generate a random ID for the token-user link
+        String tokenUserLinkId = this.generator.generateId(this.counterRepo.getCount(TokenUserLink.TOKEN_USER_LINK_CLASS_NAME));
+        TokenUserLink tokenUserLink = new TokenUserLink(tokenUserLinkId, matchingToken, user);
         this.tokenUserLinkRepo.save(tokenUserLink);
 
         return user;
