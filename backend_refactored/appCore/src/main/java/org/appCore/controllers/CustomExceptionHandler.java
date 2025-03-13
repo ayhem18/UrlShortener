@@ -1,4 +1,4 @@
-package org.appCore.controllers;
+package org.authManagement.controllers;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

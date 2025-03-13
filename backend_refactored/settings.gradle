@@ -6,4 +6,7 @@ include ('access')
 include ('companies')
 include ('users')
 include ('tokens')
-include ('appCore')
+include ('apiConfigurations')
+include ('authManagement')
+
+// include ('appCore')

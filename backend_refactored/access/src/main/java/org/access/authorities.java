@@ -22,6 +22,7 @@ class CanUpdateDomainName implements GrantedAuthority {
     }
 }
 
+
 class CanDeleteAccess implements GrantedAuthority {
     private static final String AUTHORITY = "CAN_DELETE_ACCESS";
     private static volatile CanDeleteAccess instance;
@@ -41,6 +42,7 @@ class CanDeleteAccess implements GrantedAuthority {
         return AUTHORITY;
     }
 }
+
 
 class CanCancelSubscription implements GrantedAuthority {
     private static final String AUTHORITY = "CAN_CANCEL_SUBSCRIPTION";
@@ -62,6 +64,7 @@ class CanCancelSubscription implements GrantedAuthority {
     }
 }
 
+
 class CanViewCompanyDetails implements GrantedAuthority {
     private static final String AUTHORITY = "CAN_VIEW_COMPANY_DETAILS";
     private static volatile CanViewCompanyDetails instance;
@@ -82,6 +85,7 @@ class CanViewCompanyDetails implements GrantedAuthority {
     }
 }
 
+
 class CanViewSubscription implements GrantedAuthority {
     private static final String AUTHORITY = "CAN_VIEW_SUBSCRIPTION";
     private static volatile CanViewSubscription instance;
@@ -101,6 +105,7 @@ class CanViewSubscription implements GrantedAuthority {
         return AUTHORITY;
     }
 }
+
 
 class CanGenerateTokens implements GrantedAuthority {
     private static final String AUTHORITY = "CAN_GENERATE_TOKENS";
@@ -123,7 +128,6 @@ class CanGenerateTokens implements GrantedAuthority {
 }
 
 
-
 class CanUseShortUrl implements GrantedAuthority {
     private static final String AUTHORITY = "CAN_USE_SHORT_URL";
     private static volatile CanUseShortUrl instance;
@@ -142,6 +146,7 @@ class CanUseShortUrl implements GrantedAuthority {
         return AUTHORITY;
     }
 }
+
 
 class CanEncodeUrl implements GrantedAuthority {
     private static final String AUTHORITY = "CAN_ENCODE_URL";

@@ -1,4 +1,4 @@
-package org.appCore.configurations;
+package org.authManagement.configurations;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -1,0 +1,57 @@
+package org.apiConfigurations;
+
+import java.util.Collection;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Component;
+import org.user.entities.AppUser;
+import org.user.repositories.UserRepository;
+
+class UserDetailsImp implements UserDetails {
+
+    private final AppUser user;
+
+    public UserDetailsImp(AppUser user) {
+        this.user = user;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return this.user.getRole().getAuthorities();
+    }
+
+    @Override
+    public String getUsername() {
+        return user.getUsername();
+    }
+
+    @Override
+    public String getPassword() {
+        return user.getPassword();
+    }
+
+}
+
+
+
+@Component
+public class AppUserDetailService implements UserDetailsService {
+    private final UserRepository userRepo;
+
+    @Autowired
+    public AppUserDetailService(UserRepository userRepo) {
+        this.userRepo = userRepo;
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        AppUser user = userRepo.findByUsername(username).orElseThrow(
+                () -> new UsernameNotFoundException("There is no user with the username: " + username)
+        );
+        return new UserDetailsImp(user);
+    }
+}

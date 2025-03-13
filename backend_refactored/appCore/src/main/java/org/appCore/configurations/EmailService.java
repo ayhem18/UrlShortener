@@ -1,4 +1,4 @@
-package org.appCore.configurations;
+package org.authManagement.configurations;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

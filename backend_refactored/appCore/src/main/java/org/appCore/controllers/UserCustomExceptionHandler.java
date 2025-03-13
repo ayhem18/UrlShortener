@@ -1,7 +1,7 @@
-package org.appCore.controllers;
+package org.authManagement.controllers;
 
-import org.appCore.exceptions.CompanyAndUserExceptions;
-import org.appCore.exceptions.UserExceptions;
+import org.authManagement.exceptions.CompanyAndUserExceptions;
+import org.authManagement.exceptions.UserExceptions;
 import org.access.RoleManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

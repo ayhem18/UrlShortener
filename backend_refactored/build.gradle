@@ -33,7 +33,9 @@ dependencies {
 	implementation project(':companies')
 	implementation project(':users')
 	implementation project(':tokens')
-	implementation project(':appCore')
+	implementation project(':apiConfigurations')
+	implementation project(':authManagement')
+	// implementation project(':appCore')
 }
 
 

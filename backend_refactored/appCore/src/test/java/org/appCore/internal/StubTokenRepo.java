@@ -1,4 +1,4 @@
-package org.appCore.internal;
+package org.authManagement.internal;
 
 import org.access.Role;
 import org.access.RoleManager;

@@ -1,4 +1,4 @@
-package org.appCore.configurations;
+package org.authManagement.configurations;
 
 import java.util.Collection;
 

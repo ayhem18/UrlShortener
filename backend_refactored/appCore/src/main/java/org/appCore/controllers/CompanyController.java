@@ -1,8 +1,8 @@
-package org.appCore.controllers;
+package org.authManagement.controllers;
 
-import org.appCore.exceptions.CompanyAndUserExceptions;
-import org.appCore.exceptions.CompanyExceptions;
-import org.appCore.exceptions.TokenAndUserExceptions;
+import org.authManagement.exceptions.CompanyAndUserExceptions;
+import org.authManagement.exceptions.CompanyExceptions;
+import org.authManagement.exceptions.TokenAndUserExceptions;
 import org.company.entities.Company;
 import org.company.entities.TopLevelDomain;
 import org.company.repositories.CompanyRepository;
@@ -26,10 +26,10 @@ import java.time.LocalDateTime;
 
 import org.access.Subscription;
 import org.access.SubscriptionManager;
-import org.appCore.configurations.EmailService;
-import org.appCore.repositories.CounterRepository;
-import org.appCore.requests.CompanyRegisterRequest;
-import org.appCore.requests.CompanyVerifyRequest;
+import org.authManagement.configurations.EmailService;
+import org.authManagement.repositories.CounterRepository;
+import org.authManagement.requests.CompanyRegisterRequest;
+import org.authManagement.requests.CompanyVerifyRequest;
 import org.user.entities.AppUser;
 import org.user.repositories.UserRepository;
 import org.utils.CustomGenerator;

@@ -1,15 +1,15 @@
-package org.appCore.unitsTests.Controllers;
+package org.authManagement.unitsTests.Controllers;
 
-import org.appCore.controllers.CompanyController;
-import org.appCore.exceptions.CompanyAndUserExceptions;
-import org.appCore.exceptions.CompanyExceptions;
-import org.appCore.internal.StubCompanyRepo;
-import org.appCore.internal.StubCounterRepo;
-import org.appCore.internal.StubTokenRepo;
-import org.appCore.internal.StubTokenUserLinkRepo;
-import org.appCore.internal.StubTopLevelDomainRepo;
-import org.appCore.internal.StubUserRepo;
-import org.appCore.requests.CompanyRegisterRequest;
+import org.authManagement.controllers.CompanyController;
+import org.authManagement.exceptions.CompanyAndUserExceptions;
+import org.authManagement.exceptions.CompanyExceptions;
+import org.authManagement.internal.StubCompanyRepo;
+import org.authManagement.internal.StubCounterRepo;
+import org.authManagement.internal.StubTokenRepo;
+import org.authManagement.internal.StubTokenUserLinkRepo;
+import org.authManagement.internal.StubTopLevelDomainRepo;
+import org.authManagement.internal.StubUserRepo;
+import org.authManagement.requests.CompanyRegisterRequest;
 import org.company.entities.Company;
 import org.company.entities.TopLevelDomain;
 import org.junit.jupiter.api.AfterEach;

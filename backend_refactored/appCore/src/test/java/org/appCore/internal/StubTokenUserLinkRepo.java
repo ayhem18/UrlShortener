@@ -1,4 +1,4 @@
-package org.appCore.internal;
+package org.authManagement.internal;
 
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
