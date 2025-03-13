@@ -154,7 +154,13 @@ public class StubTokenRepo implements TokenRepository {
     @Override
     public <S extends AppToken, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) { return null; }
     @Override
-    public <S extends AppToken> List<S> saveAll(Iterable<S> entities) { return List.of(); }
+    public <S extends AppToken> List<S> saveAll(Iterable<S> entities) {
+        List<S> saved = new ArrayList<>();
+        for (S entity : entities) {
+            saved.add(this.save(entity));
+        }
+        return saved;
+    }
     @Override
     public List<AppToken> findAll() { return new ArrayList<>(this.db); }
     @Override

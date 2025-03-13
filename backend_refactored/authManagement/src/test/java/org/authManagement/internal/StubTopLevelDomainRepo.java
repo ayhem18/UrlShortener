@@ -123,7 +123,13 @@ public class StubTopLevelDomainRepo implements TopLevelDomainRepository {
     @Override
     public <S extends TopLevelDomain, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) { return null; }
     @Override
-    public <S extends TopLevelDomain> List<S> saveAll(Iterable<S> entities) { return List.of(); }
+    public <S extends TopLevelDomain> List<S> saveAll(Iterable<S> entities) {
+        List<S> saved = new ArrayList<>();
+        for (S entity : entities) {
+            saved.add(this.save(entity));
+        }
+        return saved;
+    }
     @Override
     public List<TopLevelDomain> findAll() { return new ArrayList<>(this.db); }
     @Override

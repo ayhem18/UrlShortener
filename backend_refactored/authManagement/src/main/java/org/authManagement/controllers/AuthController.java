@@ -11,9 +11,11 @@ import org.apiConfigurations.EmailService;
 import org.authManagement.exceptions.CompanyAndUserExceptions;
 import org.authManagement.exceptions.CompanyExceptions;
 import org.authManagement.exceptions.TokenAndUserExceptions;
+import org.authManagement.exceptions.UserExceptions;
 import org.authManagement.repositories.CounterRepository;
 import org.authManagement.requests.CompanyRegisterRequest;
 import org.authManagement.requests.CompanyVerifyRequest;
+import org.authManagement.requests.UserRegisterRequest;
 import org.company.entities.Company;
 import org.company.entities.TopLevelDomain;
 import org.company.repositories.CompanyRepository;
@@ -85,7 +87,8 @@ public class AuthController {
         return om;
     }
 
-
+    ////////////////////////////////////// METHODS FOR REGISTERING A COMPANY //////////////////////////////////////
+ 
     private void validateNewCompany(CompanyRegisterRequest req) {
         // any new company must satisfy the uniqueness constraints:
         // unique id and unique site
@@ -108,7 +111,6 @@ public class AuthController {
         }
     }
 
-
     private void validateOwnerToken(Company company) {
         List<AppToken> companyTokens = this.tokenRepo.findByCompany(company);
 
@@ -117,13 +119,11 @@ public class AuthController {
         }            
     }
 
-
     private void sendCompanyVerificationEmail(String ownerEmail, String ownerToken) {
         String subject = "Company Verification";
         String body = "Here is your company verification token:\n" + ownerToken + "\nThe token expires in 1 hour.";
         this.emailService.sendEmail(ownerEmail, subject, body);  
     }
-
 
     @PostMapping("api/auth/register/company")
     public ResponseEntity<String> registerCompany(@Valid @RequestBody CompanyRegisterRequest req) throws JsonProcessingException {
@@ -174,6 +174,8 @@ public class AuthController {
                 HttpStatus.CREATED);
     }
 
+
+    ////////////////////////////////////// METHODS FOR VERIFYING A COMPANY //////////////////////////////////////
 
     private Company validateCompanyVerificationRequest(CompanyVerifyRequest req) {
         // 1. Check if the company exists
@@ -266,5 +268,159 @@ public class AuthController {
         // 6. Return the serialized company
         return ResponseEntity.ok(this.objectMapper().writeValueAsString(company));
     }
+
+
+    ////////////////////////////////////// METHODS FOR REGISTERING A USER //////////////////////////////////////
+
+    private Role initialVerification(UserRegisterRequest req) {
+        // check if the company exists
+        if (!this.companyRepo.existsById(req.companyId())) {
+            throw new UserExceptions.UserWithNoCompanyException("No registered company with the given id: " + req.companyId());
+        }
+        
+        // check if the username already exists
+        if (this.userRepo.existsById(req.email())) {
+            throw new UserExceptions.AlreadyExistingUserException("The username already exists");
+        }
+
+        // check the role
+        String claimedRoleStr = req.role().toLowerCase();
+        // RoleManager.getRole throws an exception if the role does not exist
+        Role claimedRole = RoleManager.getRole(claimedRoleStr);
+
+        if (claimedRole != RoleManager.getRole(RoleManager.OWNER_ROLE) && req.roleToken() == null) {
+            throw new TokenAndUserExceptions.MissingTokenException("The role token is missing");
+        }
+
+        return claimedRole;
+    }
+
+    private AppUser registerOwner(UserRegisterRequest req) {
+        // at this point, we know the company exists and the username does not exist
+        // we need to check if the email matches the owner email
+        if (!req.email().equals(this.companyRepo.findById(req.companyId()).get().getOwnerEmail())) {
+            throw new CompanyAndUserExceptions.UserCompanyMisalignedException("The passed email does not match the saved owner email");
+        }
+
+        // make sure the company is not verified
+        Company company = this.companyRepo.findById(req.companyId()).get();
+        
+        if (company.getVerified()) {
+            throw new CompanyAndUserExceptions.MultipleOwnersException("The company is already verified");
+        }
+
+        // create the owner user
+        AppUser owner = new AppUser(req.email(),
+                                req.username(),
+                                encoder().encode(req.password()),
+                                company, 
+                                RoleManager.getRole(req.role()));
+
+        this.userRepo.save(owner);
+
+        return owner;
+    }
+
+    private AppToken verifyToken(UserRegisterRequest req, Company company) {
+        // Get the role from the request
+        Role requestedRole = RoleManager.getRole(req.role());
+        
+        // Find tokens for this company and role
+        List<AppToken> tokens = this.tokenRepo.findByCompanyAndRole(company, requestedRole);
+
+        if (tokens.isEmpty()) {
+            throw new TokenAndUserExceptions.TokenNotFoundForRoleException("No token found for role " + req.role() + " in this company");
+        }
+
+        // iterate through the tokens and check if the roleToken is correct
+        AppToken matchingToken = null;
+        
+        for (AppToken token : tokens) {
+            if (encoder().matches(req.roleToken(), token.getTokenHash())) {
+                matchingToken = token; 
+                break;
+            }
+        }
+
+        if (matchingToken == null) {
+            throw new TokenAndUserExceptions.InvalidTokenException("The passed token does not match any token for this specific role and company");
+        }
+
+        if (matchingToken.getTokenState() == AppToken.TokenState.EXPIRED) {
+            throw new TokenAndUserExceptions.TokenExpiredException("The token is expired");
+        }
+
+        if (matchingToken.getTokenState() == AppToken.TokenState.ACTIVE) {
+            throw new TokenAndUserExceptions.TokenAlreadyUsedException("The token is already used by another user");
+        }
+
+        // make sure the token is not linked to another user
+        if (this.tokenUserLinkRepo.existsById(matchingToken.getTokenId())) {
+            throw new TokenAndUserExceptions.TokenAlreadyUsedException("The token is already used by another user");
+        }
+
+        return matchingToken;
+    }
+
+
+    private AppUser registerNonOwner(UserRegisterRequest req) {
+        // at this point, we know the company exists and the username does not exist 
+        // the roleToken is not null, it needs to be verified
+        
+        // 1. make sure the company is verified
+        Company company = this.companyRepo.findById(req.companyId()).get(); 
+
+        if (!company.getVerified()) {
+            throw new CompanyAndUserExceptions.UserBeforeOwnerException("The owner of the company has not verified the company yet");
+        }
+
+        // 2. make sure the email matches the domain of the company if any
+        String emailDomain = req.email().substring(req.email().indexOf('@') + 1);
+
+        if (!emailDomain.equals(company.getEmailDomain())) {
+            throw new CompanyAndUserExceptions.UserCompanyMisalignedException("The use email domain does not match the company domain");
+        }
+
+        // 5. create the user
+        AppUser user = new AppUser(req.email(),
+                                req.username(),
+                                encoder().encode(req.password()),
+                                company, 
+                                RoleManager.getRole(req.role()));
+
+        this.userRepo.save(user);
+
+        // link the user to the token
+        AppToken matchingToken = verifyToken(req, company);
+        // activate the token
+        matchingToken.activate();
+        this.tokenRepo.save(matchingToken);
+
+        // Generate a random ID for the token-user link
+        String tokenUserLinkId = this.generator.generateId(this.counterRepo.getCount(TokenUserLink.TOKEN_USER_LINK_CLASS_NAME));
+        TokenUserLink tokenUserLink = new TokenUserLink(tokenUserLinkId, matchingToken, user);
+        this.tokenUserLinkRepo.save(tokenUserLink);
+
+        return user;
+    }
+
+
+    @PostMapping("api/auth/register/user")
+    public ResponseEntity<String> registerUser(@Valid @RequestBody UserRegisterRequest req) throws JsonProcessingException {
+        Role role = initialVerification(req); 
+
+        AppUser newUser;
+
+        if (role == RoleManager.getRole(RoleManager.OWNER_ROLE)) {
+            newUser = registerOwner(req);
+        } else {
+            newUser = registerNonOwner(req);
+        }
+
+        return ResponseEntity.ok(objectMapper().writeValueAsString(newUser));
+    }
+
+
+
 }
 

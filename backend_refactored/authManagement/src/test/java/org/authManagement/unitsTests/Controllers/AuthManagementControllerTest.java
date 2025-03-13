@@ -1,8 +1,10 @@
 package org.authManagement.unitsTests.Controllers;
 
-import org.authManagement.controllers.CompanyController;
+import org.authManagement.controllers.AuthController;
 import org.authManagement.exceptions.CompanyAndUserExceptions;
 import org.authManagement.exceptions.CompanyExceptions;
+import org.authManagement.exceptions.TokenAndUserExceptions;
+import org.authManagement.exceptions.UserExceptions;
 import org.authManagement.internal.StubCompanyRepo;
 import org.authManagement.internal.StubCounterRepo;
 import org.authManagement.internal.StubTokenRepo;
@@ -10,6 +12,7 @@ import org.authManagement.internal.StubTokenUserLinkRepo;
 import org.authManagement.internal.StubTopLevelDomainRepo;
 import org.authManagement.internal.StubUserRepo;
 import org.authManagement.requests.CompanyRegisterRequest;
+import org.authManagement.requests.UserRegisterRequest;
 import org.company.entities.Company;
 import org.company.entities.TopLevelDomain;
 import org.junit.jupiter.api.AfterEach;
@@ -32,6 +35,10 @@ import org.access.RoleManager;
 import org.access.SubscriptionManager;
 
 import java.util.List;
+import java.util.Optional;
+
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 public class AuthManagementControllerTest {
 
@@ -44,7 +51,7 @@ public class AuthManagementControllerTest {
 
     private final CustomGenerator gen = new CustomGenerator();
     private final CustomGenerator mockGen;
-    private final CompanyController comCon;
+    private final AuthController authCon;
     public static int COUNTER = 0;
 
     private CustomGenerator setMockCG() {
@@ -78,32 +85,15 @@ public class AuthManagementControllerTest {
         // 3. Add default users for these companies
         AppUser youtubeOwner = new AppUser("owner@youtube.com", "ytowner", "password123", youtube, RoleManager.getRole(RoleManager.OWNER_ROLE));
         AppUser githubOwner = new AppUser("owner@github.com", "ghowner", "password123", github, RoleManager.getRole(RoleManager.OWNER_ROLE));
-        userRepo.save(youtubeOwner);
-        userRepo.save(githubOwner);
         
-        // 4. Add default tokens for these companies
-        AppToken youtubeToken = new AppToken("token_youtube", "hash_youtube", youtube, RoleManager.getRole(RoleManager.OWNER_ROLE));
-        AppToken githubToken = new AppToken("token_github", "hash_github", github, RoleManager.getRole(RoleManager.OWNER_ROLE));
+        AppUser youtubeAdmin = new AppUser("admin@youtube.com", "ytadmin", "password123", youtube, RoleManager.getRole(RoleManager.ADMIN_ROLE));
+        AppUser githubAdmin = new AppUser("admin@github.com", "ghadmin", "password123", github, RoleManager.getRole(RoleManager.ADMIN_ROLE));
 
-        youtubeToken.activate();
-        githubToken.activate();
+        AppUser youtubeEmployee = new AppUser("employee@youtube.com", "ytemployee", "password123", youtube, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE));
+        AppUser githubEmployee = new AppUser("employee@github.com", "ghemployee", "password123", github, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE));
 
-        AppToken adminYoutubeToken = new AppToken("token_youtube", "hash_youtube", youtube, RoleManager.getRole(RoleManager.ADMIN_ROLE));
-        AppToken adminGithubToken = new AppToken("token_github", "hash_github", github, RoleManager.getRole(RoleManager.ADMIN_ROLE));
+        userRepo.saveAll(List.of(youtubeOwner, githubOwner, youtubeAdmin, githubAdmin, youtubeEmployee, githubEmployee));
 
-        tokenRepo.save(youtubeToken);
-        tokenRepo.save(githubToken);
-
-        tokenRepo.save(adminGithubToken);
-        tokenRepo.save(adminYoutubeToken);
-
-
-        // 5. Add default token-user links
-        TokenUserLink youtubeLink = new TokenUserLink("youtubeLinked", youtubeToken, youtubeOwner);
-        TokenUserLink githubLink = new TokenUserLink("githubLinked", githubToken, githubOwner);
-        tokenUserLinkRepo.save(youtubeLink);
-        tokenUserLinkRepo.save(githubLink);
-        
         // 6. Ensure counter repository is initialized
         counterRepo.addCompanyCollection();
     }
@@ -136,7 +126,7 @@ public class AuthManagementControllerTest {
         this.mockGen = setMockCG();
         // set a stubCustomGenerator, so we can verify the registerCompany method properly
         
-        this.comCon = new CompanyController(this.companyRepo,
+        this.authCon = new AuthController(this.companyRepo,
                 this.topLevelDomainRepo,
                 this.userRepo,
                 this.counterRepo,
@@ -146,15 +136,9 @@ public class AuthManagementControllerTest {
                 null);
     }
 
-    @Test
-    public void testMockCG() {
-        // a small test to make sure the mock object works as expected
-        for (int i = 0; i <= 100; i++) {
-            Assertions.assertEquals(this.mockGen.randomString(10), "RANDOM_STRING_" + (i + 1));
-        }
-        for (int i = 0; i <= 100; i++) {
-            assertNotNull(this.mockGen.generateId(i));
-        }
+   // Helper method for password encoding
+    private PasswordEncoder encoder() {
+        return new BCryptPasswordEncoder();
     }
 
     //////////////////////// register a company ////////////////////////
@@ -171,7 +155,7 @@ public class AuthManagementControllerTest {
 
             Assertions.assertThrows(
                     CompanyExceptions.ExistingCompanyException.class,
-                    () -> this.comCon.registerCompany(req)
+                    () -> this.authCon.registerCompany(req)
             );
         }
 
@@ -192,7 +176,7 @@ public class AuthManagementControllerTest {
             // Verify that an ExistingTopLevelDomainException is thrown
             Assertions.assertThrows(
                     CompanyExceptions.ExistingTopLevelDomainException.class,
-                    () -> this.comCon.registerCompany(req)
+                    () -> this.authCon.registerCompany(req)
             );
         }
 
@@ -220,164 +204,9 @@ public class AuthManagementControllerTest {
             // Verify that a MultipleOwnersException is thrown
             Assertions.assertThrows(
                 CompanyAndUserExceptions.MultipleOwnersException.class,
-                () -> this.comCon.registerCompany(req)
+                () -> this.authCon.registerCompany(req)
             );
         }
-
-        // @Test
-        // void testRegisterUniquenessConstraints() {
-        //     for (CompanyWrapper w: this.companyRepo.getWrappers()) {
-        //         // create a register request based on the given company
-        //         CompanyRegisterRequest req = new CompanyRegisterRequest(this.gen.randomString(10),
-        //                 w.getSite(),
-        //                 w.getSubscription().getTier());
-
-        //         Assertions.assertThrows(
-        //                 CompanyExceptions.ExistingSiteException.class,
-        //                 () -> this.comCon.registerCompany(req)
-        //         );
-        //     }
-        // }
-
-        // @Test
-        // void testCompanyCount() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        //     Method method = this.comCon.getClass().getDeclaredMethod("getCompanyCount");
-        //     method.setAccessible(true);
-
-        //     for (int i = 0; i < 100; i++) {
-        //         long count = (long) method.invoke(this.comCon);
-        //         assertEquals(count, i);
-        //         assertEquals(i + 1, this.counterRepo.findById(Company.COMPANY_COLLECTION_NAME).get().getCount());
-        //     }
-
-        //     // make sure to delete all the
-        //     this.counterRepo.deleteAll();
-        // }
-
-        // @Test
-        // void testRegisterValidCompany() throws JsonProcessingException, IllegalAccessException {
-        //     List<String> initialFieldsSerialization = List.of("id",
-        //             "site",
-        //             "siteHash",
-        //             "roleTokens",
-        //             "roleTokensHashed",
-        //             "subscription");
-
-        //     String id = "a_company_id";
-        //     String site = "www.completelyNewSite.com";
-        //     Subscription sub = SubscriptionManager.getSubscription("TIER_1");
-
-        //     CompanyRegisterRequest req = new CompanyRegisterRequest(id, site, sub.getTier());
-
-        //     ResponseEntity<String> res = comCon.registerCompany(req);
-
-        //     // the new company object must have been added to the database
-        //     assertEquals(3, this.companyRepo.getDb().size());
-
-        //     Company newC = this.companyRepo.getDb().get(2);
-
-        //     // use reflection to make sure none of the fields are none
-        //     List<Field> fields = List.of(Company.class.getDeclaredFields());
-        //     for (Field f : fields) {
-        //         f.setAccessible(true);
-        //         assertNotNull(f.get(newC));
-        //     }
-
-        //     String body = res.getBody();
-
-        //     // read the body to make sure the company record is saved correctly
-        //     Object doc;
-        //     doc = Configuration.defaultConfiguration().jsonProvider().parse(body);
-        //     Set<String> keys = JsonPath.read(doc, "keys()");
-
-        //     org.assertj.core.api.Assertions.assertThat(keys).hasSameElementsAs(initialFieldsSerialization);
-        //     // the next step is to make sure everything is saved and serialized correctly
-
-        //     // id
-        //     String serializedId = JsonPath.read(doc, "$.id");
-        //     assertEquals(id, serializedId);
-
-        //     // the site
-        //     String serializedSite = JsonPath.read(doc, "$.site");
-        //     assertEquals(site, serializedSite);
-
-        //     // site hash
-        //     String siteHashSerialized = JsonPath.read(doc, "$.siteHash");
-        //     assertEquals(this.gen.generateId(0), siteHashSerialized);
-
-        //     // tokens
-        //     Map<String, String> tokens = JsonPath.read(doc, "$.roleTokens");
-        //     Map<String, String> expectedTokens = Map.of("owner", "RANDOM_STRING_1",
-        //             "admin", "RANDOM_STRING_2",
-        //             "registereduser", "RANDOM_STRING_3");
-        //     assertEquals(expectedTokens, tokens);
-
-        //     PasswordEncoder encoder = new BCryptPasswordEncoder();
-        //     Map<String, String> hashedTokens = JsonPath.read(doc, "$.roleTokensHashed");
-
-        //     assertTrue(encoder.matches("RANDOM_STRING_1", hashedTokens.get("owner")));
-        //     assertTrue(encoder.matches("RANDOM_STRING_2", hashedTokens.get("admin")));
-        //     assertTrue(encoder.matches("RANDOM_STRING_3", hashedTokens.get("registereduser")));
-
-        //     // subscription
-        //     String subSerializer = JsonPath.read(doc, "$.subscription");
-        //     assertEquals(subSerializer, sub.getTier());
-        // }
-
-
-        // //////////////////////// view company details  ////////////////////////
-        // @Test
-        // void testViewNoExistingCompany() {
-        //     for (int i = 0; i <= 100; i++) {
-        //         String NoId = this.gen.randomString(100);
-        //         assertThrows(CompanyExceptions.NoCompanyException.class, () -> this.comCon.viewCompanyDetails(NoId));
-        //     }
-        // }
-
-        // @Test
-        // void testViewCompanyDetails() throws NoSuchFieldException, IllegalAccessException, JsonProcessingException {
-        //     List<String> fields = List.of("site",
-        //             "subscription");
-
-        //     List<Company> db = this.companyRepo.getDb();
-
-        //     Field fid = Company.class.getDeclaredField("id");
-        //     fid.setAccessible(true);
-
-        //     Field fSite = Company.class.getDeclaredField("site");
-        //     fSite.setAccessible(true);
-
-        //     Field fSub = Company.class.getDeclaredField("subscription");
-        //     fSub.setAccessible(true);
-
-
-        //     for (Company c : db) {
-        //         // access the company id
-        //         String id = (String) fid.get(c);
-        //         assertDoesNotThrow(() -> comCon.viewCompanyDetails(id));
-
-        //         ResponseEntity<String> re = comCon.viewCompanyDetails(id);
-        //         // check the status code
-        //         assertEquals(HttpStatus.OK, re.getStatusCode());
-        //         String body = re.getBody();
-
-        //         Object doc = Configuration.defaultConfiguration().jsonProvider().parse(body);
-        //         Set<String> keys = JsonPath.read(doc, "keys()");
-
-        //         // make sure the keys are correct
-        //         org.assertj.core.api.Assertions.assertThat(keys).hasSameElementsAs(fields);
-
-        //         String serializedSite = JsonPath.read(doc, "$.site");
-        //         String serializedSub = JsonPath.read(doc, "$.subscription");
-
-        //         // make sure the values are correct
-        //         assertEquals(((Subscription) fSub.get(c)).getTier(), serializedSub);
-        //         assertEquals(fSite.get(c), serializedSite);
-        //     }
-        // }
-
-        // //////////////////////// delete a company  ////////////////////////
-
     }
 
     @Test 
@@ -423,7 +252,7 @@ public class AuthManagementControllerTest {
             // Verify that registering a company with this ID throws an exception
             assertThrows(
                 CompanyAndUserExceptions.MultipleOwnersException.class,
-                () -> comCon.registerCompany(req),
+                () -> authCon.registerCompany(req),
                 "Should fail when token already exists for company ID " + finalCompanyId
             );
         }
@@ -451,7 +280,7 @@ public class AuthManagementControllerTest {
         );
         
         // Register the company and verify no exceptions are thrown
-        assertDoesNotThrow(() -> comCon.registerCompany(req));
+        assertDoesNotThrow(() -> authCon.registerCompany(req));
         
         // 3. Verify that a company with this ID now exists
         assertTrue(companyRepo.existsById(randomCompanyId), 
@@ -483,4 +312,417 @@ public class AuthManagementControllerTest {
         assertFalse(domains.isEmpty(), "A domain should exist for the company");
         assertEquals(domain, domains.getFirst().getDomain());
     }
+
+    //////////////////////// register a user ////////////////////////
+
+    @Test
+    void testRegisterUserInitialConstraints() {
+       // 1. Test that registration fails when the username already exists
+       // Loop through all existing users to test constraint
+       for (AppUser existingUser : userRepo.findAll()) {
+
+           // Create request with existing username - FIXED PARAMETER ORDER
+           UserRegisterRequest existingUserRequest = new UserRegisterRequest(
+               existingUser.getCompany().getId(),    // companyId
+               "someUsername",                       // username
+               "password123",                        // password
+                existingUser.getEmail()   ,          // email
+               RoleManager.EMPLOYEE_ROLE,            // role
+               "someToken"                           // roleToken
+           );
+
+           assertThrows(
+               UserExceptions.AlreadyExistingUserException.class,
+               () -> authCon.registerUser(existingUserRequest),
+               "Should fail when a user with the email already exists: " + existingUser.getEmail()
+           );
+       }
+
+       // 2. Test that registration fails when the company does not exist - FIXED PARAMETER ORDER
+       String nonExistentCompanyId = "non_existent_company_" + gen.randomAlphaString(8);
+       UserRegisterRequest nonExistentCompanyRequest = new UserRegisterRequest(
+           nonExistentCompanyId,                // companyId
+           "newUser",                           // username
+           "password123",                       // password
+           "new_user@example.com",              // email
+           RoleManager.EMPLOYEE_ROLE,           // role
+           "someToken"                          // roleToken
+       );
+
+       assertThrows(
+           UserExceptions.UserWithNoCompanyException.class,
+           () -> authCon.registerUser(nonExistentCompanyRequest),
+           "Should fail when the company ID doesn't exist"
+       );
+
+       // 3. Test that registration fails when the role does not exist - FIXED PARAMETER ORDER
+       String invalidRole = "INVALID_ROLE_";
+       Company existingCompany = companyRepo.findAll().getFirst();
+       UserRegisterRequest invalidRoleRequest = new UserRegisterRequest(
+           existingCompany.getId(),             // companyId
+           "newUser",                           // username
+           "password123",                       // password
+           "new_user@example.com",              // email
+           invalidRole,                         // role
+           "someToken"                          // roleToken
+       );
+
+       assertThrows(
+           RoleManager.NoExistingRoleException.class,
+           () -> authCon.registerUser(invalidRoleRequest),
+           "Should fail when the role doesn't exist"
+       );
+
+       // 4. Test that registration fails when token is missing for non-owner roles - FIXED PARAMETER ORDER
+       // Test for ADMIN role
+       UserRegisterRequest missingTokenAdminRequest = new UserRegisterRequest(
+           existingCompany.getId(),             // companyId
+           "adminUser",                         // username
+           "password123",                       // password
+           "admin_user@example.com",            // email
+           RoleManager.ADMIN_ROLE,              // role
+           null                                 // roleToken
+       );
+
+       assertThrows(
+           TokenAndUserExceptions.MissingTokenException.class,
+           () -> authCon.registerUser(missingTokenAdminRequest),
+           "Should fail when token is missing for ADMIN role"
+       );
+
+       // Test for EMPLOYEE role - FIXED PARAMETER ORDER
+       UserRegisterRequest missingTokenEmployeeRequest = new UserRegisterRequest(
+           existingCompany.getId(),             // companyId
+           "employeeUser",                      // username
+           "password123",                       // password
+           "employee_user@example.com",         // email
+           RoleManager.EMPLOYEE_ROLE,           // role
+           null
+       );
+
+       assertThrows(
+           TokenAndUserExceptions.MissingTokenException.class,
+           () -> authCon.registerUser(missingTokenEmployeeRequest),
+           "Should fail when token is missing for EMPLOYEE role"
+       );
+    }
+
+    @Test
+    void testNonOwnerSecondConstraints() {
+       // 1. Create a verified company with email domain "example.com"
+       Company verifiedCompany = new Company(
+           "verified_company_id",
+           SubscriptionManager.getSubscription("TIER_1"),
+           "owner@example.com",
+           "example.com"
+       );
+       verifiedCompany.verify(); // Mark as verified
+       companyRepo.save(verifiedCompany);
+
+       // 2. Test email domain mismatch - trying to register with gmail.com for a example.com company
+       UserRegisterRequest mismatchedEmailRequest = new UserRegisterRequest(
+           verifiedCompany.getId(),         // companyId (matching verified company)
+           "newAdmin",                      // username
+           "password123",                   // password
+           "admin@gmail.com",               // email (mismatched domain)
+           RoleManager.ADMIN_ROLE,          // role
+           "admin_token_string"             // roleToken
+       );
+
+       assertThrows(
+           CompanyAndUserExceptions.UserCompanyMisalignedException.class,
+           () -> authCon.registerUser(mismatchedEmailRequest),
+           "Should fail when email domain doesn't match company domain"
+       );
+
+       // 3. Test unverified company constraint
+       // since registering an owner requires passing the email of the owner, we need to delete all users
+       // to avoid the AlreadyExistingUserException
+
+        this.userRepo.deleteAll();
+
+        for (Company company : companyRepo.findAll()) {
+            // Skip verified companies
+            if (company.getVerified()) {
+                continue;
+            }
+
+
+            for (String roleString : RoleManager.ROLES_STRING) {
+                    if (roleString.equals(RoleManager.OWNER_ROLE)) {
+                        continue;
+                    }
+
+                    String domain = company.getEmailDomain();
+                    String email = this.gen.randomAlphaString(10) + "@" + (domain == null ? "" : domain);
+
+
+                    UserRegisterRequest unverifiedCompanyRequest = new UserRegisterRequest(
+                    company.getId(),                       // companyId (unverified company)
+                    "employee_" + company.getId(),         // username
+                    "password123",                         // password
+                    email,// email (matching domain)
+                    roleString,             // role (non-owner)
+                    "token_string_" + company.getId()      // roleToken
+                    );
+
+                    assertThrows(
+                        CompanyAndUserExceptions.UserBeforeOwnerException.class,
+                        () -> authCon.registerUser(unverifiedCompanyRequest),
+                        "Should fail when company is not verified yet"
+                    );
+            }
+        }
+    }
+
+    @Test
+    void testNonOwnerTokenConstraints() {
+        // when a non-owner is registered his
+        // 1. token must match with one of the tokens in the company + Role
+        // cannot be deprecated or activated
+        // 2. token cannot be linked to another user
+
+        // Make all companies verified
+        for (Company company : companyRepo.findAll()) {
+            company.verify();
+            companyRepo.save(company);
+        }
+
+        // Find youtube and github companies
+        Company youtube = companyRepo.findById("aaa").get();
+        Company github = companyRepo.findById("bbb").get();
+
+        // Clear existing users to avoid conflicts
+        userRepo.deleteAll();
+
+        // 1. Test successful registration with admin token
+        AppToken validAdminToken = new AppToken(
+            "valid_admin_token",
+            encoder().encode("valid_admin_token_string"),
+            youtube,
+            RoleManager.getRole(RoleManager.ADMIN_ROLE)
+        );
+        tokenRepo.save(validAdminToken);
+
+        UserRegisterRequest validAdminRequest = new UserRegisterRequest(
+            youtube.getId(),
+            "new_admin",
+            "password123",
+            "new_admin@youtube.com",
+            RoleManager.ADMIN_ROLE,
+            "valid_admin_token_string"
+        );
+
+        // This should succeed
+        assertDoesNotThrow(
+            () -> authCon.registerUser(validAdminRequest),
+            "Should successfully register admin user with valid token"
+        );
+
+        // 2. Test mismatched role and token (admin token but employee role)
+        AppToken adminTokenForEmployeeTest = new AppToken(
+            "admin_token_for_employee_test",
+            encoder().encode("admin_token_employee_string"),
+            github,
+            RoleManager.getRole(RoleManager.ADMIN_ROLE)
+        );
+        tokenRepo.save(adminTokenForEmployeeTest);
+
+        UserRegisterRequest mismatchedRoleRequest = new UserRegisterRequest(
+            github.getId(),
+            "employee_with_admin_token",
+            "password123",
+            "employee@github.com",
+            RoleManager.EMPLOYEE_ROLE,
+            "admin_token_employee_string"
+        );
+
+        assertThrows(
+            TokenAndUserExceptions.TokenNotFoundForRoleException.class,
+            () -> authCon.registerUser(mismatchedRoleRequest),
+            "Should fail when token role doesn't match requested role"
+        );
+
+        // 3. Test with activated token
+        AppToken activatedToken = new AppToken(
+            "activated_token",
+            encoder().encode("activated_token_string"),
+            youtube,
+            RoleManager.getRole(RoleManager.ADMIN_ROLE)
+        );
+        activatedToken.activate(); // Activate the token
+        tokenRepo.save(activatedToken);
+
+        UserRegisterRequest activatedTokenRequest = new UserRegisterRequest(
+            youtube.getId(),
+            "admin_with_activated_token",
+            "password123",
+            "activated_admin@youtube.com",
+            RoleManager.ADMIN_ROLE,
+            "activated_token_string"
+        );
+
+        assertThrows(
+            TokenAndUserExceptions.TokenAlreadyUsedException.class,
+            () -> authCon.registerUser(activatedTokenRequest),
+            "Should fail when token is already activated"
+        );
+
+        // 4. Test with expired/deprecated token
+        AppToken expiredToken = new AppToken(
+            "expired_token",
+            encoder().encode("expired_token_string"),
+            github,
+            RoleManager.getRole(RoleManager.ADMIN_ROLE)
+        );
+        expiredToken.expire(); // Expire the token
+        tokenRepo.save(expiredToken);
+
+        UserRegisterRequest expiredTokenRequest = new UserRegisterRequest(
+            github.getId(),
+            "admin_with_expired_token",
+            "password123",
+            "expired_admin@github.com",
+            RoleManager.ADMIN_ROLE,
+            "expired_token_string"
+        );
+
+        assertThrows(
+            TokenAndUserExceptions.TokenExpiredException.class,
+            () -> authCon.registerUser(expiredTokenRequest),
+            "Should fail when token is expired"
+        );
+
+        // 5. Test with token already linked to a user
+        AppToken linkedToken = new AppToken(
+            "linked_token",
+            encoder().encode("linked_token_string"),
+            youtube,
+            RoleManager.getRole(RoleManager.ADMIN_ROLE)
+        );
+        linkedToken.activate();
+        tokenRepo.save(linkedToken);
+
+        // Create a user to link with the token
+        AppUser existingUser = new AppUser(
+            "existing_admin@youtube.com",
+            "existing_admin",
+            "password123",
+            youtube,
+            RoleManager.getRole(RoleManager.ADMIN_ROLE)
+        );
+        userRepo.save(existingUser);
+
+        // Link the token to the existing user
+        TokenUserLink tokenUserLink = new TokenUserLink(
+            "link_id",
+            linkedToken,
+            existingUser
+        );
+        tokenUserLinkRepo.save(tokenUserLink);
+
+        // Try to register another user with the same token
+        UserRegisterRequest linkedTokenRequest = new UserRegisterRequest(
+            youtube.getId(),
+            "another_admin",
+            "password123",
+            "another_admin@youtube.com",
+            RoleManager.ADMIN_ROLE,
+            "linked_token_string"
+        );
+
+        assertThrows(
+            TokenAndUserExceptions.TokenAlreadyUsedException.class,
+            () -> authCon.registerUser(linkedTokenRequest),
+            "Should fail when token is already linked to another user"
+        );
+    }
+
+    @Test
+    void testSuccessfulUserRegistration() {
+    // 1. Make all companies verified
+    for (Company company : companyRepo.findAll()) {
+        company.verify();
+        companyRepo.save(company);
+    }
+
+    // 2. Remove all existing users to avoid conflicts
+    userRepo.deleteAll();
+    tokenRepo.deleteAll();
+    tokenUserLinkRepo.deleteAll();
+
+    // Get companies to use in tests
+    List<Company> companies = companyRepo.findAll();
+
+    // Test for each non-owner role
+    String[] roles = {RoleManager.ADMIN_ROLE, RoleManager.EMPLOYEE_ROLE};
+
+    for (String role : roles) {
+        // Repeat registration test 5 times per role with random data
+        for (int i = 0; i < 10; i++) {
+            Company company = companies.get(i % companies.size());
+            String randomSuffix = gen.randomAlphaString(5);
+
+            // 1. Create token for the role
+            String tokenId = "token_" + role + "_" + randomSuffix;
+            String tokenString = "token_string_" + randomSuffix;
+            String tokenHash = encoder().encode(tokenString);
+
+            AppToken token = new AppToken(
+                tokenId,
+                tokenHash,
+                company,
+                RoleManager.getRole(role)
+            );
+            tokenRepo.save(token);
+
+            // 2. Create registration request
+            String email = role + "_" + randomSuffix + "@" + company.getEmailDomain();
+            String username = role + "_user_" + randomSuffix;
+
+            UserRegisterRequest request = new UserRegisterRequest(
+                company.getId(),
+                username,
+                "password123",
+                email,
+                role,
+                tokenString
+            );
+
+            // 3. Test successful registration (no exception)
+            assertDoesNotThrow(() -> {
+                authCon.registerUser(request);
+            }, "User registration should succeed for " + role + " role");
+
+            // 4. Verify token is now active - using repository method
+            Optional<AppToken> updatedTokenOpt = tokenRepo.findById(tokenId);
+            assertTrue(updatedTokenOpt.isPresent(), "Token should exist after registration");
+            assertEquals(
+                AppToken.TokenState.ACTIVE,
+                updatedTokenOpt.get().getTokenState(),
+                "Token should be active after registration"
+            );
+
+            // 5. Verify user was created - using repository method
+            Optional<AppUser> createdUserOpt = userRepo.findById(email);
+            assertTrue(createdUserOpt.isPresent(), "User should be created in repository");
+
+            AppUser createdUser = createdUserOpt.get();
+            assertEquals(username, createdUser.getUsername(), "Username should match request");
+            assertEquals(role, createdUser.getRole().toString().toLowerCase(), "Role should match request");
+            assertEquals(company.getId(), createdUser.getCompany().getId(), "Company should match request");
+
+            // 6. Verify token-user link was created - using repository method
+            AppToken updatedToken = updatedTokenOpt.get();
+            List<TokenUserLink> links = tokenUserLinkRepo.findByToken(updatedToken);
+            assertFalse(links.isEmpty(), "Token-user link should be created");
+
+            // Alternative verification approach
+            Optional<TokenUserLink> linkOpt = tokenUserLinkRepo.findByUserAndToken(createdUser, updatedToken);
+            assertTrue(linkOpt.isPresent(), "Should find token-user link for the specific user and token");
+        }
+    }
+    }
+
+    
 }

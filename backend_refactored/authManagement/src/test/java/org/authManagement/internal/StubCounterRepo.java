@@ -106,7 +106,11 @@ public class StubCounterRepo implements CounterRepository {
 
     @Override
     public <S extends CollectionCounter> List<S> saveAll(Iterable<S> entities) {
-        return List.of();
+        List<S> saved = new ArrayList<>();
+        for (S entity : entities) {
+            saved.add(this.save(entity));
+        }
+        return saved;
     }
 
     @Override

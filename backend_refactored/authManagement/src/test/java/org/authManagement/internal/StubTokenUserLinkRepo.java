@@ -33,18 +33,6 @@ public class StubTokenUserLinkRepo implements TokenUserLinkRepository {
         return db;
     }
 
-    public void addDefaultLinks() {
-        // Add some default token-user links if needed
-        if (!tokenRepo.getDb().isEmpty() && !userRepo.getDb().isEmpty()) {
-            AppToken token = tokenRepo.getDb().getFirst();
-            AppUser user = userRepo.getDb().getFirst();
-            
-            // Generate a random ID for the link
-            String randomId = UUID.randomUUID().toString();
-            TokenUserLink link = new TokenUserLink(randomId, token, user);
-            this.db.add(link);
-        }
-    }
 
     @Override
     public Optional<TokenUserLink> findById(String id) {
@@ -119,7 +107,13 @@ public class StubTokenUserLinkRepo implements TokenUserLinkRepository {
     @Override
     public <S extends TokenUserLink, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) { return null; }
     @Override
-    public <S extends TokenUserLink> List<S> saveAll(Iterable<S> entities) { return List.of(); }
+    public <S extends TokenUserLink> List<S> saveAll(Iterable<S> entities) {
+        List<S> saved = new ArrayList<>();
+        for (S entity : entities) {
+            saved.add(this.save(entity));
+        }
+        return saved;
+    }
     @Override
     public List<TokenUserLink> findAll() { return new ArrayList<>(this.db); }
     @Override

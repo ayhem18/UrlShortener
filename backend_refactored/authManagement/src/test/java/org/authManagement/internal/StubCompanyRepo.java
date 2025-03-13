@@ -22,11 +22,11 @@ public class StubCompanyRepo implements CompanyRepository {
         this.db = new ArrayList<>();
         this.encoder = new BCryptPasswordEncoder();
 
-        // create 2 companies c1 and c2
-        Company c1 = new Company("aaa", SubscriptionManager.getSubscription("TIER_1"), "owner@youtube.com", "youtube.com");
-        Company c2 = new Company("bbb", SubscriptionManager.getSubscription("TIER_1"), "owner@github.com", "github.com");
-
-        this.db.addAll(List.of(c1, c2));
+//        // create 2 companies c1 and c2
+//        Company c1 = new Company("aaa", SubscriptionManager.getSubscription("TIER_1"), "owner@youtube.com", "youtube.com");
+//        Company c2 = new Company("bbb", SubscriptionManager.getSubscription("TIER_1"), "owner@github.com", "github.com");
+//
+//        this.db.addAll(List.of(c1, c2));
     }
 
     public PasswordEncoder getEncoder() {
@@ -88,7 +88,6 @@ public class StubCompanyRepo implements CompanyRepository {
 
     @Override
     public <S extends Company> List<S> findAll(Example<S> example) {
-
         return List.of();
     }
 
@@ -124,7 +123,11 @@ public class StubCompanyRepo implements CompanyRepository {
 
     @Override
     public <S extends Company> List<S> saveAll(Iterable<S> entities) {
-        return List.of();
+        List<S> saved = new ArrayList<>();
+        for (S entity : entities) {
+            saved.add(this.save(entity));
+        }
+        return saved;
     }
 
     @Override

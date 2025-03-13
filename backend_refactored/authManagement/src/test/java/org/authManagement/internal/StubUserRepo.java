@@ -62,7 +62,7 @@ public class StubUserRepo implements UserRepository {
     @Override
     public boolean existsById(String id) {
         for (AppUser u : this.db) {
-            if (u.getUsername().equals(id)) {
+            if (u.getEmail().equals(id)) {
                 return true;
             }
         }
@@ -89,8 +89,10 @@ public class StubUserRepo implements UserRepository {
 
     @Override
     public void deleteAll(Iterable<? extends AppUser> entities) {
-        this.db.clear();
-        this.roleDb.clear();
+        for (AppUser u : entities) {
+            this.db.remove(u);
+            this.roleDb.get(u.getRole().toString()).remove(u);
+        }
     }
 
     @Override
@@ -101,6 +103,12 @@ public class StubUserRepo implements UserRepository {
 
     @Override
     public Optional<AppUser> findById(String id) {
+        // iterate through the db and return the user with the given id == email
+        for (AppUser u : this.db) {
+            if (u.getEmail().equals(id)) {
+                return Optional.of(u);
+            }
+        }
         return Optional.empty();
     }
 
@@ -153,12 +161,16 @@ public class StubUserRepo implements UserRepository {
 
     @Override
     public <S extends AppUser> List<S> saveAll(Iterable<S> entities) {
-        return List.of();
+        List<S> saved = new ArrayList<>();
+        for (S entity : entities) {
+            saved.add(this.save(entity));
+        }
+        return saved;
     }
 
     @Override
     public List<AppUser> findAll() {
-        return List.of();
+        return this.db;
     }
 
     @Override
