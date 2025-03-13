@@ -639,7 +639,7 @@ public class AuthManagementControllerTest {
     }
 
     @Test
-    void testSuccessfulUserRegistration() {
+    void testSuccessfulNonOwnerRegistration() {
     // 1. Make all companies verified
     for (Company company : companyRepo.findAll()) {
         company.verify();
@@ -719,10 +719,168 @@ public class AuthManagementControllerTest {
 
             // Alternative verification approach
             Optional<TokenUserLink> linkOpt = tokenUserLinkRepo.findByUserAndToken(createdUser, updatedToken);
-            assertTrue(linkOpt.isPresent(), "Should find token-user link for the specific user and token");
+                assertTrue(linkOpt.isPresent(), "Should find token-user link for the specific user and token");
+            }
         }
     }
+
+    @Test
+    void testOwnerRegistration() {                
+        // 3. Test with mismatched owner email
+        for (Company company : companyRepo.findAll()) {
+            // Create email different than the company owner email
+            String differentEmail = "different_" + gen.randomAlphaString(5) + "@" + company.getEmailDomain();
+            
+            UserRegisterRequest mismatchedOwnerRequest = new UserRegisterRequest(
+                company.getId(),
+                "owner_" + gen.randomAlphaString(5),
+                "password123",
+                differentEmail, // Different than company.getOwnerEmail()
+                RoleManager.OWNER_ROLE,
+                null // Owner role doesn't need token
+            );
+            
+            assertThrows(
+                CompanyAndUserExceptions.UserCompanyMisalignedException.class,
+                () -> authCon.registerUser(mismatchedOwnerRequest),
+                "Should fail when email doesn't match company owner email"
+            );
+        }
+        
+        // Part 2: Test company verification constraint
+        // Loop 10 times to create different verified companies
+        for (int i = 0; i < 10; i++) {
+            // Create a new company and verify it
+            String companyId = "verified_company_" + gen.randomAlphaString(5);
+            String domain = "domain" + i + ".com";
+            String ownerEmail = "owner@" + domain;
+            
+            Company verifiedCompany = new Company(
+                companyId,
+                SubscriptionManager.getSubscription("TIER_1"),
+                ownerEmail,
+                domain
+            );
+            verifiedCompany.verify(); // Set to verified status
+            companyRepo.save(verifiedCompany);
+            
+            // Try to register owner for already verified company
+            UserRegisterRequest verifiedCompanyOwnerRequest = new UserRegisterRequest(
+                companyId,
+                "owner_" + i,
+                "password123",
+                ownerEmail, // Matching owner email
+                RoleManager.OWNER_ROLE,
+                null // Owner role doesn't need token
+            );
+            
+            assertThrows(
+                CompanyAndUserExceptions.MultipleOwnersException.class,
+                () -> authCon.registerUser(verifiedCompanyOwnerRequest),
+                "Should fail when company is already verified (has an owner)"
+            );
+        }
     }
 
-    
+    @Test
+    void testSuccessfulOwnerRegistration() {
+        // Clear existing data
+        userRepo.deleteAll();
+        tokenRepo.deleteAll();
+        tokenUserLinkRepo.deleteAll();
+        
+        // Remove all existing companies to avoid conflicts
+        companyRepo.deleteAll();
+        
+        // Test successful owner registration 10 times with different companies
+        for (int i = 0; i < 10; i++) {
+            String randomSuffix = gen.randomAlphaString(5);
+            
+            // 1. Create a new company using registerCompany method
+            String companyId = "company_" + randomSuffix;
+            String domain = "domain" + i + ".com";
+            String ownerEmail = "owner@" + domain;
+            
+            // Create the company request
+            CompanyRegisterRequest companyRequest = new CompanyRegisterRequest(
+                companyId,
+                domain,
+                "TIER_1",
+                ownerEmail,
+                domain
+            );
+            
+            // Register company - this should create the company but not an owner user yet
+            assertDoesNotThrow(
+                () -> authCon.registerCompany(companyRequest),
+                "Company registration should succeed"
+            );
+
+            // extract the company from the companyRepo
+            Company company = companyRepo.findById(companyId).get(); 
+
+            // 6. Verify exactly one token exists for this company with owner role
+            List<AppToken> ownerTokens = tokenRepo.findByCompanyAndRole(
+                company, 
+                RoleManager.getRole(RoleManager.OWNER_ROLE)
+            );
+
+            assertEquals(1, ownerTokens.size(), 
+                        "There should be exactly one owner token for the company");
+
+            assertEquals(AppToken.TokenState.INACTIVE, ownerTokens.getFirst().getTokenState(),
+                        "Owner token should be in INACTIVE state");
+
+            // 2. Now register the owner for this company
+            UserRegisterRequest ownerRequest = new UserRegisterRequest(
+                companyId,
+                "owner_" + i,
+                "password123",
+                ownerEmail, // Matching owner email
+                RoleManager.OWNER_ROLE,
+                null // Owner role doesn't need token
+            );
+            
+            // Owner registration should succeed
+            assertDoesNotThrow(
+                () -> authCon.registerUser(ownerRequest),
+                "Owner registration should succeed for unverified company"
+            );
+            
+            // 3. Verify user was created
+            Optional<AppUser> ownerOpt = userRepo.findById(ownerEmail);
+            assertTrue(ownerOpt.isPresent(), "Owner user should be created");
+            
+            AppUser owner = ownerOpt.get();
+            assertEquals(RoleManager.OWNER_ROLE, owner.getRole().toString().toLowerCase(), 
+                         "User should have owner role");
+            assertEquals(companyId, owner.getCompany().getId(), 
+                         "User should be associated with correct company");
+            
+            // 4. Verify company was created and is now verified
+            Optional<Company> companyOpt = companyRepo.findById(companyId);
+            assertTrue(companyOpt.isPresent(), "Company should exist");
+            assertFalse(companyOpt.get().getVerified(),
+                      "Owner registration is not enough for company verification");
+            
+            // the owner registration should not affect the token state whatsoever.
+            ownerTokens = tokenRepo.findByCompanyAndRole(
+                company, 
+                RoleManager.getRole(RoleManager.OWNER_ROLE)
+            );
+
+            assertEquals(1, ownerTokens.size(), 
+                        "There should be exactly one owner token for the company");
+
+            assertEquals(AppToken.TokenState.INACTIVE, ownerTokens.getFirst().getTokenState(),
+                        "Owner token should be in INACTIVE state");
+
+            AppToken ownerToken = ownerTokens.getFirst();
+            // 6. Verify no token-user link exists for this token
+            List<TokenUserLink> links = tokenUserLinkRepo.findByToken(ownerToken);
+            assertTrue(links.isEmpty(), 
+                      "There should be no token-user link for owner token");
+        }
+    }
+
 }
