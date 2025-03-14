@@ -38,8 +38,8 @@ import org.user.entities.AppUser;
 import org.user.repositories.UserRepository;
 import org.utils.CustomGenerator;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @Validated
@@ -178,12 +178,15 @@ public class AuthController {
     ////////////////////////////////////// METHODS FOR VERIFYING A COMPANY //////////////////////////////////////
 
     private Company validateCompanyVerificationRequest(CompanyVerifyRequest req) {
+        
         // 1. Check if the company exists
-        if (!this.companyRepo.existsById(req.companyId())) {
+        Optional<Company> c =  this.companyRepo.findById(req.companyId());
+        
+        if (c.isEmpty()) {
             throw new CompanyExceptions.NoCompanyException("Company with ID " + req.companyId() + " not found");
         }
         
-        Company company = this.companyRepo.findById(req.companyId()).get();
+        Company company = c.get();
         
         // 2. check if the email matches the owner email: which means the company was registered with this email
         if (!req.email().equals(company.getOwnerEmail())) {
@@ -204,7 +207,7 @@ public class AuthController {
     }
     
 
-    private AppToken validateTokenMatch(CompanyVerifyRequest req, Company company) {
+    private AppToken validateOwnerToken(CompanyVerifyRequest req, Company company) {
         // Find tokens for this company with owner role
         Role ownerRole = RoleManager.getRole(RoleManager.OWNER_ROLE);
         List<AppToken> companyTokens = this.tokenRepo.findByCompanyAndRole(company, ownerRole);
@@ -231,10 +234,13 @@ public class AuthController {
         }
         
         // Check expiration
-        if (ownerToken.getExpirationTime() != null && ownerToken.getExpirationTime().isBefore(LocalDateTime.now())) {
-            ownerToken.expire();
-            this.tokenRepo.save(ownerToken);
+
+        if (ownerToken.getTokenState() == AppToken.TokenState.EXPIRED) {
             throw new TokenAndUserExceptions.TokenExpiredException("Verification token has expired");
+        }
+
+        if (ownerToken.getTokenState() == AppToken.TokenState.ACTIVE) {
+            throw new TokenAndUserExceptions.TokenAlreadyUsedException("The token is already used by another user");
         }
         
         return ownerToken;
@@ -247,7 +253,7 @@ public class AuthController {
         Company company = this.validateCompanyVerificationRequest(req);
         
         // 2. Verify token match and status
-        AppToken ownerToken = this.validateTokenMatch(req, company);
+        AppToken ownerToken = this.validateOwnerToken(req, company);
         
         // 3. Verify the company
         company.verify();

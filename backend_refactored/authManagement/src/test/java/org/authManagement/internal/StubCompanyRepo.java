@@ -63,6 +63,7 @@ public class StubCompanyRepo implements CompanyRepository {
         for (int i = 0; i < this.db.size(); i++) {
             Company c = this.db.get(i);
             if (c.getId().equals(entity.getId())) {
+
                 this.db.set(i, entity);
                 return entity;
             }

@@ -168,9 +168,13 @@ public class StubTokenRepo implements TokenRepository {
     @Override
     public long count() { return this.db.size(); }
     @Override
-    public void deleteById(String id) {}
+    public void deleteById(String id) {
+        this.db.removeIf(token -> token.getTokenId().equals(id));
+    }
     @Override
-    public void delete(AppToken entity) {}
+    public void delete(AppToken entity) {
+        this.db.remove(entity);
+    }
     @Override
     public void deleteAllById(Iterable<? extends String> ids) {}
     @Override

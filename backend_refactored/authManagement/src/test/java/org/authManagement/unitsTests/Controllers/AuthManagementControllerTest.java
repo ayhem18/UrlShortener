@@ -12,6 +12,7 @@ import org.authManagement.internal.StubTokenUserLinkRepo;
 import org.authManagement.internal.StubTopLevelDomainRepo;
 import org.authManagement.internal.StubUserRepo;
 import org.authManagement.requests.CompanyRegisterRequest;
+import org.authManagement.requests.CompanyVerifyRequest;
 import org.authManagement.requests.UserRegisterRequest;
 import org.company.entities.Company;
 import org.company.entities.TopLevelDomain;
@@ -34,6 +35,7 @@ import org.access.Role;
 import org.access.RoleManager;
 import org.access.SubscriptionManager;
 
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
 
@@ -883,4 +885,420 @@ public class AuthManagementControllerTest {
         }
     }
 
+    @Test 
+    void testVerifyCompanyInitialConstraints() {
+        // 1. Test with a non-existing company
+        for (int i = 0; i < 10; i++) {
+            String nonExistentCompanyId = "__test_1_company_" + gen.randomAlphaString(8);
+            CompanyVerifyRequest nonExistentCompanyRequest = new CompanyVerifyRequest(
+                nonExistentCompanyId,
+                "some_token",
+                "owner@example.com"
+            );
+        
+            assertThrows(
+                CompanyExceptions.NoCompanyException.class,
+                () -> authCon.verifyCompany(nonExistentCompanyRequest),
+                "Should fail when company ID doesn't exist"
+            );
+        }
+        
+        // 2. Test with email different from company owner email
+        // First, ensure we have an unverified company
+        for (int i = 0; i < 10; i++) {
+            String companyId = "__test_2_company_" + gen.randomAlphaString(5);
+            String domain = "domain" + i + ".com";
+            String ownerEmail = "owner@" + domain;
+            
+            Company newCompany = new Company(
+                companyId,
+                SubscriptionManager.getSubscription("TIER_1"),
+                ownerEmail,
+                domain
+            );
+            companyRepo.save(newCompany);
+
+            // Create request with mismatched email
+            String mismatchedEmail = "wrong_" + gen.randomAlphaString(5) + "@" + (newCompany.getEmailDomain() == null ? "" : newCompany.getEmailDomain());
+            CompanyVerifyRequest mismatchedEmailRequest = new CompanyVerifyRequest(
+                newCompany.getId(),
+                "some_token",
+                mismatchedEmail // Different from company.getOwnerEmail()
+            );
+
+            assertThrows(
+                CompanyAndUserExceptions.UserCompanyMisalignedException.class,
+                () -> authCon.verifyCompany(mismatchedEmailRequest),
+                "Should fail when email doesn't match company owner email"
+            );
+        }
+                
+        // 3. Test with already verified company
+        for (int i = 0; i < 10; i++) {
+            String companyId = "__test_3_company_" + gen.randomAlphaString(5);
+            String domain = "domain" + i + ".com";
+            String ownerEmail = "owner@" + domain;
+            
+            Company newCompany = new Company(
+                companyId,
+                SubscriptionManager.getSubscription("TIER_1"),
+                ownerEmail,
+                domain
+            );
+            newCompany.verify();            
+            companyRepo.save(newCompany);
+
+            // Create request with verified company
+            CompanyVerifyRequest verifiedCompanyRequest = new CompanyVerifyRequest(
+                companyId,
+                "some_token",
+                ownerEmail
+            );
+            
+            assertThrows(
+                CompanyExceptions.CompanyAlreadyVerifiedException.class,
+                () -> authCon.verifyCompany(verifiedCompanyRequest),
+                "Should fail when company is already verified"
+            );
+        }
+
+        // 4. Test with owner email that doesn't exist in the user repository
+        
+        // Create 10 new random companies and test verification
+        for (int i = 0; i < 10; i++) {
+            // Create a new unverified company
+            String companyId = "__test_4_company_" + gen.randomAlphaString(5);
+            String domain = "domain" + i + ".com";
+            String ownerEmail = "__no_existing_owner" + gen.randomAlphaString(5) + "@" + domain;
+            
+            Company newCompany = new Company(
+                companyId,
+                SubscriptionManager.getSubscription("TIER_1"),
+                ownerEmail,
+                domain
+            );
+            companyRepo.save(newCompany);
+
+            // Create verification request with correct owner email but no user exists
+            CompanyVerifyRequest missingUserRequest = new CompanyVerifyRequest(
+                companyId,
+                "some_token_" + i,
+                ownerEmail
+            );
+            
+            // Test that verification fails because the user doesn't exist
+            assertThrows(
+                CompanyAndUserExceptions.UserBeforeOwnerException.class,
+                () -> authCon.verifyCompany(missingUserRequest),
+                "Should fail when owner hasn't registered as a user"
+            );
+        }
+    }
+
+
+    @Test
+    void testValidateOwnerToken() {
+        for (int i = 0; i < 10; i++) {
+            String companyId = "__test_5_company_" + gen.randomAlphaString(5);
+            String domain = "domain" + i + ".com";
+            String ownerEmail = "owner@" + domain;
+            
+            Company newCompany = new Company(
+                companyId,
+                SubscriptionManager.getSubscription("TIER_1"),
+                ownerEmail,
+                domain
+            );
+            companyRepo.save(newCompany);
+
+            AppUser owner = new AppUser(
+                ownerEmail,
+                "ownerUser_" + i,
+                "password123",
+                newCompany,
+                RoleManager.getRole(RoleManager.OWNER_ROLE)
+                );
+
+            userRepo.save(owner);
+
+            // do not create a token
+
+            // create a company verify request
+            CompanyVerifyRequest companyVerifyRequest = new CompanyVerifyRequest(
+                companyId,
+                "some_token_",
+                ownerEmail
+            );
+
+            assertThrows(
+                TokenAndUserExceptions.MissingTokenException.class,
+                () -> authCon.verifyCompany(companyVerifyRequest),
+                "Should fail when token doesn't exist"
+            );
+
+            // create multiple tokens for the company
+            AppToken ownerToken = new AppToken(
+                    "token_id",
+                    this.encoder().encode("token_id"),
+                    newCompany,
+                    RoleManager.getRole(RoleManager.OWNER_ROLE),
+                    null
+            );
+
+            AppToken ownerToken2 = new AppToken(
+                "token_id2",
+                this.encoder().encode("token_id2"),
+                newCompany,
+                RoleManager.getRole(RoleManager.OWNER_ROLE),
+                null
+            );
+
+            tokenRepo.save(ownerToken);
+            tokenRepo.save(ownerToken2);
+
+            // test the validateOwnerToken method
+            assertThrows(
+                CompanyAndUserExceptions.MultipleOwnersException.class,
+                () -> authCon.verifyCompany(companyVerifyRequest),
+                "Should fail when multiple tokens exist for the company"
+            );
+
+            // remove the second token
+            tokenRepo.delete(ownerToken2);
+
+            // test the validateOwnerToken method
+            // should fail because the token does not match
+            assertThrows(
+                TokenAndUserExceptions.InvalidTokenException.class,
+                () -> authCon.verifyCompany(companyVerifyRequest),
+                "Should fail when token does not match"
+            );  
+
+            // delete the token
+            tokenRepo.delete(ownerToken);
+
+            // create a new token with the same token id
+            AppToken ownerToken3 = new AppToken(
+                "some_id",
+                this.encoder().encode(companyVerifyRequest.token()),
+                newCompany,
+                RoleManager.getRole(RoleManager.OWNER_ROLE),
+                null
+            ); 
+
+            // activate the token
+            ownerToken3.activate();
+            tokenRepo.save(ownerToken3);
+
+            // test the validateOwnerToken method
+            assertThrows(
+                TokenAndUserExceptions.TokenAlreadyUsedException.class,
+                () -> authCon.verifyCompany(companyVerifyRequest),
+                "Should succeed when token is active"
+            );
+
+            // token expired
+            ownerToken3.expire();
+            tokenRepo.save(ownerToken3);
+
+            // test the validateOwnerToken method
+            assertThrows(
+                TokenAndUserExceptions.TokenExpiredException.class, 
+                () -> authCon.verifyCompany(companyVerifyRequest),
+                "Should fail when token is expired"
+            );            
+        }   
+    }
+
+    @Test
+    void verifySuccessfulCompanyVerification() {
+        for (int i = 0; i < 10; i++) {
+            String companyId = "__test_6_company_" + gen.randomAlphaString(5);
+            String domain = "domain" + i + ".com";
+            String ownerEmail = "owner@" + domain;
+            
+            Company newCompany = new Company(
+                companyId,
+                SubscriptionManager.getSubscription("TIER_1"),
+                ownerEmail,
+                domain
+            );
+            companyRepo.save(newCompany);
+
+            // create the owner user
+            AppUser ownerUser = new AppUser(
+                ownerEmail,
+                "ownerUser_" + i,
+                "password123",
+                newCompany,
+                RoleManager.getRole(RoleManager.OWNER_ROLE)
+            );  
+
+            userRepo.save(ownerUser);
+
+            // create a new token
+            AppToken ownerToken = new AppToken(
+                "owner_token_id" + i, 
+                this.encoder().encode("owner_token_" + i),
+                newCompany,
+                RoleManager.getRole(RoleManager.OWNER_ROLE),
+                null
+            );
+
+            tokenRepo.save(ownerToken);
+
+            // create a company verify request
+            CompanyVerifyRequest companyVerifyRequest = new CompanyVerifyRequest(
+                companyId,
+                "owner_token_" + i,
+                ownerEmail
+            );
+            
+            // verify the company
+            assertDoesNotThrow(
+                () -> authCon.verifyCompany(companyVerifyRequest),
+                "Should succeed when company is verified"
+            );            
+
+            // 1. Verify the company is now verified
+            Company updatedCompany = companyRepo.findById(companyId).get();
+            assertTrue(updatedCompany.getVerified(), 
+                      "Company should be verified after successful verification");
+            
+            // 2. Verify the token is now active
+            AppToken updatedToken = tokenRepo.findById("owner_token_id" + i).get();
+            assertEquals(AppToken.TokenState.ACTIVE, updatedToken.getTokenState(),
+                        "Token should be active after successful verification");
+            
+            // 3. Verify a token-user link was created
+            List<TokenUserLink> links = tokenUserLinkRepo.findByToken(updatedToken);
+            assertFalse(links.isEmpty(), 
+                       "A token-user link should be created after verification");
+            
+            assertEquals(1, links.size(),
+                        "There should be exactly one token-user link");
+
+            // Verify the link connects the correct user and token
+            TokenUserLink link = links.getFirst();
+            
+            assertEquals(ownerEmail, link.getUser().getEmail(),
+                        "Link should be associated with the correct user");
+            
+            assertEquals("owner_token_id" + i, link.getToken().getTokenId(),
+            "Link should be associated with the correct token");
+        }   
+    }
+
+    @Test
+    void testFullRegistrationFlow() throws IllegalAccessException, NoSuchFieldException {
+        // Clear existing data to ensure clean test environment
+        userRepo.deleteAll();
+        tokenRepo.deleteAll();
+        tokenUserLinkRepo.deleteAll();
+        companyRepo.deleteAll();
+        
+        for (int i = 0; i < 10; i++) {
+            String companyId = "full_flow_company_" + gen.randomAlphaString(5);
+            String domain = "flow" + i + ".com";
+            String ownerEmail = "owner@" + domain;
+            
+            // 1. Create and register a company
+            CompanyRegisterRequest companyRequest = new CompanyRegisterRequest(
+                companyId,
+                domain,
+                "TIER_1",
+                ownerEmail,
+                domain
+            );
+            
+            assertDoesNotThrow(
+                () -> authCon.registerCompany(companyRequest),
+                "Company registration should succeed"
+            );
+            
+            // 2. Find the owner token that was created
+            Company company = companyRepo.findById(companyId).get();
+            assertNotNull(company, "Company should be created");
+            assertFalse(company.getVerified(), "Company should not be verified yet");
+            
+            List<AppToken> ownerTokens = tokenRepo.findByCompanyAndRole(
+                company, 
+                RoleManager.getRole(RoleManager.OWNER_ROLE)
+            );
+            
+            assertEquals(1, ownerTokens.size(), "Should create exactly one owner token");
+            AppToken ownerToken = ownerTokens.getFirst();
+            assertEquals(AppToken.TokenState.INACTIVE, ownerToken.getTokenState(), "Token should be inactive initially");
+
+            // 3. Register the owner user
+            UserRegisterRequest ownerRequest = new UserRegisterRequest(
+                companyId,
+                "owner_" + i,
+                "password123",
+                ownerEmail,
+                RoleManager.OWNER_ROLE,
+                null // Owner doesn't need token
+            );
+            
+            assertDoesNotThrow(
+                () -> authCon.registerUser(ownerRequest),
+                "Owner registration should succeed"
+            );
+            
+            // Verify user was created
+            Optional<AppUser> ownerOpt = userRepo.findById(ownerEmail);
+            assertTrue(ownerOpt.isPresent(), "Owner user should be created");
+//            AppUser owner = ownerOpt.get();
+
+            // 4. Verify the company
+            List<AppToken> tokens = tokenRepo.findByCompanyAndRole(
+                company, 
+                RoleManager.getRole(RoleManager.OWNER_ROLE)
+            );
+
+            assertEquals(1, tokens.size(), "Should create exactly one owner token");
+            ownerToken = tokens.getFirst();
+
+            // modify the token hash using reflection
+            Field tokenHashField = AppToken.class.getDeclaredField("tokenHash");
+            tokenHashField.setAccessible(true);
+            tokenHashField.set(ownerToken, this.encoder().encode("owner_token_" + i));
+            tokenRepo.save(ownerToken);
+
+            String finalTokenString = "owner_token_" + i;
+
+            CompanyVerifyRequest verifyRequest = new CompanyVerifyRequest(
+                companyId,
+                finalTokenString,
+                ownerEmail
+            );
+            
+            assertDoesNotThrow(
+                () -> authCon.verifyCompany(verifyRequest),
+                "Company verification should succeed"
+            );
+            
+            // 5. Validate the final state
+            // Check company is verified
+            Company updatedCompany = companyRepo.findById(companyId).get();
+            assertTrue(updatedCompany.getVerified(), 
+                      "Company should be verified after the full flow");
+            
+            // Check token is active
+            AppToken updatedToken = tokenRepo.findById(ownerToken.getTokenId()).get();
+            assertEquals(AppToken.TokenState.ACTIVE, updatedToken.getTokenState(),
+                        "Token should be active after verification");
+            
+            // Check token-user link was created
+            List<TokenUserLink> links = tokenUserLinkRepo.findByToken(updatedToken);
+            assertEquals(1, links.size(), 
+                        "There should be exactly one token-user link");
+            
+            TokenUserLink link = links.getFirst();
+            assertEquals(ownerEmail, link.getUser().getEmail(),
+                        "Link should be associated with the correct user");
+            assertEquals(ownerToken.getTokenId(), link.getToken().getTokenId(),
+                        "Link should be associated with the correct token");
+        }
+    }
 }
