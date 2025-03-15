@@ -1260,6 +1260,8 @@ public class AuthManagementControllerTest {
             ownerToken = tokens.getFirst();
 
             // modify the token hash using reflection
+            // in the real application this is done by the email
+            
             Field tokenHashField = AppToken.class.getDeclaredField("tokenHash");
             tokenHashField.setAccessible(true);
             tokenHashField.set(ownerToken, this.encoder().encode("owner_token_" + i));
