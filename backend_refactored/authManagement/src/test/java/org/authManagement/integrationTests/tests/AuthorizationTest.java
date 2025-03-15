@@ -28,7 +28,7 @@ class AuthorizationTest {
 //            "not-an-email",
 //            "example.com"
 //        );
-//
+
 //        // Perform request and expect validation errors
 //        mockMvc.perform(MockMvcRequestBuilders.post("/api/auth/register/company")
 //                .contentType(MediaType.APPLICATION_JSON)
