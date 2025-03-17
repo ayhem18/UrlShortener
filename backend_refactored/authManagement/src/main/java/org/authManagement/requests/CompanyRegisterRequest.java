@@ -11,7 +11,7 @@ public record CompanyRegisterRequest (
     String id,
 
     @NotBlank
-    @Pattern(regexp = "(www\\.)*[a-zA-Z0-9]+\\.[a-zA-Z]{2,}", message = "the domain is in the wrong format")
+    @Pattern(regexp = "(www\\.)*[a-zA-Z0-9_-]+\\.[a-zA-Z]{2,}", message = "the domain is in the wrong format")
     String topLevelDomain,
 
     @NotBlank
@@ -20,10 +20,10 @@ public record CompanyRegisterRequest (
     @NotBlank
     // expecting a valid email
     @Email(message = "Please provide a valid email address")
-    // expecting a valid company email. Standard email providers (gmail, yahoo, outlook, etc.) are not accepted
+    // the pattern rejects standard email providers with any valid TLD (minimum 2 chars)
     @Pattern(
-        regexp = "^[a-zA-Z0-9._%+-]+@(?!gmail\\.com$|yahoo\\.(com|fr)$|outlook\\.com$|hotmail\\.com$|aol\\.com$|protonmail\\.com$|icloud\\.com$|mail\\.com$|zoho\\.com$|yandex\\.com$|gmx\\.com$|live\\.com$|msn\\.com$)([a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})$",
-        message = "Please provide a valid company email. Standard email providers (gmail, yahoo, outlook, etc.) are not accepted"
+        regexp = "^[a-zA-Z0-9._%+-]+@(?!gmail\\.[a-zA-Z]{2,}$|yahoo\\.[a-zA-Z]{2,}$|outlook\\.[a-zA-Z]{2,}$|hotmail\\.[a-zA-Z]{2,}$|aol\\.[a-zA-Z]{2,}$|protonmail\\.[a-zA-Z]{2,}$|icloud\\.[a-zA-Z]{2,}$|mail\\.[a-zA-Z]{2,}$|zoho\\.[a-zA-Z]{2,}$|yandex\\.[a-zA-Z]{2,}$|gmx\\.[a-zA-Z]{2,}$|live\\.[a-zA-Z]{2,}$|msn\\.[a-zA-Z]{2,}$)([a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})$",
+        message = "Please provide a valid company email. Standard email providers (gmail, yahoo, outlook, etc.) are not accepted regardless of TLD"
     )
     String ownerEmail,
 

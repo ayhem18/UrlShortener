@@ -13,7 +13,7 @@ import org.authManagement.internal.StubTopLevelDomainRepo;
 import org.authManagement.internal.StubUserRepo;
 import org.authManagement.requests.CompanyRegisterRequest;
 import org.authManagement.requests.CompanyVerifyRequest;
-import org.authManagement.requests.UserRegisterRequest;
+import org.authManagement.requests.UserRegisterRequest; 
 import org.company.entities.Company;
 import org.company.entities.TopLevelDomain;
 import org.junit.jupiter.api.AfterEach;
