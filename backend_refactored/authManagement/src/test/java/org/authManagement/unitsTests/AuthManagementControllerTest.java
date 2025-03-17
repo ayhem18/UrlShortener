@@ -1,4 +1,4 @@
-package org.authManagement.unitsTests.Controllers;
+package org.authManagement.unitsTests;
 
 import org.authManagement.controllers.AuthController;
 import org.authManagement.exceptions.CompanyAndUserExceptions;
@@ -66,28 +66,28 @@ public class AuthManagementControllerTest {
     }
 
     @BeforeEach
-    public void setUp() {        
+    public void setUp() {
         // Clear repositories to ensure a clean state
         clearRepositories();
-        
+
         // Initialize default test data for each repository
-        
+
         // 1. Add default companies
         Company youtube = new Company("aaa", SubscriptionManager.getSubscription("TIER_1"), "owner@youtube.com", "youtube.com");
         Company github = new Company("bbb", SubscriptionManager.getSubscription("TIER_1"), "owner@github.com", "github.com");
         companyRepo.save(youtube);
         companyRepo.save(github);
-        
+
         // 2. Add default domains for these companies
         TopLevelDomain youtubeDomain = new TopLevelDomain("domain1", "youtube.com", "hash_youtube", youtube);
         TopLevelDomain githubDomain = new TopLevelDomain("domain2", "github.com", "hash_github", github);
         topLevelDomainRepo.save(youtubeDomain);
         topLevelDomainRepo.save(githubDomain);
-        
+
         // 3. Add default users for these companies
         AppUser youtubeOwner = new AppUser("owner@youtube.com", "ytowner", "password123", youtube, RoleManager.getRole(RoleManager.OWNER_ROLE));
         AppUser githubOwner = new AppUser("owner@github.com", "ghowner", "password123", github, RoleManager.getRole(RoleManager.OWNER_ROLE));
-        
+
         AppUser youtubeAdmin = new AppUser("admin@youtube.com", "ytadmin", "password123", youtube, RoleManager.getRole(RoleManager.ADMIN_ROLE));
         AppUser githubAdmin = new AppUser("admin@github.com", "ghadmin", "password123", github, RoleManager.getRole(RoleManager.ADMIN_ROLE));
 

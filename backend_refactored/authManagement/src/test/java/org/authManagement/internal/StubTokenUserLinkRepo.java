@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.FluentQuery;
+import org.springframework.stereotype.Repository;
 import org.tokens.entities.AppToken;
 import org.tokens.entities.TokenUserLink;
 import org.tokens.repositories.TokenUserLinkRepository;
@@ -17,6 +18,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.UUID;
 
+@Repository
 @SuppressWarnings({"unused", "null", "NullableProblems", "ConstantConditions"})
 public class StubTokenUserLinkRepo implements TokenUserLinkRepository {
     private final List<TokenUserLink> db;

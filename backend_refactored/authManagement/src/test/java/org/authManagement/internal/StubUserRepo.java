@@ -7,12 +7,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.FluentQuery;
+import org.springframework.stereotype.Repository;
 import org.user.entities.AppUser;
 import org.user.repositories.UserRepository;
 
 import java.util.*;
 import java.util.function.Function;
 
+
+@Repository
 @SuppressWarnings({"unused", "null", "NullableProblems", "ConstantConditions"})
 public class StubUserRepo implements UserRepository {
 

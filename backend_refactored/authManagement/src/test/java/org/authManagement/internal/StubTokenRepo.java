@@ -10,6 +10,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.FluentQuery;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Repository;
 import org.tokens.entities.AppToken;
 import org.tokens.entities.AppToken.TokenState;
 import org.tokens.repositories.TokenRepository;
@@ -18,6 +19,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Repository
 @SuppressWarnings({"unused", "null", "NullableProblems", "ConstantConditions"})
 public class StubTokenRepo implements TokenRepository {
     private final List<AppToken> db;

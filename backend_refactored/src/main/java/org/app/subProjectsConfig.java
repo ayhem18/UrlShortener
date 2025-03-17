@@ -1,6 +1,5 @@
 package org.app;
 
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -33,7 +32,6 @@ import java.util.Properties;
                     "org.authManagement.entities"
                 }
 )
-// @EnableAutoConfiguration // this annotation is added to make Spring boot auto-configure the java MailSender Bean hopefully.
 @PropertySource("classpath:mail.properties") 
 public class subProjectsConfig {
     // create some beans needed for the app

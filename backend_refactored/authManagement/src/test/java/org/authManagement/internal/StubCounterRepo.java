@@ -8,11 +8,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.FluentQuery;
+import org.springframework.stereotype.Repository;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
+@Repository
 @SuppressWarnings({"unused", "null", "NullableProblems", "ConstantConditions"})
 public class StubCounterRepo implements CounterRepository {
     private final List<CollectionCounter> db;

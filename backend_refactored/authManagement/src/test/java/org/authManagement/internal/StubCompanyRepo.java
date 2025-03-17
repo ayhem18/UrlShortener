@@ -10,9 +10,13 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.FluentQuery;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
+
 import java.util.*;
 import java.util.function.Function;
 
+@Repository
 @SuppressWarnings({"unused", "null", "NullableProblems", "ConstantConditions"})
 public class StubCompanyRepo implements CompanyRepository {
     private final List<Company> db;
