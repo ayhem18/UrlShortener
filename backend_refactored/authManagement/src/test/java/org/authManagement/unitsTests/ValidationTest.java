@@ -9,6 +9,7 @@ import org.access.SubscriptionManager;
 import org.authManagement.configurations.WebTestConfig;
 import org.authManagement.controllers.AuthController;
 import org.authManagement.requests.CompanyRegisterRequest;
+import org.authManagement.requests.UserRegisterRequest;
 import org.company.entities.Company;
 import org.company.entities.TopLevelDomain;
 import org.company.repositories.CompanyRepository;
@@ -16,6 +17,7 @@ import org.company.repositories.TopLevelDomainRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.CustomEditorConfigurer;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -278,7 +280,175 @@ public class ValidationTest {
             assertEquals(1, tokenRepo.findByCompanyAndRole(savedCompany, RoleManager.getRole(RoleManager.OWNER_ROLE)).size(), "At least one token should be created for the company");
         }
     }
+
+    @Test
+    void testRegisterUserInvalidUsername() throws Exception {
+
+        for (int i = 0; i < 50; i++) {
+
+            String companyId = "company_" + String.format("%04d", i);
+
+            // create a company
+            CompanyRegisterRequest companyRequest = new CompanyRegisterRequest(
+                companyId,
+                "example.com",
+                "TIER_1",
+                "owner@example.com",
+                null
+            );
+
+            mockMvc.perform(
+                MockMvcRequestBuilders.post("/api/auth/register/company")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(companyRequest))
+            );
+
+            // generate a username that start with a non-alphabetic character
+            char c = 'a';
+
+            while (Character.isLetter(c)) {
+                c = (char) (Math.random() * 128);
+            }
+
+            String username = c + customGenerator.randomAlphaString(10);
+
+            UserRegisterRequest request = new UserRegisterRequest(
+                companyId,
+                username, 
+                "some_password",
+                "owner@example.com",
+                "owner",
+                null
+            );
+
+            mockMvc.perform(
+                MockMvcRequestBuilders.post("/api/auth/register/user")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request))
+            )
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+
+        }
+    }
+
+    @Test
+    void testRegisterUserMissingFields() throws Exception {
+        // Create a valid company first to use in the tests
+        String companyId = "company_test";
+        CompanyRegisterRequest companyRequest = new CompanyRegisterRequest(
+            companyId,
+            "example.com",
+            "TIER_1",
+            "owner@example.com",
+            "example.com"
+        );
+        
+        mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/register/company")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(companyRequest))
+        )
+        .andExpect(MockMvcResultMatchers.status().isCreated());
+        
+        // Valid base request (will modify field by field)
+        String validUsername = "validUser";
+        String validPassword = "password123";
+        String validEmail = "user@example.com";
+        String validRole = "employee";
+        String validToken = "some_token";
+        
+        // Test each field one by one
+        // 1. Missing companyId
+        UserRegisterRequest missingCompanyIdRequest = new UserRegisterRequest(
+            "",  // Empty companyId
+            validUsername,
+            validPassword,
+            validEmail,
+            validRole,
+            validToken
+        );
+        
+        mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/register/user")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(missingCompanyIdRequest))
+        )
+        .andExpect(MockMvcResultMatchers.status().isBadRequest());
+        
+        // 2. Missing username
+        UserRegisterRequest missingUsernameRequest = new UserRegisterRequest(
+            companyId,
+            "",  // Empty username
+            validPassword,
+            validEmail,
+            validRole,
+            validToken
+        );
+        
+        mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/register/user")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(missingUsernameRequest))
+        )
+        .andExpect(MockMvcResultMatchers.status().isBadRequest());
+        
+        // 3. Missing password
+        UserRegisterRequest missingPasswordRequest = new UserRegisterRequest(
+            companyId,
+            validUsername,
+            "",  // Empty password
+            validEmail,
+            validRole,
+            validToken
+        );
+        
+        mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/register/user")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(missingPasswordRequest))
+        )
+        .andExpect(MockMvcResultMatchers.status().isBadRequest());
+        
+        // 4. Missing email
+        UserRegisterRequest missingEmailRequest = new UserRegisterRequest(
+            companyId,
+            validUsername,
+            validPassword,
+            "",  // Empty email
+            validRole,
+            validToken
+        );
+        
+        mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/register/user")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(missingEmailRequest))
+        )
+        .andExpect(MockMvcResultMatchers.status().isBadRequest());
+        
+        // 5. Missing role
+        UserRegisterRequest missingRoleRequest = new UserRegisterRequest(
+            companyId,
+            validUsername,
+            validPassword,
+            validEmail,
+            "",  // Empty role
+            validToken
+        );
+        
+        mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/register/user")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(missingRoleRequest))
+        )
+        .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    
 }
+
+
+
 
 
 

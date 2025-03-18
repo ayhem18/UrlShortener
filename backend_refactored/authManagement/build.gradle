@@ -31,6 +31,9 @@ dependencies {
     // // add spring boot mail dependency
      implementation group: 'org.springframework.boot', name: 'spring-boot-starter-mail', version: '3.4.2'
 
+    // for the swagger ui
+    implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.8.5'
+
     // for security
     implementation group: 'org.springframework.security', name: 'spring-security-web', version: '6.4.1'
     implementation group: 'org.springframework.security', name: 'spring-security-core', version: '6.4.2'

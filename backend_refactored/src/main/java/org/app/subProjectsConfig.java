@@ -16,7 +16,8 @@ import java.util.Properties;
 @Configuration
 @ComponentScan(basePackages = {
     "org.apiConfigurations",
-    "org.authManagement.controllers",  
+    "org.authManagement.controllers",
+    "org.authManagement.configurations"  
 })
 
 @EnableMongoRepositories(basePackages = {"org.company.repositories", 
@@ -32,7 +33,7 @@ import java.util.Properties;
                     "org.authManagement.entities"
                 }
 )
-@PropertySource("classpath:mail.properties") 
+@PropertySource("classpath:mail.properties")
 public class subProjectsConfig {
     // create some beans needed for the app
     @Bean

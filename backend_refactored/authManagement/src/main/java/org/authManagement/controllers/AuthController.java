@@ -37,6 +37,11 @@ import org.tokens.repositories.TokenUserLinkRepository;
 import org.user.entities.AppUser;
 import org.user.repositories.UserRepository;
 import org.utils.CustomGenerator;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import java.util.List;
 import java.util.Optional;
@@ -122,10 +127,19 @@ public class AuthController {
     private void sendCompanyVerificationEmail(String ownerEmail, String ownerToken) {
         String subject = "Company Verification";
         String body = "Here is your company verification token:\n" + ownerToken + "\nThe token expires in 1 hour.";
-        this.emailService.sendEmail(ownerEmail, subject, body);  
+        // this.emailService.sendEmail(ownerEmail, subject, body);  
     }
 
     @PostMapping("api/auth/register/company")
+    @Operation(summary = "Register a new company", 
+               description = "Creates a new company record and returns the company details")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Company successfully created",
+                    content = @Content(mediaType = "application/json", 
+                    schema = @Schema(implementation = Company.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid input provided", 
+                    content = @Content)
+    })
     public ResponseEntity<String> registerCompany(@Valid @RequestBody CompanyRegisterRequest req) throws JsonProcessingException {
         // registering a company is done through the following steps: 
         // 1. check the uniqueness constraints
@@ -327,6 +341,7 @@ public class AuthController {
         return owner;
     }
 
+
     private AppToken verifyToken(UserRegisterRequest req, Company company) {
         // Get the role from the request
         Role requestedRole = RoleManager.getRole(req.role());
@@ -425,8 +440,6 @@ public class AuthController {
 
         return ResponseEntity.ok(objectMapper().writeValueAsString(newUser));
     }
-
-
 
 }
 
