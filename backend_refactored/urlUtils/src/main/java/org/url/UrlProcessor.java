@@ -10,11 +10,11 @@ import java.util.Map;
 import java.util.HashMap;
 
 
-public class UrlEncoder {
+public class UrlProcessor {
 
     private final CustomGenerator customGenerator;
 
-    public UrlEncoder(CustomGenerator customGenerator) {
+    public UrlProcessor(CustomGenerator customGenerator) {
         this.customGenerator = customGenerator;
     }
 
@@ -112,12 +112,19 @@ public class UrlEncoder {
     }
 
 
-    public String encode(String urlString, 
+    public String encode(
+                    String urlString, 
+                    String encodedUrlPrefix,
                     String topLevelDomainHash, 
                     List<Map<String, String>> encodedData,
                     List<Map<String, String>> decodedData,
                     int minVariableLength,
                     int minParameterLength) {
+        
+        // make sure the prefix ends with a "/" character
+        if (!encodedUrlPrefix.endsWith("/") && !encodedUrlPrefix.isEmpty()) {
+            throw new IllegalArgumentException("The prefix must be either empty or ends with a '/' character");
+        }
 
         // 1. Breakdown the urlString into a list of UrlLevelEntity
         List<UrlLevelEntity> urlLevels = breakdown(urlString);
@@ -133,6 +140,8 @@ public class UrlEncoder {
         // Keep the protocol as is (first element)
         String protocol = urlLevels.getFirst().levelName();
         encodedUrl.append(protocol);
+
+        encodedUrl.append(encodedUrlPrefix);
 
         // Use the provided hash for the domain (second element)
         encodedUrl.append(topLevelDomainHash);
@@ -274,4 +283,88 @@ public class UrlEncoder {
 
         return encodedUrl.toString();
     }
+
+    /**
+     * Decodes an encoded URL back to its original form using the stored mapping data
+     * @param encodedUrl The shortened/encoded URL to decode
+     * @param decodedData The mapping from encoded segments to original segments
+     * @return The original URL
+     * @throws IllegalArgumentException if the URL cannot be decoded
+     */
+    public String decode(String encodedUrl, String originalTopLevelDomain, String encodedUrlPrefix, List<Map<String, String>> decodedData) {
+        // Check if there's any data to decode with
+        if (decodedData == null || decodedData.isEmpty()) {
+            throw new IllegalArgumentException("No decoding data available");
+        }
+        
+        // Break down the encoded URL
+        List<UrlLevelEntity> levels = breakdown(encodedUrl);
+        
+        // Need at least protocol and domain to proceed
+        if (levels.size() < 3) {
+            throw new IllegalArgumentException("Invalid encoded URL format");
+        }
+        
+        // extract the protocol as it is not encoded
+        String protocol = levels.getFirst().levelName();
+
+        // extract the encodedUrlPrefix as it is not encoded
+        if (!levels.get(1).levelName().equals(encodedUrlPrefix)) {
+            throw new IllegalArgumentException("The prefix extracted from the encded url does not match the expected prefix");
+        }
+        
+        // Start building original URL
+        StringBuilder originalUrl = new StringBuilder(protocol);
+        
+        originalUrl.append(encodedUrlPrefix);
+        
+        originalUrl.append(originalTopLevelDomain);
+        
+        // Process remaining path segments
+        for (int i = 2; i < levels.size(); i++) {
+            UrlLevelEntity currentLevel = levels.get(i);
+            int segmentIndex = i - 2; // Adjust index to match decodedData
+            
+            // Add path separator
+            originalUrl.append("/");
+            
+            if (segmentIndex >= decodedData.size()) {
+                throw new IllegalArgumentException("Either Inconsistent state or unvalid encoded url");
+            }
+
+            // We need to look up the original value for each segment
+            Map<String, String> currentDecodedMap = decodedData.get(segmentIndex);
+                
+            // the exact type of the segment path does not matter (since the encoding is not meant to be human readable)
+            String segmentPath = currentLevel.levelName() != null ? currentLevel.levelName() : currentLevel.pathVariable();
+
+            originalUrl.append(currentDecodedMap.getOrDefault(segmentPath, segmentPath));
+            
+            // Handle query parameters if present
+            if (currentLevel.queryParamNames() != null && !currentLevel.queryParamNames().isEmpty()) {
+                originalUrl.append("?");
+                
+                for (int j = 0; j < currentLevel.queryParamNames().size(); j++) {
+                    String encodedParamName = currentLevel.queryParamNames().get(j);
+                    String encodedParamValue = currentLevel.queryParamValues().get(j);
+                    
+                    // Add parameter separator if not the first param
+                    if (j > 0) {
+                        originalUrl.append("&");
+                    }
+
+                    originalUrl.append(currentDecodedMap.getOrDefault(encodedParamName, encodedParamName));
+                    
+                    originalUrl.append("="); 
+
+                    originalUrl.append(currentDecodedMap.getOrDefault(encodedParamValue, encodedParamValue));
+
+                }
+            }
+        }
+        
+        return originalUrl.toString();
+    }
+
+
 }       
