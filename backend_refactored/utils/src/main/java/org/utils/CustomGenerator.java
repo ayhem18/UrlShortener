@@ -1,6 +1,8 @@
 package org.utils;
 
 import java.util.Random;
+import java.util.List;
+import java.util.HashSet;
 
 public class CustomGenerator {
     private static final String ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -8,7 +10,7 @@ public class CustomGenerator {
     private static final String CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijk"
             +"lmnopqrstuvwxyz!@#$%&";
 
-    private String innerRandomString(int length, String characters) {
+    public String randomStringFromChars(int length, String characters) {
         StringBuilder str = new StringBuilder();
         Random random = new Random();
         for (int i = 0 ; i < length; i++) {
@@ -19,11 +21,11 @@ public class CustomGenerator {
     }
 
     public String randomString(int length) {
-        return innerRandomString(length, CHARS);
+        return randomStringFromChars(length, CHARS);
     }
 
     public String randomAlphaString(int length) {
-        return innerRandomString(length, ALPHA);
+        return randomStringFromChars(length, ALPHA);
     }
 
 
@@ -103,6 +105,34 @@ public class CustomGenerator {
             newString.append(c);
         }
         return newString.toString();
+    }
+
+    /**
+     * Generates a random string of specified length that excludes any characters in the excludeSet
+     * @param excludeChars List of characters to exclude
+     * @param length Length of the string to generate
+     * @return Random string without any characters from excludeSet
+     */
+    public String randomStringExclude(List<Character> excludeChars, int length) {
+        // Convert the list to a HashSet for O(1) lookups
+        HashSet<Character> excludeSet = new HashSet<>(excludeChars);
+        
+        StringBuilder allowedChars = new StringBuilder();
+        
+        // Start with all characters in CHARS
+        for (char c : CHARS.toCharArray()) {
+            // Only include if not in excludeSet
+            if (!excludeSet.contains(c)) {
+                allowedChars.append(c);
+            }
+        }
+        
+        // If we excluded too many characters, throw an exception
+        if (allowedChars.isEmpty()) {
+            throw new IllegalArgumentException("excludeSet contains all available characters");
+        }
+        
+        return randomStringFromChars(length, allowedChars.toString());
     }
 
 }

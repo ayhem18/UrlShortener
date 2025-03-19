@@ -4,16 +4,52 @@
 package org.url;
 
 import org.junit.jupiter.api.Test;
+import org.utils.CustomGenerator;
 
 import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class UrlUtilitiesTest {
 
-    // private final UrlValidator urlValidator = new UrlValidator();
-    private final UrlEncoder decoder = new UrlEncoder();
+    private final UrlEncoder decoder = new UrlEncoder(new CustomGenerator());
     
+
+    @Test
+    void testPathVariableDetection() {        
+        // Test URLs with various segment patterns
+        String alphabeticSegment = "users";         // Should be a level name
+        String alphaWithUnderscores = "user_data";  // Should be a level name
+        String alphaWithHyphens = "user-profile";   // Should be a level name
+        
+        // These should all be detected as path variables, not level names
+        String numeric = "12345"; 
+        String alphaNumeric = "user123";
+        String withSpecialChars = "doc@version";
+        
+        // Create test URLs
+        String url1 = "https://example.com/" + alphabeticSegment + "/" + numeric;
+        String url2 = "https://example.com/" + alphaWithUnderscores + "/" + alphaNumeric;
+        String url3 = "https://example.com/" + alphaWithHyphens + "/" + withSpecialChars;
+        
+        // Parse URLs
+        List<UrlLevelEntity> result1 = decoder.breakdown(url1);
+        List<UrlLevelEntity> result2 = decoder.breakdown(url2);
+        List<UrlLevelEntity> result3 = decoder.breakdown(url3);
+        
+        // Verify level name detection
+        assertEquals(alphabeticSegment, result1.get(2).levelName());
+        assertEquals(alphaWithUnderscores, result2.get(2).levelName());
+        assertEquals(alphaWithHyphens, result3.get(2).levelName());
+        
+        // Verify path variable detection
+        assertEquals(numeric, result1.get(3).pathVariable());
+        assertEquals(alphaNumeric, result2.get(3).pathVariable());
+        assertEquals(withSpecialChars, result3.get(3).pathVariable());
+    }
+
 
     @Test
     void testUrlDecoderOneLevel() {
@@ -394,4 +430,472 @@ class UrlUtilitiesTest {
         );
         assertEquals(expected20, decoder.breakdown(url20));
     }
+
+    @Test
+    void testEncodeMinimumLengthRequirements() {
+        CustomGenerator cs = new CustomGenerator();
+
+        // Setup data structures to store encoding mappings
+        List<Map<String, String>> encodedData = new ArrayList<>();
+        List<Map<String, String>> decodedData = new ArrayList<>();
+        
+        // Characters that make a string a path variable instead of a level name (anything not alphabetic, _, or -)
+        String pathVarChars = "0123456789!@#$%";
+        
+        // Test with different minimum length requirements
+        for (int minVarLength = 8; minVarLength <= 12; minVarLength++) {
+            for (int minParamLength = 5; minParamLength <= 9; minParamLength++) {
+                // Reset data structures for each test configuration
+                encodedData.clear();
+                decodedData.clear();
+                
+                // Generate test domain hash
+                String domainHash = "sh.rt";
+                
+                // Create short path variables (length < minVarLength)
+                // Make sure they contain numbers or special chars to be recognized as path variables
+                String shortPathVar1 = cs.randomAlphaString(minVarLength - 4) + cs.randomStringFromChars(3, pathVarChars);
+                String shortPathVar2 = cs.randomAlphaString(minVarLength - 4) + cs.randomStringFromChars(3, pathVarChars);
+                
+                // Create short level names and parameter names (length < minParamLength)
+                String shortLevelName = cs.randomAlphaString(minParamLength - 2);
+                String shortParamName = cs.randomAlphaString(minParamLength - 1);
+                String shortParamValue = cs.randomStringFromChars(3, pathVarChars) + cs.randomAlphaString(minVarLength - 4) ;
+                
+                // Create long segments (should be encoded)
+                String longLevelName = cs.randomAlphaString(minParamLength + 5);
+                // Ensure the path variable has non-alphabetic characters
+                String longPathVar = cs.randomAlphaString(minVarLength + 2) + cs.randomStringFromChars(3, pathVarChars);
+                String longParamName = cs.randomAlphaString(minParamLength + 3);
+                String longParamValue = cs.randomAlphaString(minVarLength - 4) + cs.randomStringFromChars(6, pathVarChars);
+
+                // Create test URLs with these segments
+                String url1 = "https://example.com/" + shortLevelName + "/" + longPathVar;
+                String url2 = "https://example.com/" + longLevelName + "/" + shortPathVar1;
+                String url3 = "https://example.com/api/" + shortLevelName + "?" + shortParamName + "=" + shortParamValue;
+                String url4 = "https://example.com/api/" + longLevelName + "?" + longParamName + "=" + longParamValue;
+                String url5 = "https://example.com/" + shortLevelName + "/" + shortPathVar2 + "?" + longParamName + "=" + shortParamValue;
+                
+                // Test URL 1 - short level name with long path variable
+                String encoded1 = decoder.encode(url1, domainHash, encodedData, decodedData, minVarLength, minParamLength);
+                
+                // URL 1 assertions
+                assertTrue(encoded1.contains(shortLevelName), 
+                    "Short level name (" + shortLevelName + ") should not be encoded with minParamLength=" + minParamLength);
+                assertFalse(encoded1.contains(longPathVar), 
+                    "Long path variable (" + longPathVar + ") should be encoded with minVarLength=" + minVarLength);
+                
+                // Test URL 2 - long level name with short path variable
+                String encoded2 = decoder.encode(url2, domainHash, encodedData, decodedData, minVarLength, minParamLength);
+                
+                // URL 2 assertions
+                assertFalse(encoded2.contains(longLevelName), 
+                    "Long level name (" + longLevelName + ") should be encoded with minParamLength=" + minParamLength);
+                assertTrue(encoded2.contains(shortPathVar1), 
+                    "Short path variable (" + shortPathVar1 + ") should not be encoded with minVarLength=" + minVarLength);
+                
+                // Test URL 3 - short segments throughout
+                String encoded3 = decoder.encode(url3, domainHash, encodedData, decodedData, minVarLength, minParamLength);
+                
+                // URL 3 assertions
+                assertTrue(encoded3.contains(shortLevelName), 
+                    "Short level name should not be encoded");
+                assertTrue(encoded3.contains(shortParamName), 
+                    "Short parameter name should not be encoded");
+                assertTrue(encoded3.contains(shortParamValue), 
+                    "Short parameter value should not be encoded");
+                
+                // Test URL 4 - long segments throughout
+                String encoded4 = decoder.encode(url4, domainHash, encodedData, decodedData, minVarLength, minParamLength);
+                
+                // URL 4 assertions
+                assertFalse(encoded4.contains(longLevelName), 
+                    "Long level name should be encoded");
+                assertFalse(encoded4.contains(longParamName), 
+                    "Long parameter name should be encoded");
+                assertFalse(encoded4.contains(longParamValue), 
+                    "Long parameter value should be encoded");
+                
+                // Test URL 5 - mixed short and long segments
+                String encoded5 = decoder.encode(url5, domainHash, encodedData, decodedData, minVarLength, minParamLength);
+                
+                // URL 5 assertions
+                assertTrue(encoded5.contains(shortLevelName), 
+                    "Short level name should not be encoded");
+                assertTrue(encoded5.contains(shortPathVar2), 
+                    "Short path variable should not be encoded");
+                assertFalse(encoded5.contains(longParamName), 
+                    "Long parameter name should be encoded");
+                assertTrue(encoded5.contains(shortParamValue), 
+                    "Short parameter value should not be encoded");
+                
+            }
+        }
+    }
+
+    @Test
+    void testEncodePersistenceAndReuse() {
+        // Setup data structures to store encoding mappings
+        List<Map<String, String>> encodedData = new ArrayList<>();
+        List<Map<String, String>> decodedData = new ArrayList<>();
+        String domainHash = "example.hash";
+        int minVarLength = 8;
+        int minParamLength = 6;
+        
+        // Create test URLs with common segments
+        String commonLevelName = "profile";
+        String commonPathVar = "123456789";
+        String commonParamName = "filter";
+        String commonParamValue = "active";
+        
+        String url1 = "https://example.com/" + commonLevelName + "/" + commonPathVar;
+        String url2 = "https://example.com/users/" + commonPathVar + "/details";
+        String url3 = "https://example.com/search?" + commonParamName + "=" + commonParamValue;
+        String url4 = "https://example.com/" + commonLevelName + "?" + commonParamName + "=" + commonParamValue;
+        
+        // First encode all URLs
+        String encoded1 = decoder.encode(url1, domainHash, encodedData, decodedData, minVarLength, minParamLength);
+        String encoded2 = decoder.encode(url2, domainHash, encodedData, decodedData, minVarLength, minParamLength);
+        String encoded3 = decoder.encode(url3, domainHash, encodedData, decodedData, minVarLength, minParamLength);
+        String encoded4 = decoder.encode(url4, domainHash, encodedData, decodedData, minVarLength, minParamLength);
+        
+        // Extract encoded values from the mappings
+        String encodedLevelName = null;
+        String encodedPathVar = null;
+        String encodedParamName = null;
+        String encodedParamValue = null;
+        
+        for (Map<String, String> mappings : encodedData) {
+            if (mappings.containsKey(commonLevelName)) {
+                encodedLevelName = mappings.get(commonLevelName);
+            }
+            if (mappings.containsKey(commonPathVar)) {
+                encodedPathVar = mappings.get(commonPathVar);
+            }
+            if (mappings.containsKey(commonParamName)) {
+                encodedParamName = mappings.get(commonParamName);
+            }
+            if (mappings.containsKey(commonParamValue)) {
+                encodedParamValue = mappings.get(commonParamValue);
+            }
+        }
+        
+        // Assert that encoded values are found in appropriate URL encodings
+        assertNotNull(encodedLevelName, "Common level name should be encoded");
+        assertNotNull(encodedPathVar, "Common path variable should be encoded");
+        assertNotNull(encodedParamName, "Common parameter name should be encoded");
+        assertNotNull(encodedParamValue, "Common parameter value should be encoded");
+        
+        assertTrue(encoded1.contains(encodedLevelName), "URL1 should contain encoded level name");
+        assertTrue(encoded1.contains(encodedPathVar), "URL1 should contain encoded path variable");
+        
+        assertTrue(encoded2.contains(encodedPathVar), "URL2 should contain encoded path variable");
+        
+        assertTrue(encoded3.contains(encodedParamName), "URL3 should contain encoded parameter name");
+        assertTrue(encoded3.contains(encodedParamValue), "URL3 should contain encoded parameter value");
+        
+        assertTrue(encoded4.contains(encodedLevelName), "URL4 should contain encoded level name");
+        assertTrue(encoded4.contains(encodedParamName), "URL4 should contain encoded parameter name");
+        assertTrue(encoded4.contains(encodedParamValue), "URL4 should contain encoded parameter value");
+        
+        // Now create new URLs with the same segments to verify reuse
+        String newUrl1 = "https://example.com/articles/" + commonPathVar;
+        String newUrl2 = "https://example.com/" + commonLevelName + "/settings";
+        
+        String newEncoded1 = decoder.encode(newUrl1, domainHash, encodedData, decodedData, minVarLength, minParamLength);
+        String newEncoded2 = decoder.encode(newUrl2, domainHash, encodedData, decodedData, minVarLength, minParamLength);
+        
+        // Verify encoded segments are reused
+        assertTrue(newEncoded1.contains(encodedPathVar), 
+            "New URL should reuse the same encoding for the common path variable");
+        assertTrue(newEncoded2.contains(encodedLevelName), 
+            "New URL should reuse the same encoding for the common level name");
+    }
+
+    @Test
+    void testUrlEncodingWithStructuredSegments() {
+        // Setup data structures to store encoding mappings
+        List<Map<String, String>> encodedData = new ArrayList<>();
+        List<Map<String, String>> decodedData = new ArrayList<>();
+        String domainHash = "shortdomain.co";
+        int minVarLength = 10;
+        int minParamLength = 8;
+        
+        // For each level (0, 1, 2), create structured test segments
+        String[][][] segments = new String[3][4][3]; // [level][type][index]
+        
+        // Types are: 0=pathVariable, 1=levelName, 2=paramName, 3=paramValue
+        for (int level = 0; level < 3; level++) {
+            for (int typeIndex = 0; typeIndex < 4; typeIndex++) {
+                for (int itemIndex = 0; itemIndex < 3; itemIndex++) {
+                    // Generate different patterns for each type
+                    switch(typeIndex) {
+                        case 0: // Path variables - add numbers to ensure they're detected as path variables
+                            segments[level][typeIndex][itemIndex] = 
+                                "level" + level + "_path_variable" + itemIndex + "_" + (level + 10 * itemIndex);
+                            break;
+                        case 1: // Level names - use only alphabetic characters and underscores
+                            segments[level][typeIndex][itemIndex] = 
+                                "level" + level + "_level_name" + itemIndex;
+                            break;
+                        case 2: // Parameter names
+                            segments[level][typeIndex][itemIndex] = 
+                                "level" + level + "_param_name" + itemIndex;
+                            break;
+                        case 3: // Parameter values
+                            segments[level][typeIndex][itemIndex] = 
+                                "level" + level + "_param_value" + itemIndex + "_" + (level + 10 * itemIndex);
+                            break;
+                    }
+                }
+            }
+        }
+        
+        // Create a CustomGenerator instance for ID generation verification
+        CustomGenerator cs = new CustomGenerator();
+        
+        // Test URLs with just domain + level name
+        String protocol = "https://";
+        
+        // Test all level names from the first level (level 0)
+        for (int i = 0; i < 3; i++) {
+            // Get the level name for this iteration
+            String levelName = segments[0][1][i]; // level 0, type 1 (level name), index i
+            
+            // Make sure the level name is long enough to be encoded
+            if (levelName.length() >= minParamLength) {
+                // Create URL with domain + level name
+                String url = protocol + "example.com/" + levelName;
+                
+                // Encode the URL
+                String encodedUrl = decoder.encode(url, domainHash, encodedData, decodedData, minVarLength, minParamLength);
+                
+                String levelName_id = cs.generateId(i);
+
+
+                // Verify the encoding follows expected pattern: protocol://domainHash/generatedId
+                String expectedPattern = protocol + domainHash + "/" + levelName_id;
+                assertEquals(expectedPattern, encodedUrl, 
+                    "Encoded URL should match pattern with generated ID");
+
+
+                assertTrue(encodedData.getFirst().containsKey(levelName), "Encoded data should contain the generated ID");
+                assertEquals(encodedData.getFirst().get(levelName), levelName_id, "Encoded data should contain the generated ID");
+                assertTrue( decodedData.getFirst().containsKey(levelName_id), "Encoded data should contain the generated ID");
+                assertEquals(decodedData.getFirst().get(levelName_id), levelName, "Encoded data should contain the generated ID");
+            }
+        }
+
+        // After the level name test loop, add this code to test path variables
+        // Test all path variables from the first level (level 0)
+        for (int i = 0; i < 3; i++) {
+            // Get the path variable for this iteration
+            String pathVariable = segments[0][0][i]; // level 0, type 0 (path variable), index i
+            
+            // Make sure the path variable is long enough to be encoded
+            if (pathVariable.length() >= minVarLength) {
+                // Create URL with domain + path variable
+                String url = protocol + "example.com/" + pathVariable;
+                
+                // Encode the URL
+                String encodedUrl = decoder.encode(url, domainHash, encodedData, decodedData, minVarLength, minParamLength);
+                
+                // Path variables should get IDs starting after the level names (i + 3)
+                String pathVar_id = cs.generateId(i + 3);
+                
+                // Verify the encoding follows expected pattern: protocol://domainHash/generatedId
+                String expectedPattern = protocol + domainHash + "/" + pathVar_id;
+                assertEquals(expectedPattern, encodedUrl, 
+                    "Encoded URL should match pattern with generated ID for path variable");
+                
+                // Verify the mappings were created correctly
+                assertTrue(encodedData.getFirst().containsKey(pathVariable), 
+                    "Encoded data should contain the generated ID for path variable");
+                assertEquals(encodedData.getFirst().get(pathVariable), pathVar_id, 
+                    "Encoded data should map path variable to correct ID");
+                assertTrue(decodedData.getFirst().containsKey(pathVar_id), 
+                    "Decoded data should contain mapping for ID");
+                assertEquals(decodedData.getFirst().get(pathVar_id), pathVariable, 
+                    "Decoded data should map ID back to correct path variable");
+            }
+        }
+
+        // Now clear the encoding data and test again - IDs should start from beginning
+        encodedData.clear();
+        decodedData.clear();
+
+        // Test path variables again with cleared data
+        for (int i = 0; i < 3; i++) {
+            // Get the path variable for this iteration
+            String pathVariable = segments[0][0][i]; // level 0, type 0 (path variable), index i
+            
+            // Make sure the path variable is long enough to be encoded
+            if (pathVariable.length() >= minVarLength) {
+                // Create URL with domain + path variable
+                String url = protocol + "example.com/" + pathVariable;
+                
+                // Encode the URL
+                String encodedUrl = decoder.encode(url, domainHash, encodedData, decodedData, minVarLength, minParamLength);
+                
+                // After clearing data, IDs should start from 0 again
+                String pathVar_id = cs.generateId(i);
+                
+                // Verify the encoding follows expected pattern: protocol://domainHash/generatedId
+                String expectedPattern = protocol + domainHash + "/" + pathVar_id;
+                assertEquals(expectedPattern, encodedUrl, 
+                    "Encoded URL should match pattern with generated ID for path variable after clearing data");
+                
+                // Verify the mappings were created correctly
+                assertTrue(encodedData.getFirst().containsKey(pathVariable), 
+                    "Encoded data should contain the generated ID for path variable");
+                assertEquals(encodedData.getFirst().get(pathVariable), pathVar_id, 
+                    "Encoded data should map path variable to correct ID");
+                assertTrue(decodedData.getFirst().containsKey(pathVar_id), 
+                    "Decoded data should contain mapping for ID");
+                assertEquals(decodedData.getFirst().get(pathVar_id), pathVariable, 
+                    "Decoded data should map ID back to correct path variable");
+            }
+        }
+
+        // Clear the data again and test level names with query parameters
+        encodedData.clear();
+        decodedData.clear();
+
+        // Test level names with query parameters
+        for (int i = 0; i < 3; i++) {
+            // Get segments for this iteration
+            String levelName = segments[0][1][i]; // Level name
+            String paramName = segments[0][2][i]; // Query parameter name
+            String paramValue = segments[0][3][i]; // Query parameter value
+            
+            // Make sure all segments are long enough to be encoded
+            if (levelName.length() >= minParamLength && 
+                paramName.length() >= minParamLength && 
+                paramValue.length() >= minVarLength) {
+                
+                // Create URL with domain + level name + query parameter
+                String url = protocol + "example.com/" + levelName + "?" + paramName + "=" + paramValue;
+                
+                // Encode the URL
+                String encodedUrl = decoder.encode(url, domainHash, encodedData, decodedData, minVarLength, minParamLength);
+                
+                // IDs should follow the specified pattern
+                String levelName_id = cs.generateId(3 * i);
+                String paramName_id = cs.generateId(3 * i + 1);
+                String paramValue_id = cs.generateId(3 * i + 2);
+                
+                // Verify the encoding follows expected pattern
+                String expectedPattern = protocol + domainHash + "/" + levelName_id + "?" + paramName_id + "=" + paramValue_id;
+                assertEquals(expectedPattern, encodedUrl, 
+                    "Encoded URL should match pattern with generated IDs for level name and query params");
+                
+                // Verify mappings
+                assertEquals(levelName_id, encodedData.getFirst().get(levelName), 
+                    "Level name should be encoded with ID " + levelName_id);
+                assertEquals(paramName_id, encodedData.getFirst().get(paramName), 
+                    "Parameter name should be encoded with ID " + paramName_id);
+                assertEquals(paramValue_id, encodedData.getFirst().get(paramValue), 
+                    "Parameter value should be encoded with ID " + paramValue_id);
+            }
+        }
+
+        // Now test path variables without clearing the data
+        // Path variable IDs should start at 9 (after the 9 existing encodings)
+        for (int i = 0; i < 3; i++) {
+            String pathVariable = segments[0][0][i]; // Path variable
+            
+            if (pathVariable.length() >= minVarLength) {
+                // Create URL with domain + path variable
+                String url = protocol + "example.com/" + pathVariable;
+                
+                // Encode the URL
+                String encodedUrl = decoder.encode(url, domainHash, encodedData, decodedData, minVarLength, minParamLength);
+                
+                // Path variables should get IDs starting at 9
+                String pathVar_id = cs.generateId(9 + i);
+                
+                // Verify the encoding follows expected pattern
+                String expectedPattern = protocol + domainHash + "/" + pathVar_id;
+                assertEquals(expectedPattern, encodedUrl, 
+                    "Encoded URL should match pattern with generated ID for path variable (after query params)");
+                
+                // Verify the mappings
+                assertEquals(pathVar_id, encodedData.getFirst().get(pathVariable), 
+                    "Path variable should be encoded with ID " + pathVar_id);
+            }
+        }
+
+        // Finally, test URLs with path variables and query parameters
+        // Query parameters should reuse existing encodings
+        for (int i = 0; i < 3; i++) {
+            String pathVariable = segments[0][0][i]; // Path variable
+            String paramName = segments[0][2][i];    // Query parameter name
+            String paramValue = segments[0][3][i];   // Query parameter value
+            
+            if (pathVariable.length() >= minVarLength && 
+                paramName.length() >= minParamLength && 
+                paramValue.length() >= minVarLength) {
+                
+                // Create URL with domain + path variable + query parameter
+                String url = protocol + "example.com/" + pathVariable + "?" + paramName + "=" + paramValue;
+                
+                // Encode the URL
+                String encodedUrl = decoder.encode(url, domainHash, encodedData, decodedData, minVarLength, minParamLength);
+                
+                // Get the IDs that should be used
+                String pathVar_id = cs.generateId(9 + i);           // From the previous loop
+                String paramName_id = cs.generateId(3 * i + 1);     // From the first loop in this set
+                String paramValue_id = cs.generateId(3 * i + 2);    // From the first loop in this set
+                
+                // Verify the encoding follows expected pattern
+                String expectedPattern = protocol + domainHash + "/" + pathVar_id + "?" + paramName_id + "=" + paramValue_id;
+                assertEquals(expectedPattern, encodedUrl, 
+                    "Encoded URL should match pattern with correct IDs for path variable and query params");
+                
+                // Verify the mappings are reused
+                assertEquals(pathVar_id, encodedData.getFirst().get(pathVariable), 
+                    "Path variable encoding should be reused");
+                assertEquals(paramName_id, encodedData.getFirst().get(paramName), 
+                    "Parameter name encoding should be reused");
+                assertEquals(paramValue_id, encodedData.getFirst().get(paramValue), 
+                    "Parameter value encoding should be reused");
+            }
+        }
+
+        // After all the tests, verify that the maps contain exactly the expected number of elements
+
+        // Verify encoded map size
+        assertEquals(12, encodedData.getFirst().size(), 
+            "Encoded map should contain exactly 12 elements: 3 level names + 3 path variables + 3 param names + 3 param values");
+
+        // Verify decoded map size
+        assertEquals(12, decodedData.getFirst().size(), 
+            "Decoded map should contain exactly 12 elements: 3 level names + 3 path variables + 3 param names + 3 param values");
+
+        // Verify each element type is present
+        int levelNameCount = 0;
+        int pathVarCount = 0;
+        int paramNameCount = 0;
+        int paramValueCount = 0;
+
+        // Count by checking pattern in keys
+        for (String key : encodedData.getFirst().keySet()) {
+            if (key.contains("level_name")) {
+                levelNameCount++;
+            } else if (key.contains("path_variable")) {
+                pathVarCount++;
+            } else if (key.contains("param_name")) {
+                paramNameCount++;
+            } else if (key.contains("param_value")) {
+                paramValueCount++;
+            }
+        }
+
+        // Verify counts of each type
+        assertEquals(3, levelNameCount, "Should have 3 encoded level names");
+        assertEquals(3, pathVarCount, "Should have 3 encoded path variables");
+        assertEquals(3, paramNameCount, "Should have 3 encoded parameter names");
+        assertEquals(3, paramValueCount, "Should have 3 encoded parameter values");
+    }
+
 }

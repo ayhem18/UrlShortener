@@ -16,6 +16,9 @@ dependencies {
     // for junit: https://docs.gradle.org/current/userguide/java_testing.html
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    implementation project(":utils")
+
 }
 
 tasks.withType(JavaCompile).configureEach {

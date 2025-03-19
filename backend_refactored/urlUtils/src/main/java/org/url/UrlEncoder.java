@@ -1,12 +1,24 @@
 package org.url;
 
 
+import org.utils.CustomGenerator;
+
+import java.lang.StringBuilder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 
 public class UrlEncoder {
-    private UrlLevelEntity inspectLevel(String urlLevel) {
+
+    private final CustomGenerator customGenerator;
+
+    public UrlEncoder(CustomGenerator customGenerator) {
+        this.customGenerator = customGenerator;
+    }
+
+    private UrlLevelEntity inspectPathSegment(String urlLevel) {
         // this method assume teh levelUrl is not the top level url (nothing such as www.youtube.com...)
 
         // the algorithm is simple: a basic set of rules
@@ -17,7 +29,8 @@ public class UrlEncoder {
         //              the first being the queryParameterName, the second being the query parameter value
         //      1.c if no: we know the level does not contain any queryParamNames / Values, set both fields to Null
         //          and move to step 2
-        // 2. if there are non-alphabetical characters then, the level is assumed to be a pathVariable
+        // 2. if there are non-alphabetical (and not _ or -) characters then, the level is assumed to be a pathVariable
+
         // 3. otherwise, it is a levelName variable
 
         if (urlLevel.contains("?")) {
@@ -84,7 +97,7 @@ public class UrlEncoder {
         String topLevelUrl = levels.getFirst();
 
         List<UrlLevelEntity> entities = levels.subList(1, levels.size()).stream().
-                map(this::inspectLevel).
+                map(this::inspectPathSegment).
                 toList();
 
         // make sure the 'entities' variable is mutable
@@ -98,4 +111,167 @@ public class UrlEncoder {
         return m_entities;
     }
 
-}
+
+    public String encode(String urlString, 
+                    String topLevelDomainHash, 
+                    List<Map<String, String>> encodedData,
+                    List<Map<String, String>> decodedData,
+                    int minVariableLength,
+                    int minParameterLength) {
+
+        // 1. Breakdown the urlString into a list of UrlLevelEntity
+        List<UrlLevelEntity> urlLevels = breakdown(urlString);
+
+        // Check if we have at least protocol and domain
+        if (urlLevels.size() < 2) {
+            throw new IllegalArgumentException("Invalid URL structure: missing protocol or domain");
+        }
+
+        // 2. Build the encoded URL
+        StringBuilder encodedUrl = new StringBuilder();
+
+        // Keep the protocol as is (first element)
+        String protocol = urlLevels.getFirst().levelName();
+        encodedUrl.append(protocol);
+
+        // Use the provided hash for the domain (second element)
+        encodedUrl.append(topLevelDomainHash);
+
+        // Process remaining path segments
+        for (int i = 2; i < urlLevels.size(); i++) {
+            UrlLevelEntity currentLevel = urlLevels.get(i);
+
+            // Current segment index in our encoding data is (i-2) because we skip protocol and domain
+            int segmentIndex = i - 2;
+
+            // Make sure encodedData has enough entries
+            while (encodedData.size() <= segmentIndex) {
+                encodedData.add(new HashMap<>());
+                decodedData.add(new HashMap<>());
+            }
+
+            Map<String, String> currentEncodedMap = encodedData.get(segmentIndex);
+            Map<String, String> currentDecodedMap = decodedData.get(segmentIndex);
+
+            // Add path separator
+            encodedUrl.append("/");
+
+            // Handle the path segment based on its type
+            if (currentLevel.levelName() != null) {
+                // This is a named level (like "users", "profile", etc.)
+                String levelName = currentLevel.levelName();
+
+                if (currentEncodedMap.containsKey(levelName)) {
+                    // We already have an encoding for this segment
+                    encodedUrl.append(currentEncodedMap.get(levelName));
+                } else {
+                    // if the levelName is not in the encodedMap, we first check whether the levelName is long enough
+                    if (levelName.length() < minParameterLength) {
+                        encodedUrl.append(levelName);
+                    } else {
+                        // at this point, we know that levelName is long enough to be encoded and saved in the encodedMap
+
+                        // Generate a new encoding
+                        String encodedSegment = customGenerator.generateId(currentEncodedMap.size());
+
+                        // Store in both maps
+                        currentEncodedMap.put(levelName, encodedSegment);
+                        currentDecodedMap.put(encodedSegment, levelName);
+
+                        encodedUrl.append(encodedSegment);
+
+                    }
+                }
+
+            }
+
+            else if (currentLevel.pathVariable() != null) {
+                // This is a path variable (like IDs, etc.)
+                String pathVar = currentLevel.pathVariable();
+
+                if (currentEncodedMap.containsKey(pathVar)) {
+                    // We already have an encoding for this variable
+                    encodedUrl.append(currentEncodedMap.get(pathVar));
+                } else {
+                    // Ensure minimum length
+                    if (pathVar.length() < minVariableLength) {
+                        encodedUrl.append(pathVar);
+                    }
+                    else{
+                        // Generate a new encoding
+                        String encodedVar = customGenerator.generateId(currentEncodedMap.size());
+
+
+                        // Store in both maps
+                        currentEncodedMap.put(pathVar, encodedVar);
+                        currentDecodedMap.put(encodedVar, pathVar);
+
+                        encodedUrl.append(encodedVar);
+                    }
+                }
+            }
+
+            // Handle query parameters if present
+            if (currentLevel.queryParamNames() != null && !currentLevel.queryParamNames().isEmpty()) {
+                encodedUrl.append("?");
+
+                for (int j = 0; j < currentLevel.queryParamNames().size(); j++) {
+                    String paramName = currentLevel.queryParamNames().get(j);
+                    String paramValue = currentLevel.queryParamValues().get(j);
+
+                    // Add parameter separator if not the first param
+                    if (j > 0) {
+                        encodedUrl.append("&");
+                    }
+
+                    // Handle parameter name
+                    if (currentEncodedMap.containsKey(paramName)) {
+                        encodedUrl.append(currentEncodedMap.get(paramName));
+                    } else {
+                        // if the paramName is not in the encodedMap, we first check whether the paramName is long enough
+                        if (paramName.length() < minParameterLength) {
+                            encodedUrl.append(paramName);
+                        } else {
+                            // at this point, we know that paramName is long enough to be encoded and saved in the encodedMap
+
+                            // Generate a new encoding
+                            String encodedParam = customGenerator.generateId(currentEncodedMap.size());
+
+                            // Store in both maps with prefix to avoid collision with path segments
+                            currentEncodedMap.put(paramName, encodedParam);
+                            currentDecodedMap.put(encodedParam, paramName);
+
+                            // add the encoding of the query parameter name to the encodedUrl
+                            encodedUrl.append(encodedParam);
+                        }
+                    }
+
+                    encodedUrl.append("=");
+
+                    // Handle parameter value
+                    if (currentEncodedMap.containsKey(paramValue)) {
+                        encodedUrl.append(currentEncodedMap.get(paramValue));
+                    } else {
+                        // if the paramValue is not in the encodedMap, we first check whether the paramValue is long enough
+                        if (paramValue.length() < minVariableLength) {
+                            encodedUrl.append(paramValue);
+                        } else {
+                            // at this point, we know that paramValue is long enough to be encoded and saved in the encodedMap
+                            String encodedValue = customGenerator.generateId(currentEncodedMap.size());
+
+                            // Store in both maps with prefix to avoid collision
+                            currentEncodedMap.put(paramValue, encodedValue);
+                            currentDecodedMap.put(encodedValue, paramValue);
+
+                            // add the encoding of the query parameter value to the encodedUrl
+                            encodedUrl.append(encodedValue);
+                        }
+                    }
+                }
+            }
+
+        }
+
+        return encodedUrl.toString();
+    }
+}       
