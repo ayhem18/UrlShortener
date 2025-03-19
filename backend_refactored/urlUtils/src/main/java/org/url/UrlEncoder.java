@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class UrlDecoder {
+public class UrlEncoder {
     private UrlLevelEntity inspectLevel(String urlLevel) {
         // this method assume teh levelUrl is not the top level url (nothing such as www.youtube.com...)
 
@@ -41,7 +41,7 @@ public class UrlDecoder {
             String levelName;
             String pathVariable;
 
-            if (items.getFirst().matches("[a-zA-Z]+")) {
+            if (items.getFirst().matches("[a-zA-Z_-]+")) {
                 levelName = items.getFirst();
                 pathVariable = null;
             }
@@ -53,7 +53,7 @@ public class UrlDecoder {
             return new UrlLevelEntity(levelName, pathVariable, qpNames, qpValues);
         }
 
-        if (urlLevel.matches("[a-zA-Z]+")) {
+        if (urlLevel.matches("[a-zA-Z_-]+")) {
             return new UrlLevelEntity(urlLevel, null, null, null);
         }
 
@@ -62,16 +62,21 @@ public class UrlDecoder {
     }
 
     public List<UrlLevelEntity> breakdown(String urlString) {
-        //
-        String strToWorkWith;
+        // step1: extract the protocol schema
+        // step2: extract the top level Domain 
+        // split the rest of the url by the "/" character 
+        // for each item in the list call the inspectLevel method
+        // return protocol (as urlEntity) + topLevelDomain (as urlEntity) + list of UrlLevelEntity 
 
-        if (urlString.startsWith("https://")) {
-            // make sure to extract the substring after the protocol part of the url
-            strToWorkWith = urlString.substring("https://".length());
+        int protocolEndIndex = urlString.indexOf("://"); 
+
+        if (protocolEndIndex == -1) {
+            throw new RuntimeException("The passed url does not contain the protocol delimiter");
         }
-        else {
-            strToWorkWith = urlString.substring("http://".length());
-        }
+
+        String protocol = urlString.substring(0, protocolEndIndex + 3);
+
+        String strToWorkWith = urlString.substring(protocolEndIndex + 3);
 
         // 1. split by the "/" character (which can be only done after removing the http(s) delimiter
         List<String> levels = List.of(strToWorkWith.split("/"));
@@ -86,6 +91,9 @@ public class UrlDecoder {
         ArrayList<UrlLevelEntity> m_entities = new ArrayList<>(entities);
 
         m_entities.addFirst(new UrlLevelEntity(topLevelUrl, null, null, null));
+
+        // add the protocol to the list
+        m_entities.addFirst(new UrlLevelEntity(protocol, null, null, null));
 
         return m_entities;
     }

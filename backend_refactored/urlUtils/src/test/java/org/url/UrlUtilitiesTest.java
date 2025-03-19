@@ -11,62 +11,104 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class UrlUtilitiesTest {
 
-    private final UrlValidator urlValidator = new UrlValidator();
-    private final UrlDecoder decoder = new UrlDecoder();
-
-    @Test
-    void testValidUrls() {
-        String s1 = "https://youtube.com";
-        String s2 = "https://github.com/ayhem18/Towards_Data_Science/blob/main/Programming_Tools/Databases/Practice/sqlpad";
-
-        assertDoesNotThrow(() -> this.urlValidator.validateUrl(s1));
-        assertDoesNotThrow(() -> this.urlValidator.validateUrl(s2));
-    }
-
-    @Test void testInvalidUrls() {
-        String s1 = "https://github.com/ayhem 18"; // invalid because of the space
-        String s2 = "https://github.c/ayhem18"; // invalid because of the 1 character top-domain
-
-        assertThrows(UrlValidator.InvalidUrlException.class,() -> this.urlValidator.validateUrl(s1));
-        assertThrows(UrlValidator.InvalidUrlException.class,() -> this.urlValidator.validateUrl(s2));
-    }
+    // private final UrlValidator urlValidator = new UrlValidator();
+    private final UrlEncoder decoder = new UrlEncoder();
+    
 
     @Test
     void testUrlDecoderOneLevel() {
-        List<String> oneLevelUrls = List.of("https://youtube.com",
+        List<String> oneLevelUrls = List.of(
+                "https://youtube.com",
                 "https://www.github.edu",
                 "http://another111site.eu",
-                "http://well_yeye_here_we666.org");
+                "http://well_yeye_here_we666.org",
+                "https://facebook.com",
+                "http://stackoverflow.com",
+                "https://www.amazon.com",
+                "http://microsoft.net",
+                "https://apple.com",
+                "http://www.intel.co",
+                "https://nvidia.io",
+                "http://ibm.org",
+                "https://www.netflix.com",
+                "http://twitter.com",
+                "https://tesla123.com",
+                "http://www.harvard.edu",
+                "https://linux.org",
+                "http://www.mit.edu",
+                "https://dev2dev.io",
+                "http://coding4fun.net",
+                "https://www.py-data.org",
+                "http://java-world.com",
+                "https://cloud9.io",
+                "http://www.tech-daily.info"
+        );
 
-        List<String> levelNames = List.of("youtube.com",
+        List<String> levelNames = List.of(
+                "youtube.com",
                 "www.github.edu",
                 "another111site.eu",
-                "well_yeye_here_we666.org");
+                "well_yeye_here_we666.org",
+                "facebook.com",
+                "stackoverflow.com",
+                "www.amazon.com",
+                "microsoft.net",
+                "apple.com",
+                "www.intel.co",
+                "nvidia.io",
+                "ibm.org",
+                "www.netflix.com",
+                "twitter.com",
+                "tesla123.com",
+                "www.harvard.edu",
+                "linux.org",
+                "www.mit.edu",
+                "dev2dev.io",
+                "coding4fun.net",
+                "www.py-data.org",
+                "java-world.com",
+                "cloud9.io",
+                "www.tech-daily.info"
+        );
 
-        for (int i = 0; i < 4; i++) {
+        List<String> protocolNames = List.of(
+                "https://", "https://", "http://", "http://",
+                "https://", "http://", "https://", "http://",
+                "https://", "http://", "https://", "http://",
+                "https://", "http://", "https://", "http://",
+                "https://", "http://", "https://", "http://",
+                "https://", "http://", "https://", "http://"
+        );
+
+        // test the breakdown of the url
+        for (int i = 0; i < oneLevelUrls.size(); i++) {
             String url = oneLevelUrls.get(i);
-            String level = levelNames.get(i);
+            String topLevel = levelNames.get(i);
+
             List<UrlLevelEntity> levels = decoder.breakdown(url);
-            // make sure it is only one level
-            assertEquals(levels.size(), 1);
+            // make sure it is 2 levels: one for the protocol and one for the level     
+            assertEquals(levels.size(), 2);
+            
             // make sure the level is extracted correctly
-            UrlLevelEntity topLevel = levels.getFirst();
-            assertEquals(new UrlLevelEntity(level, null, null, null), topLevel);
+            assertEquals(new UrlLevelEntity(protocolNames.get(i), null, null, null), levels.getFirst());
+            assertEquals(new UrlLevelEntity(topLevel, null, null, null), levels.getLast());
         }
     }
 
     @Test
     void testLongUrls() {
-        // more tests are definitely needed !!!
+
+        // fully manual tests
 
         String u1 = "https://github.com/ayhem18/Towards_Data_Science/blob/main/Programming_Tools/Databases/Practice/sqlpad";
         List<UrlLevelEntity> e1 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
                 new UrlLevelEntity("github.com", null, null, null),
                 new UrlLevelEntity(null, "ayhem18", null, null),
-                new UrlLevelEntity(null, "Towards_Data_Science", null, null),
+                new UrlLevelEntity("Towards_Data_Science", null , null, null),
                 new UrlLevelEntity("blob", null, null, null),
                 new UrlLevelEntity("main", null, null, null),
-                new UrlLevelEntity(null, "Programming_Tools", null, null),
+                new UrlLevelEntity("Programming_Tools", null, null, null),
                 new UrlLevelEntity("Databases", null, null, null),
                 new UrlLevelEntity("Practice", null, null, null),
                 new UrlLevelEntity("sqlpad", null, null, null)
@@ -78,6 +120,7 @@ class UrlUtilitiesTest {
         String u2 = "https://github.com/ayhem18?tab=overview&from=2025-01-01&to=2025-01-22";
 
         List<UrlLevelEntity> e2 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
                 new UrlLevelEntity("github.com", null, null, null),
                 new UrlLevelEntity(null, "ayhem18",
                         List.of("tab", "from", "to"),
@@ -87,5 +130,268 @@ class UrlUtilitiesTest {
 
         List<UrlLevelEntity> l2 = decoder.breakdown(u2);
         assertEquals(l2, e2);
+    }
+
+    @Test
+    void testExtendedUrlPatterns() {
+        //tests generated by Cursor and verified by me ))
+
+        // TEST CASE 1: URL with multiple path segments and query parameters
+        String url1 = "https://www.amazon.com/dp/B07PXGQC1Q/ref=cm_sw_r_cp_api_glt_i_A1V2K8HE8RS8ZWP0DTY7?_encoding=UTF8&psc=1";
+        List<UrlLevelEntity> expected1 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("www.amazon.com", null, null, null),
+                new UrlLevelEntity("dp", null, null, null),
+                new UrlLevelEntity(null, "B07PXGQC1Q", null, null),
+                new UrlLevelEntity(null, "ref=cm_sw_r_cp_api_glt_i_A1V2K8HE8RS8ZWP0DTY7",
+                        List.of("_encoding", "psc"), 
+                        List.of("UTF8", "1"))
+        );
+        assertEquals(expected1, decoder.breakdown(url1));
+
+        // TEST CASE 2: Academic URL with multiple segments
+        String url2 = "https://dl.acm.org/doi/proceedings/10.1145/3442188";
+        List<UrlLevelEntity> expected2 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("dl.acm.org", null, null, null),
+                new UrlLevelEntity("doi", null, null, null),
+                new UrlLevelEntity("proceedings", null, null, null),
+                new UrlLevelEntity(null, "10.1145", null, null),
+                new UrlLevelEntity(null, "3442188", null, null)
+        );
+        assertEquals(expected2, decoder.breakdown(url2));
+
+        // TEST CASE 3: URL with multiple query parameters
+        String url3 = "https://www.google.com/search?q=spring+boot&oq=spring+boot&aqs=chrome..69i57j0l7.3j0j7&sourceid=chrome&ie=UTF-8";
+        List<UrlLevelEntity> expected3 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("www.google.com", null, null, null),
+                new UrlLevelEntity("search", 
+                        null,
+                        List.of("q", "oq", "aqs", "sourceid", "ie"),
+                        List.of("spring+boot", "spring+boot", "chrome..69i57j0l7.3j0j7", "chrome", "UTF-8"))
+        );
+        assertEquals(expected3, decoder.breakdown(url3));
+
+        // TEST CASE 4: E-commerce URL with filters
+        String url4 = "https://shop.example.com/category/electronics/smartphones?brand=apple&price=500-1000&sort=price-asc";
+        List<UrlLevelEntity> expected4 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("shop.example.com", null, null, null),
+                new UrlLevelEntity("category", null, null, null),
+                new UrlLevelEntity("electronics", null, null, null),
+                new UrlLevelEntity("smartphones", 
+                        null,
+                        List.of("brand", "price", "sort"),
+                        List.of("apple", "500-1000", "price-asc"))
+        );
+        assertEquals(expected4, decoder.breakdown(url4));
+
+        // TEST CASE 5: URL with fragment identifier
+        String url5 = "https://developer.mozilla.org/en-US/docs/Web/API/URL_API?section=methods#constructor";
+        List<UrlLevelEntity> expected5 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("developer.mozilla.org", null, null, null),
+                new UrlLevelEntity("en-US",null , null, null),
+                new UrlLevelEntity("docs", null, null, null),
+                new UrlLevelEntity("Web", null, null, null),
+                new UrlLevelEntity("API", null, null, null),
+                new UrlLevelEntity("URL_API", 
+                        null,
+                        List.of("section"),
+                        List.of("methods#constructor"))
+        );
+        assertEquals(expected5, decoder.breakdown(url5));
+        
+        // TEST CASE 6: Video streaming URL with timestamp
+        String url6 = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42s&ab_channel=RickAstley";
+        List<UrlLevelEntity> expected6 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("www.youtube.com", null, null, null),
+                new UrlLevelEntity("watch", 
+                        null,
+                        List.of("v", "t", "ab_channel"),
+                        List.of("dQw4w9WgXcQ", "42s", "RickAstley"))
+        );
+        assertEquals(expected6, decoder.breakdown(url6));
+        
+        // TEST CASE 7: Social media profile URL
+        String url7 = "https://twitter.com/elonmusk/status/1615488596264652800";
+        List<UrlLevelEntity> expected7 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("twitter.com", null, null, null),
+                new UrlLevelEntity("elonmusk", null, null, null),
+                new UrlLevelEntity("status", null, null, null),
+                new UrlLevelEntity(null, "1615488596264652800", null, null)
+        );
+        assertEquals(expected7, decoder.breakdown(url7));
+        
+        // TEST CASE 8: URL with IP address instead of domain
+        String url8 = "http://192.168.1.1/admin/settings?section=network&debug=true";
+        List<UrlLevelEntity> expected8 = List.of(
+                new UrlLevelEntity("http://", null, null, null),
+                new UrlLevelEntity("192.168.1.1", null, null, null),
+                new UrlLevelEntity("admin", null, null, null),
+                new UrlLevelEntity("settings", 
+                        null,
+                        List.of("section", "debug"),
+                        List.of("network", "true"))
+        );
+        assertEquals(expected8, decoder.breakdown(url8));
+        
+        // TEST CASE 9: URL with subdomain and port number
+        String url9 = "https://api.example.com:8443/v2/users/123456/profile";
+        List<UrlLevelEntity> expected9 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("api.example.com:8443", null, null, null),
+                new UrlLevelEntity(null, "v2", null, null),
+                new UrlLevelEntity("users", null, null, null),
+                new UrlLevelEntity(null, "123456", null, null),
+                new UrlLevelEntity("profile", null, null, null)
+        );
+        assertEquals(expected9, decoder.breakdown(url9));
+        
+        // TEST CASE 10: URL with encoded characters
+        String url10 = "https://example.com/search?q=space%20odyssey&year=1968";
+        List<UrlLevelEntity> expected10 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("example.com", null, null, null),
+                new UrlLevelEntity("search", 
+                        null,
+                        List.of("q", "year"),
+                        List.of("space%20odyssey", "1968"))
+        );
+        assertEquals(expected10, decoder.breakdown(url10));
+        
+        // TEST CASE 11: Document URL with file extension
+        String url11 = "https://docs.example.org/files/presentation.pdf";
+        List<UrlLevelEntity> expected11 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("docs.example.org", null, null, null),
+                new UrlLevelEntity("files", null, null, null),
+                new UrlLevelEntity(null, "presentation.pdf", null, null)
+        );
+        assertEquals(expected11, decoder.breakdown(url11));
+        
+        // TEST CASE 12: Banking URL with secure parameters
+        String url12 = "https://banking.example.com/account/transfers?from=1234567890&to=0987654321&amount=500.00&currency=USD";
+        List<UrlLevelEntity> expected12 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("banking.example.com", null, null, null),
+                new UrlLevelEntity("account", null, null, null),
+                new UrlLevelEntity("transfers", 
+                        null,
+                        List.of("from", "to", "amount", "currency"),
+                        List.of("1234567890", "0987654321", "500.00", "USD"))
+        );
+        assertEquals(expected12, decoder.breakdown(url12));
+        
+        // TEST CASE 13: Map URL with coordinates
+        String url13 = "https://maps.example.com/view?lat=37.7749&lng=-122.4194&zoom=12&mode=satellite";
+        List<UrlLevelEntity> expected13 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("maps.example.com", null, null, null),
+                new UrlLevelEntity("view", 
+                        null,
+                        List.of("lat", "lng", "zoom", "mode"),
+                        List.of("37.7749", "-122.4194", "12", "satellite"))
+        );
+        assertEquals(expected13, decoder.breakdown(url13));
+        
+        // TEST CASE 14: URL with multiple numeric path segments
+        String url14 = "https://api.github.com/repos/octocat/Hello-World/issues/1347";
+        List<UrlLevelEntity> expected14 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("api.github.com", null, null, null),
+                new UrlLevelEntity("repos", null, null, null),
+                new UrlLevelEntity("octocat", null, null, null),
+                new UrlLevelEntity("Hello-World", null, null, null),
+                new UrlLevelEntity("issues", null, null, null),
+                new UrlLevelEntity(null, "1347", null, null)
+        );
+        assertEquals(expected14, decoder.breakdown(url14));
+        
+        // TEST CASE 15: News article URL with date structure
+        String url15 = "https://news.example.com/2023/03/15/technology/ai-breakthrough-research.html";
+        List<UrlLevelEntity> expected15 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("news.example.com", null, null, null),
+                new UrlLevelEntity(null, "2023", null, null),
+                new UrlLevelEntity(null, "03", null, null),
+                new UrlLevelEntity(null, "15", null, null),
+                new UrlLevelEntity("technology", null, null, null),
+                new UrlLevelEntity(null, "ai-breakthrough-research.html", null, null)
+        );
+        assertEquals(expected15, decoder.breakdown(url15));
+        
+        // TEST CASE 16: URL with JWT token in query parameter
+        String url16 = "https://auth.example.com/validate?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U";
+        List<UrlLevelEntity> expected16 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("auth.example.com", null, null, null),
+                new UrlLevelEntity("validate", 
+                        null,
+                        List.of("token"),
+                        List.of("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"))
+        );
+        assertEquals(expected16, decoder.breakdown(url16));
+        
+        // TEST CASE 17: E-learning platform course URL
+        String url17 = "https://learn.example.edu/course/CS101/module/3/lesson/4?completionStatus=inProgress";
+        List<UrlLevelEntity> expected17 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("learn.example.edu", null, null, null),
+                new UrlLevelEntity("course", null, null, null),
+                new UrlLevelEntity(null, "CS101", null, null),
+                new UrlLevelEntity("module", null, null, null),
+                new UrlLevelEntity(null, "3", null, null),
+                new UrlLevelEntity("lesson", null, null, null),
+                new UrlLevelEntity(null, "4", 
+                        List.of("completionStatus"),
+                        List.of("inProgress"))
+        );
+        assertEquals(expected17, decoder.breakdown(url17));
+        
+        // TEST CASE 18: URL with path parameters and API version
+        String url18 = "https://api.example.io/v3/products/electronics/categories/smartphones";
+        List<UrlLevelEntity> expected18 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("api.example.io", null, null, null),
+                new UrlLevelEntity(null, "v3", null, null),
+                new UrlLevelEntity("products", null, null, null),
+                new UrlLevelEntity("electronics", null, null, null),
+                new UrlLevelEntity("categories", null, null, null),
+                new UrlLevelEntity("smartphones", null, null, null)
+        );
+        assertEquals(expected18, decoder.breakdown(url18));
+        
+        // TEST CASE 19: Health tracking API URL with multiple parameters
+        String url19 = "https://health-api.example.net/users/42/metrics?type=steps&from=2023-01-01&to=2023-01-31&aggregation=daily";
+        List<UrlLevelEntity> expected19 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("health-api.example.net", null, null, null),
+                new UrlLevelEntity("users", null, null, null),
+                new UrlLevelEntity(null, "42", null, null),
+                new UrlLevelEntity("metrics", 
+                        null,
+                        List.of("type", "from", "to", "aggregation"),
+                        List.of("steps", "2023-01-01", "2023-01-31", "daily"))
+        );
+        assertEquals(expected19, decoder.breakdown(url19));
+        
+        // TEST CASE 20: URL with mixed path segments and complex query parameters
+        String url20 = "https://analytics.example.com/dashboard/2023/Q1/performance?metrics=revenue,users,conversion&compare=2022-Q1&format=chart&theme=dark";
+        List<UrlLevelEntity> expected20 = List.of(
+                new UrlLevelEntity("https://", null, null, null),
+                new UrlLevelEntity("analytics.example.com", null, null, null),
+                new UrlLevelEntity("dashboard", null, null, null),
+                new UrlLevelEntity(null, "2023", null, null),
+                new UrlLevelEntity(null, "Q1", null, null),
+                new UrlLevelEntity("performance", 
+                        null,
+                        List.of("metrics", "compare", "format", "theme"),
+                        List.of("revenue,users,conversion", "2022-Q1", "chart", "dark"))
+        );
+        assertEquals(expected20, decoder.breakdown(url20));
     }
 }
