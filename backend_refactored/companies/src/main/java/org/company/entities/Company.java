@@ -10,15 +10,19 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Company {
     public static final String COMPANY_COLLECTION_NAME = "COMPANY";
 
-    // all ids should be read-only
     @Id
-    private String id; // some sort of Company identifier
+    private String id; // must be unique
 
-    private String emailDomain;
+    // the name of the company
+    private String companyName; // must be unique
 
-    private String ownerEmail; 
+    private String companyAddress; // not sure worth adding the unique constraint here 
 
-    // write only 
+    private String emailDomain; // determines the email domain enforced by the company (if any)
+
+    private String ownerEmail; // the email of the owner of the company
+
+    // write only: a field used to track the number of times the sensitive fields are serialized 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private int serializeSensitiveCount = 0;
 
@@ -27,11 +31,8 @@ public class Company {
     private boolean verified;
 
     // Updated constructor to include ownerEmail
-    public Company(String id,
-                Subscription subscription,
-                String ownerEmail,
-                String emailDomain
-                ) {
+    public Company(String id, String companyName, String companyAddress, String ownerEmail, String emailDomain, Subscription subscription) {
+        
         // make sure the email domain matches the owner email
         if (emailDomain != null && !ownerEmail.endsWith(emailDomain)) {
             throw new IllegalArgumentException("The email domain does not match the company domain");
@@ -42,10 +43,11 @@ public class Company {
         this.ownerEmail = ownerEmail;
         this.emailDomain = emailDomain;
         this.verified = false;
+        this.companyName = companyName;
+        this.companyAddress = companyAddress;
     }
 
-
-    // a private constructor for Jackson serialization
+    // a private no-args constructor for Jackson serialization
     @SuppressWarnings("unused")
     private Company() {
     }
@@ -77,6 +79,16 @@ public class Company {
     }
 
 
+    @JsonGetter(value = "companyName")
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    @JsonGetter(value = "companyAddress")
+    public String getCompanyAddress() {
+        return companyAddress;
+    }
+
     @JsonGetter(value = "emailDomain")
     public String getEmailDomain() {
         return emailDomain;
@@ -103,38 +115,51 @@ public class Company {
         return serializeSensitiveCount;
     }
 
-    ///////////////////////////////// SETTERS /////////////////////////////////////////////
-    void setId(String id) {
-        this.id = id;
+    
+    ///////////////////////////////// actual setters /////////////////////////////////////////////
+    // can change the company name
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
     }
 
-    // the subscription can be changed
-    void setSubscription(Subscription subscription) {
+    // can change the company address
+    public void setCompanyAddress(String companyAddress) {
+        this.companyAddress = companyAddress;
+    }
+
+    // can change the subscription
+    public void setSubscription(Subscription subscription) {
         this.subscription = subscription;
     }
-    
-    // Add setter for ownerEmail
-    void setOwnerEmail(String ownerEmail) {
-        this.ownerEmail = ownerEmail;
-    }
 
-    // add private setters for Jackson serialization (private so they can't be set by the program)
-    @SuppressWarnings("unused")
-    private void setSerializeSensitiveCount(int serializeSensitiveCount) {
-        this.serializeSensitiveCount = serializeSensitiveCount;
-    }
-    
-    // Add Jackson-specific setter with SuppressWarnings
-    @SuppressWarnings("unused")
-    private void setEmailDomain(String emailDomain) {
-        this.emailDomain = emailDomain;
-    }
-
+    // can verify the company (well atmost once)
     public void verify() {
         if (this.verified) {
             throw new IllegalStateException("The company is already verified");
         }
         this.verified = true;
+    }
+
+    ///////////////////////////////// JACKSON PRIVATE SETTERS /////////////////////////////////////////////
+    @SuppressWarnings("unused") // cannot set the id
+    private void setId(String id) {
+        this.id = id;
+    }
+
+    @SuppressWarnings("unused") // setting the ownerEmail might be very problematic
+    private void setOwnerEmail(String ownerEmail) {
+        this.ownerEmail = ownerEmail;
+    }
+
+    @SuppressWarnings("unused")
+    private void setSerializeSensitiveCount(int serializeSensitiveCount) {
+        this.serializeSensitiveCount = serializeSensitiveCount;
+    }
+
+
+    @SuppressWarnings("unused") // setting the emailDomain might be very problematic
+    private void setEmailDomain(String emailDomain) {
+        this.emailDomain = emailDomain;
     }
 }
 

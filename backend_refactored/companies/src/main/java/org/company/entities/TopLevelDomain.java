@@ -13,7 +13,7 @@ public class TopLevelDomain {
     public enum DomainState {
         ACTIVE,
         INACTIVE, // it is possible to temporarily user inactive domains
-        DEPRECATED // a deprecated domain cannot no longer be used.
+        DEPRECATED // a deprecated domain can no longer be used.
     }
 
     @Id

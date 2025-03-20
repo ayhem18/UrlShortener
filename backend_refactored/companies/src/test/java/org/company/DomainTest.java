@@ -29,7 +29,7 @@ class DomainTest {
     @Test
     void testInitialization() throws NoSuchFieldException, IllegalAccessException {
         // Create a company for the domain
-        Company company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "test@example.com", "example.com");
+        Company company = new Company("123", "companyName", "companyAddress", "test@example.com", "example.com", SubscriptionManager.getSubscription("TIER_1"));
         
         // Create the TopLevelDomain with test values
         TopLevelDomain domain = new TopLevelDomain("456", "example.com", "some_hash", company);
@@ -73,7 +73,7 @@ class DomainTest {
     @Test
     void testDeactivate() throws NoSuchFieldException, IllegalAccessException {
         // Create a company for the domain
-        Company company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "test@example.com", "example.com");
+        Company company = new Company("123", "companyName", "companyAddress", "test@example.com", "example.com", SubscriptionManager.getSubscription("TIER_1"));
         
         // Create the TopLevelDomain
         TopLevelDomain domain = new TopLevelDomain("456", "example.com", "some_hash", company);
@@ -106,7 +106,7 @@ class DomainTest {
     @Test
     void testDeprecate() throws NoSuchFieldException, IllegalAccessException {
         // Create a company for the domain
-        Company company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "test@example.com", "example.com");
+        Company company = new Company("123", "companyName", "companyAddress", "test@example.com", "example.com", SubscriptionManager.getSubscription("TIER_1"));
         
         // Create the TopLevelDomain
         TopLevelDomain domain = new TopLevelDomain("456", "example.com", "some_hash", company);
@@ -139,7 +139,7 @@ class DomainTest {
     @Test
     void testDomainSerialization() throws JsonProcessingException {
         // Create dependencies
-        Company company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "test@example.com", "example.com");
+        Company company = new Company("123", "companyName", "companyAddress", "test@example.com", "example.com", SubscriptionManager.getSubscription("TIER_1"));
         
         // Create the TopLevelDomain with test values
         TopLevelDomain domain = new TopLevelDomain("456", "example.com", "some_hash", company);

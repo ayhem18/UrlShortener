@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.config.annotation.authentication.configurers.userdetails.UserDetailsAwareConfigurer;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,8 +19,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.servlet.function.EntityResponse;
-import org.urlService.entities.UrlEncoding;
 import org.urlService.exceptions.UrlExceptions;
 import org.urlService.repositories.UrlEncodingRepository;
 import org.url.UrlLevelEntity;
@@ -30,13 +27,11 @@ import org.company.repositories.TopLevelDomainRepository;
 import org.user.entities.AppUser;
 import org.user.repositories.UserRepository;
 
-import javax.swing.text.html.parser.Entity;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @Validated
@@ -65,7 +60,7 @@ public class UrlController {
         this.userRepository = userRepository;
         this.urlProcessor = urlProcessor;
         
-        // limit the protocols to http and https
+        // limit the protocols to http and https and allow local urls
         String[] schemes = {"http", "https"};
         this.urlValidator = new UrlValidator(schemes, UrlValidator.ALLOW_LOCAL_URLS);
     }

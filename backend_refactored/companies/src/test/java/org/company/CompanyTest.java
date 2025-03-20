@@ -23,7 +23,8 @@ class CompanyTest {
 
     @Test
     void testInitialization() throws NoSuchFieldException, IllegalAccessException {
-        Company company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "admin@example.com", "example.com");
+        Company company = new Company("123", "Example Company", "123 Business St", "admin@example.com", "example.com", 
+                                    SubscriptionManager.getSubscription("TIER_1"));
         
         // use reflection to get the private field "serializeSensitiveCount"
         Field field = Company.class.getDeclaredField("serializeSensitiveCount");
@@ -59,12 +60,12 @@ class CompanyTest {
 
     @Test
     void testFirstJsonSerialization() throws JsonProcessingException, NoSuchFieldException, IllegalAccessException {
-        List<String> initialFieldsSerialization = List.of("id", "emailDomain", "ownerEmail", "verified", "subscription");
+        List<String> initialFieldsSerialization = List.of("id", "emailDomain", "ownerEmail", "verified", "subscription", "companyName", "companyAddress");
     
         String id = "aaa";
         Subscription sub = SubscriptionManager.getSubscription("TIER_1");
 
-        Company com = new Company(id, sub, "admin@example.com", "example.com");
+        Company com = new Company(id, "Test Company", "456 Test Ave", "admin@example.com", "example.com", sub);
 
         // before serializing the object; make sure none of the fields are Null
         for (Field f : com.getClass().getDeclaredFields()) {
@@ -97,12 +98,12 @@ class CompanyTest {
 
     @Test
     void testCompanySubsequentSerialization1() throws JsonProcessingException, NoSuchFieldException, IllegalAccessException {
-        List<String> serializationFields2 = List.of("subscription", "emailDomain", "verified");
+        List<String> serializationFields2 = List.of("subscription", "emailDomain", "verified", "companyName", "companyAddress");
 
         String id = "aaa";
         Subscription sub = SubscriptionManager.getSubscription("TIER_1");
 
-        Company com = new Company(id, sub, "admin@example.com", "example.com");
+        Company com = new Company(id, "Test Company", "456 Test Ave", "admin@example.com", "example.com", sub);
 
         String firstJson = this.om.writeValueAsString(com);
         
@@ -139,12 +140,12 @@ class CompanyTest {
 
     @Test
     void testCompanySubsequentSerialization2() throws JsonProcessingException, NoSuchFieldException, IllegalAccessException {
-        List<String> serializationFields2 = List.of("subscription", "verified");
+        List<String> serializationFields2 = List.of("subscription", "verified", "companyName", "companyAddress");
 
         String id = "aaa";
         Subscription sub = SubscriptionManager.getSubscription("TIER_1");
 
-        Company com = new Company(id, sub, "admin@example.com", null);
+        Company com = new Company(id, "Test Company", "456 Test Ave", "admin@example.com", null, sub);
 
         this.om.writeValueAsString(com);
 
@@ -174,7 +175,7 @@ class CompanyTest {
     void testVerified() {
         String id = "aaa";
         Subscription sub = SubscriptionManager.getSubscription("TIER_1");
-        Company com = new Company(id, sub, "admin@example.com", null);
+        Company com = new Company(id, "Test Company", "456 Test Ave", "admin@example.com", "example.com", sub);
 
         assertFalse(com.getVerified());
 
@@ -191,24 +192,24 @@ class CompanyTest {
     @Test
     void testDifferentSubscriptionTiers() throws JsonProcessingException {
         // Test FREE tier
-        Company freeCompany = new Company("free123", SubscriptionManager.getSubscription("FREE"), 
-                                          "free@example.com", "example.com");
+        Company freeCompany = new Company("free123", "Free Company", "789 Free St", "free@example.com", "example.com",
+                                        SubscriptionManager.getSubscription("FREE"));
         String freeJson = this.om.writeValueAsString(freeCompany);
         Object freeDoc = Configuration.defaultConfiguration().jsonProvider().parse(freeJson);
         String freeSubscription = JsonPath.read(freeDoc, "$.subscription");
         assertEquals("FREE", freeSubscription);
         
         // Test TIER_1
-        Company tier1Company = new Company("tier1123", SubscriptionManager.getSubscription("TIER_1"), 
-                                          "tier1@example.com", "example.com");
+        Company tier1Company = new Company("tier1123", "Tier 1 Company", "321 Premium Rd", "tier1@example.com", "example.com",
+                                        SubscriptionManager.getSubscription("TIER_1"));
         String tier1Json = this.om.writeValueAsString(tier1Company);
         Object tier1Doc = Configuration.defaultConfiguration().jsonProvider().parse(tier1Json);
         String tier1Subscription = JsonPath.read(tier1Doc, "$.subscription");
         assertEquals("TIER_1", tier1Subscription);
         
         // Test TIER_INFINITY
-        Company infinityCompany = new Company("inf123", SubscriptionManager.getSubscription("TIER_INFINITY"), 
-                                          "infinity@example.com", "example.com");
+        Company infinityCompany = new Company("inf123", "Infinity Company", "999 Enterprise Way", "infinity@example.com", "example.com",
+                                        SubscriptionManager.getSubscription("TIER_INFINITY"));
         String infinityJson = this.om.writeValueAsString(infinityCompany);
         Object infinityDoc = Configuration.defaultConfiguration().jsonProvider().parse(infinityJson);
         String infinitySubscription = JsonPath.read(infinityDoc, "$.subscription");

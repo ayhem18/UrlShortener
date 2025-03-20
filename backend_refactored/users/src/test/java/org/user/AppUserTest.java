@@ -13,7 +13,9 @@ import org.junit.jupiter.api.Test;
 import org.user.entities.AppUser;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,11 +26,15 @@ class AppUserTest {
     @Test
     void testInitialization() throws NoSuchFieldException, IllegalAccessException {
         // Create necessary dependencies
-        Company company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "admin@example.com", "example.com");
+        Company company = new Company("123", "companyName", "companyAddress",
+                "admin@example.com",
+                "example.com",
+                SubscriptionManager.getSubscription("TIER_1"));
+
         Role role = RoleManager.getRole(RoleManager.OWNER_ROLE);
         
         // Create the user
-        AppUser user = new AppUser("user@example.com", "testuser", "password123", company, role);
+        AppUser user = new AppUser("user@example.com", "testuser", "password123", "firstname", "lastname", null, company, role);
         
         // Test email field
         Field emailField = AppUser.class.getDeclaredField("email");
@@ -69,13 +75,26 @@ class AppUserTest {
      */
     private void testUserSerializationWithRole(String roleName) throws JsonProcessingException {
         // Create necessary dependencies
-        Company company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "admin@example.com", "example.com");
-        Role role = RoleManager.getRole(roleName);
+        Company company = new Company("123", "companyName", "companyAddress", "admin@example.com", "example.com", SubscriptionManager.getSubscription("TIER_1"));
         
+        // let's make sure to serialize the company
+        String companyJson = this.om.writeValueAsString(company);
+        Object companyDoc = Configuration.defaultConfiguration().jsonProvider().parse(companyJson);
+
+        Set<String> companyFields1 = JsonPath.read(companyDoc, "keys()");
+        List<String> expectedCompanyFields1 = List.of("id", "companyName", "companyAddress", "emailDomain", "ownerEmail", "subscription", "verified");
+        Assertions.assertThat(companyFields1).hasSameElementsAs(expectedCompanyFields1);
+        
+        
+        Role role = RoleManager.getRole(roleName);
+
         // Create the user with the specified role
         AppUser user = new AppUser(roleName.toLowerCase() + "@example.com", 
                                   roleName.toLowerCase() + "User", 
                                   "password123", 
+                                  "firstname", 
+                                  "lastname", 
+                                  "someMiddleName", 
                                   company, 
                                   role);
         
@@ -87,7 +106,7 @@ class AppUserTest {
         Set<String> keys = JsonPath.read(doc, "keys()");
         
         // Verify serialized fields
-        List<String> expectedFields = List.of("email", "username", "company", "role");
+        List<String> expectedFields = List.of("email", "username", "company", "role", "firstName", "lastName", "middleName", "urlEncodingCount");
         Assertions.assertThat(keys).hasSameElementsAs(expectedFields);
         
         // Verify password is NOT included (due to @JsonProperty annotation)
@@ -96,6 +115,13 @@ class AppUserTest {
         // Verify role is serialized as a string and matches the expected role
         String serializedRole = JsonPath.read(doc, "$.role");
         assertEquals(roleName.toLowerCase(), serializedRole.toLowerCase());
-        
+
+        Map<String, String> serializedCompany= JsonPath.read(doc, "$.company");
+
+        // the company serialize should be a json object with the following fields:
+        // id, companyName, companyAddress, emailDomain, ownerEmail, subscription, verified
+        List<String> companyFields2 = new ArrayList<>(serializedCompany.keySet());
+        List<String> expectedCompanyFields2 = List.of("companyName", "companyAddress", "subscription", "verified", "emailDomain");
+        Assertions.assertThat(companyFields2).hasSameElementsAs(expectedCompanyFields2);
     }
 } 
