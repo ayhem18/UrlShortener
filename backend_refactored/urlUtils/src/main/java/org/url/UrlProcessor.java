@@ -91,7 +91,7 @@ public class UrlProcessor {
 
         String strToWorkWith = urlString.substring(protocolEndIndex + 3);
 
-        // 1. split by the "/" character (which can be only done after removing the http(s) delimiter
+        // 1. split by the "/" character
         List<String> levels = List.of(strToWorkWith.split("/"));
 
         String topLevelUrl = levels.getFirst();
@@ -180,7 +180,6 @@ public class UrlProcessor {
                     } else {
                         // at this point, we know that levelName is long enough to be encoded and saved in the encodedMap
 
-                        // Generate a new encoding
                         String encodedSegment = customGenerator.generateId(currentEncodedMap.size());
 
                         // Store in both maps

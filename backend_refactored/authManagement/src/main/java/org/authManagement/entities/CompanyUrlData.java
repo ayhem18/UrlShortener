@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 
 @Document
@@ -26,19 +27,18 @@ public class CompanyUrlData {
     - companySiteHash: an encoding of the company: saved independently as it will be used for each shorter url
     - dataEncoded: natural strings -> hashes
     - dataDecoded: hashes -> natural string , this way both operations are optimized (for the cost of double memory usage)
-
-    - DataEncoded: List[item1, item2, ... ] where each item represents a hash map
-    item_i : {valueType: {map_i}}
-    map_i: represents {string of type: ValueType -> hash}
-    * */
+    
+    - DataEncoded: List[level1Data, level2Data, ... ] where each levelData is a hash map that saves the encoded data seen in the given level. For example: {"some_value": "some_hash"}
+    
+    */
 
     @DocumentReference
     private Company company;
 
     private String companySiteHash;
 
-    private List<HashMap<UrlEntity, HashMap<String, String>>> dataEncoded;
-    private List<HashMap<UrlEntity, HashMap<String, String>>> dataDecoded;
+    private List<Map<String, String>> dataEncoded;
+    private List<Map<String, String>> dataDecoded;
 
     public CompanyUrlData(Company company, String companySiteHash) {
         this.company = company;
@@ -55,72 +55,16 @@ public class CompanyUrlData {
         return companySiteHash;
     }
 
-    public List<HashMap<UrlEntity, HashMap<String, String>>> getDataEncoded() {
+
+    // private getters for Jackson
+    public List<Map<String, String>> getDataEncoded() {
         return dataEncoded;
     }
 
-    public List<HashMap<UrlEntity, HashMap<String, String>>> getDataDecoded() {
+    public List<Map<String, String>> getDataDecoded() {
         return dataDecoded;
     }
 
-    private HashMap<UrlEntity, HashMap<String, String>> initializeLevel() {
-        HashMap<UrlEntity, HashMap<String, String>> values = new HashMap<>();
-        values.put(UrlEntity.LEVEL_NAME, new HashMap<>());
-        values.put(UrlEntity.PATH_VARIABLE, new HashMap<>());
-        values.put(UrlEntity.QUERY_PARAM, new HashMap<>());
-        values.put(UrlEntity.QUERY_PARAM_VALUE, new HashMap<>());
-        return values;
-    }
-
-    public Map.Entry<HashMap<String, String>, HashMap<String, String>>
-    getLevelTypeData(int level, UrlEntity valueType) {
-        if (level <= 0) {
-            throw new IllegalArgumentException("The level argument is expected to be 1-indexed !!!");
-        }
-
-        // the level is expected to be 1-indexed
-        level -= 1;
-
-        if (this.dataEncoded.size() == level) {
-            HashMap<UrlEntity, HashMap<String, String>> levelValues = this.initializeLevel();
-            HashMap<UrlEntity, HashMap<String, String>> levelValuesDecoded = this.initializeLevel();
-            this.dataEncoded.add(levelValues);
-            this.dataDecoded.add(levelValuesDecoded);
-        }
-
-        if (this.dataEncoded.size() + 1 <= level) {
-            throw new IllegalArgumentException("Make sure the levels are added consecutively. " +
-                    "The current maximum level is " + this.dataEncoded.size());
-        }
-
-        // I use the Map.Entry class here since there is no Pair class in Java
-        return Map.entry(this.dataEncoded.get(level).get(valueType),
-                this.dataDecoded.get(level).get(valueType));
-    }
-
-    public int count(int level, UrlEntity valueType) {
-        return getLevelTypeData(level, valueType).getKey().size();
-    }
-
-    public void addValue(int level, UrlEntity valueType, String value, CustomGenerator gen) {
-        Map.Entry<HashMap<String, String>, HashMap<String, String>>
-                levelData =  getLevelTypeData(level, valueType);
-
-        HashMap<String, String> levelDataEncoded = levelData.getKey();
-
-        // only update the hashmap if the value has not been already saved
-        if (levelDataEncoded.containsKey(value)) {
-            return;
-        }
-
-        HashMap<String, String> levelDataDecoded= levelData.getValue();
-
-        int itemsCount = levelData.getKey().size();
-        String valueHash = gen.generateId(itemsCount);
-
-        levelDataEncoded.put(value, valueHash);
-        levelDataDecoded.put(valueHash, value);
-    }
 
     // private setters and no-arg constructor added so that Jackson can work properly
     @SuppressWarnings("unused")
@@ -140,12 +84,12 @@ public class CompanyUrlData {
     }
 
     @SuppressWarnings("unused")
-    private void setDataEncoded(List<HashMap<UrlEntity, HashMap<String, String>>> dataEncoded) {
+    private void setDataEncoded(List<Map<String, String>> dataEncoded) {
         this.dataEncoded = dataEncoded;
     }
 
     @SuppressWarnings("unused")
-    private void setDataDecoded(List<HashMap<UrlEntity, HashMap<String, String>>> dataDecoded) {
+    private void setDataDecoded(List<Map<String, String>> dataDecoded) {
         this.dataDecoded = dataDecoded;
     }
 }

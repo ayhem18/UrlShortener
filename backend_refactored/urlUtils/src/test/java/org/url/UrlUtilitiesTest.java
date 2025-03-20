@@ -3,7 +3,6 @@
  */
 package org.url;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.utils.CustomGenerator;
 
@@ -869,7 +868,7 @@ class UrlUtilitiesTest {
         
         // Configuration
         String originalDomain = "example.com";
-        String domainHash = "sh.rt";z
+        String domainHash = "sh.rt";
         String encodedUrlPrefix = "prefix/"; // Add URL prefix
         
         int minVarLength = 8;

@@ -36,6 +36,13 @@ public interface Subscription {
     // constraints on the size of the history
     Integer getMaxHistorySize();
 
+    Integer getEncodingDailyLimit();
+
+    Integer getMinUrlLength();
+
+    Integer getMinParameterLength();
+
+    Integer getMinVariableLength();
 }
 
 
@@ -96,6 +103,26 @@ class FreeTier implements Subscription {
     @Override
     public Integer getMaxHistorySize() {
         return 0;
+    }
+
+    @Override
+    public Integer getEncodingDailyLimit() {
+        return 20;
+    }
+
+    @Override
+    public Integer getMinUrlLength() {
+        return 40;
+    }
+
+    @Override
+    public Integer getMinParameterLength() {
+        return 15;
+    }
+
+    @Override
+    public Integer getMinVariableLength() {
+        return 20;
     }
 }
 
@@ -160,6 +187,26 @@ class TierOne implements Subscription {
     public Integer getMaxHistorySize() {
         return 10;
     }
+
+    @Override
+    public Integer getEncodingDailyLimit() {
+        return 100;
+    }
+
+    @Override
+    public Integer getMinUrlLength() {
+        return 25;
+    }
+
+    @Override
+    public Integer getMinParameterLength() {
+        return 15;
+    }
+
+    @Override
+    public Integer getMinVariableLength() {
+        return 15;
+    }
 }
 
 
@@ -222,5 +269,25 @@ class TierInfinity implements Subscription {
     @Override
     public Integer getMaxHistorySize() {
         return 100;
+    }
+
+    @Override
+    public Integer getEncodingDailyLimit() {
+        return null;
+    }
+
+    @Override
+    public Integer getMinUrlLength() {
+        return 0;
+    }
+
+    @Override
+    public Integer getMinParameterLength() {
+        return 5;
+    }
+
+    @Override
+    public Integer getMinVariableLength() {
+        return 5;
     }
 }

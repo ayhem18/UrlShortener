@@ -8,5 +8,6 @@ include ('users')
 include ('tokens')
 include ('apiConfigurations')
 include ('authManagement')
+include ('urlService')
 
 // include ('appCore')

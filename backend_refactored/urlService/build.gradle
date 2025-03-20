@@ -1,0 +1,71 @@
+plugins {
+    id 'java'
+//    id 'org.springframework.boot' version '3.4.1'
+//    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'org.core'
+version = '0.0.1-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+
+dependencies {
+    // used for mongodb as a database
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-mongodb', version: '3.4.1'
+
+    // for jackson
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.18.2'
+
+    // for jsonpath: verifying and querying Json strings / objects
+    implementation group: 'com.jayway.jsonpath', name: 'json-path', version: '2.9.0'
+
+    // for jackarta validation
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: '3.4.2'
+
+    // for Rest Controllers...
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '3.4.2'
+
+    // // add spring boot mail dependency
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-mail', version: '3.4.2'
+
+    // Apache Commons Validator for URL validation
+    implementation group: 'commons-validator', name: 'commons-validator', version: '1.9.0'
+
+
+    // for security
+    implementation group: 'org.springframework.security', name: 'spring-security-web', version: '6.4.1'
+    implementation group: 'org.springframework.security', name: 'spring-security-core', version: '6.4.2'
+    implementation group: 'org.springframework.security', name: 'spring-security-config', version: '6.4.2'
+
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.15.2'
+    testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '3.4.2'
+
+
+    implementation project(':utils')
+    implementation project(':urlUtils')
+    implementation project(':access')
+    implementation project(':companies')
+    implementation project(':users')
+    implementation project(':tokens')
+    implementation project(':apiConfigurations')
+    implementation project(':authManagement')
+    implementation project(':urlService')
+
+    // for junit: https://docs.gradle.org/current/userguide/java_testing.html
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs.add("-parameters")
+}
+
+
+// without this line, the tests won't be executed
+tasks.named('test') {
+    useJUnitPlatform()
+}

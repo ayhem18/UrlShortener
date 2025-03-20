@@ -37,7 +37,7 @@ dependencies {
 	implementation project(':tokens')
 	implementation project(':apiConfigurations')
 	implementation project(':authManagement')
-	// implementation project(':appCore')
+	implementation project(':urlService')
 }
 
 
