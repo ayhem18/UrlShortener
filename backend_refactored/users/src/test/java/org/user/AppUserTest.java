@@ -2,6 +2,9 @@ package org.user;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import org.access.Role;
@@ -13,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.user.entities.AppUser;
 
 import java.lang.reflect.Field;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +25,17 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AppUserTest {
-    private final ObjectMapper om = new ObjectMapper();
+    private final ObjectMapper om;
+
+
+    public AppUserTest() {
+        SimpleDateFormat df = new SimpleDateFormat("dd-MM-yyyy hh:mm");
+        this.om = new ObjectMapper();
+        this.om.setDateFormat(df);
+        this.om.registerModule(new JavaTimeModule());
+        this.om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    }
+
 
     @Test
     void testInitialization() throws NoSuchFieldException, IllegalAccessException {
@@ -106,7 +120,7 @@ class AppUserTest {
         Set<String> keys = JsonPath.read(doc, "keys()");
         
         // Verify serialized fields
-        List<String> expectedFields = List.of("email", "username", "company", "role", "firstName", "lastName", "middleName", "urlEncodingCount");
+        List<String> expectedFields = List.of("email", "username", "company", "role", "firstName", "lastName", "middleName", "urlEncodingCount", "timeJoined");
         Assertions.assertThat(keys).hasSameElementsAs(expectedFields);
         
         // Verify password is NOT included (due to @JsonProperty annotation)

@@ -6,7 +6,6 @@ import org.authManagement.exceptions.CompanyExceptions;
 import org.authManagement.exceptions.TokenAndUserExceptions;
 import org.authManagement.exceptions.UserExceptions;
 import org.authManagement.internal.StubCompanyRepo;
-import org.authManagement.internal.StubCounterRepo;
 import org.authManagement.internal.StubTokenRepo;
 import org.authManagement.internal.StubTokenUserLinkRepo;
 import org.authManagement.internal.StubTopLevelDomainRepo;
@@ -45,14 +44,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class AuthManagementControllerTest {
 
     private final StubCompanyRepo companyRepo;
-    private final StubCounterRepo counterRepo;
+    // private final StubCounterRepo counterRepo;
     private final StubUserRepo userRepo;
     private final StubTopLevelDomainRepo topLevelDomainRepo;
     private final StubTokenRepo tokenRepo;
     private final StubTokenUserLinkRepo tokenUserLinkRepo;
 
     private final CustomGenerator gen = new CustomGenerator();
-    private final CustomGenerator mockGen;
     private final AuthController authCon;
     public static int COUNTER = 0;
 
@@ -73,8 +71,8 @@ public class AuthManagementControllerTest {
         // Initialize default test data for each repository
 
         // 1. Add default companies
-        Company youtube = new Company("aaa", SubscriptionManager.getSubscription("TIER_1"), "owner@youtube.com", "youtube.com");
-        Company github = new Company("bbb", SubscriptionManager.getSubscription("TIER_1"), "owner@github.com", "github.com");
+        Company youtube = new Company("aaa", "youtube", "youtubeAddress", "owner@youtube.com", "youtube.com", SubscriptionManager.getSubscription("TIER_1"));
+        Company github = new Company("bbb", "github", "githubAddress", "owner@github.com", "github.com", SubscriptionManager.getSubscription("TIER_1"));
         companyRepo.save(youtube);
         companyRepo.save(github);
 
@@ -84,20 +82,80 @@ public class AuthManagementControllerTest {
         topLevelDomainRepo.save(youtubeDomain);
         topLevelDomainRepo.save(githubDomain);
 
-        // 3. Add default users for these companies
-        AppUser youtubeOwner = new AppUser("owner@youtube.com", "ytowner", "password123", youtube, RoleManager.getRole(RoleManager.OWNER_ROLE));
-        AppUser githubOwner = new AppUser("owner@github.com", "ghowner", "password123", github, RoleManager.getRole(RoleManager.OWNER_ROLE));
+        
+        // owners
+        AppUser youtubeOwner = new AppUser(
+            "owner@youtube.com",                // Email
+            "ytowner",                          // Username
+            "password123",                      // Password
+            "YouTube",                          // First name
+            "Owner",                            // Last name
+            "Test",                             // Middle name
+            youtube,                            // Company
+            RoleManager.getRole(RoleManager.OWNER_ROLE)  // Role
+        );
+        AppUser githubOwner = new AppUser(
+            "owner@github.com",                // Email
+            "ghowner",                          // Username
+            "password123",                      // Password
+            "GitHub",                          // First name
+            "Owner",                            // Last name
+            null,                             // Middle name
+            github,                             // Company
+            RoleManager.getRole(RoleManager.OWNER_ROLE)  // Role
+        );
 
-        AppUser youtubeAdmin = new AppUser("admin@youtube.com", "ytadmin", "password123", youtube, RoleManager.getRole(RoleManager.ADMIN_ROLE));
-        AppUser githubAdmin = new AppUser("admin@github.com", "ghadmin", "password123", github, RoleManager.getRole(RoleManager.ADMIN_ROLE));
+        // admins
 
-        AppUser youtubeEmployee = new AppUser("employee@youtube.com", "ytemployee", "password123", youtube, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE));
-        AppUser githubEmployee = new AppUser("employee@github.com", "ghemployee", "password123", github, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE));
+        AppUser youtubeAdmin = new AppUser(
+            "admin@youtube.com",                // Email
+            "ytadmin",                          // Username
+            "password123",                      // Password
+            "YouTube",                          // First name
+            "Admin",                            // Last name
+            null,                             // Middle name
+            youtube,                            // Company
+            RoleManager.getRole(RoleManager.ADMIN_ROLE)  // Role
+        );
+        
+        AppUser githubAdmin = new AppUser(
+            "admin@github.com",                // Email
+            "ghadmin",                          // Username
+            "password123",                      // Password
+            "GitHub",                          // First name
+            "Admin",                            // Last name
+            null,                             // Middle name
+            github,                            // Company
+            RoleManager.getRole(RoleManager.ADMIN_ROLE)  // Role
+        );
+
+        // employees
+
+        
+        AppUser youtubeEmployee = new AppUser(
+            "employee@youtube.com",                // Email
+            "ytemployee",                          // Username
+            "password123",                      // Password
+            "YouTube",                          // First name
+            "Employee",                            // Last name
+            null,                             // Middle name
+            youtube,                            // Company
+            RoleManager.getRole(RoleManager.EMPLOYEE_ROLE)  // Role
+        );
+
+        AppUser githubEmployee = new AppUser(
+            "employee@github.com",                // Email
+            "ghemployee",                          // Username
+            "password123",                      // Password
+            "GitHub",                          // First name
+            "Employee",                            // Last name
+            null,                             // Middle name
+            github,                            // Company
+            RoleManager.getRole(RoleManager.EMPLOYEE_ROLE)  // Role
+        );
 
         userRepo.saveAll(List.of(youtubeOwner, githubOwner, youtubeAdmin, githubAdmin, youtubeEmployee, githubEmployee));
 
-        // 6. Ensure counter repository is initialized
-        counterRepo.addCompanyCollection();
     }
 
     @AfterEach
@@ -119,19 +177,17 @@ public class AuthManagementControllerTest {
     public AuthManagementControllerTest() throws NoSuchFieldException, IllegalAccessException {
         this.companyRepo = new StubCompanyRepo();
         this.topLevelDomainRepo = new StubTopLevelDomainRepo(this.companyRepo);
-        this.counterRepo = new StubCounterRepo();
+//        this.counterRepo = new StubCounterRepo();
         this.userRepo = new StubUserRepo(this.companyRepo);
         this.tokenRepo = new StubTokenRepo(this.companyRepo);
         this.tokenUserLinkRepo = new StubTokenUserLinkRepo(this.tokenRepo, this.userRepo);
         
         
-        this.mockGen = setMockCG();
         // set a stubCustomGenerator, so we can verify the registerCompany method properly
-        
         this.authCon = new AuthController(this.companyRepo,
                 this.topLevelDomainRepo,
                 this.userRepo,
-                this.counterRepo,
+//                this.counterRepo,
                 this.tokenRepo,
                 this.tokenUserLinkRepo,
                 this.gen,
@@ -146,10 +202,14 @@ public class AuthManagementControllerTest {
     //////////////////////// register a company ////////////////////////
     @Test
     void testUniquenessConstraints() {
-        // 1. company ID uniqueness test 
+        int i = 0;
+        // 1. company ID uniqueness test
         for (Company c : this.companyRepo.findAll()) {
+            i += 1;
             // create a register request based on the given company
             CompanyRegisterRequest req = new CompanyRegisterRequest(c.getId(),
+                    "companyName_" + i,
+                    "companyAddress" + i,
                     "random_domain.com",
                     c.getSubscription().getTier(),
                     null,
@@ -163,12 +223,15 @@ public class AuthManagementControllerTest {
 
         // 2. top level domain uniqueness test
         for (TopLevelDomain domain : this.topLevelDomainRepo.findAll()) {
+            i += 1 ; // update the counter to make sure the address and names are uqnieu
             // Generate a unique company ID for this test case
             String uniqueId = "unique_" + this.gen.randomString(8);
 
             // Create a request with unique ID but existing domain
             CompanyRegisterRequest req = new CompanyRegisterRequest(
                     uniqueId,
+                    "companyName_" + i,
+                    "companyAddress" + i,
                     domain.getDomain(),
                     "TIER_1",
                     "owner@" + domain.getDomain(),  // Use matching email for domain
@@ -182,8 +245,10 @@ public class AuthManagementControllerTest {
             );
         }
 
+
         // 3. owner email uniqueness test
         for (AppUser user : this.userRepo.findAll()) {
+            i += 1;
             // Get the user's email
             String userEmail = user.getEmail();
 
@@ -197,6 +262,8 @@ public class AuthManagementControllerTest {
             // Create request with unique ID, unique domain, but existing email
             CompanyRegisterRequest req = new CompanyRegisterRequest(
                     uniqueId,
+                    "companyName_" + i,
+                    "companyAddress" + i,
                     uniqueDomain,
                     "TIER_1",
                     userEmail,  // Existing user email
@@ -223,10 +290,12 @@ public class AuthManagementControllerTest {
             
             // Create a dummy company to associate with the token
             Company dummyCompany = new Company(
-                randomCompanyId,
-                SubscriptionManager.getSubscription("TIER_1"),
-                "owner@example.com",
-                "example.com"
+                randomCompanyId, 
+                "Test Company " + randomCompanyId,  // Meaningful company name
+                "123 Test Street, TestCity",        // Physical address
+                "owner@example.com",                // Owner email
+                "example.com",                      // Email domain
+                SubscriptionManager.getSubscription("TIER_1")
             );
             
             // 2. Create and save a token for this company with the current role
@@ -242,10 +311,12 @@ public class AuthManagementControllerTest {
             // 3. Create a company register request with the same ID
             CompanyRegisterRequest req = new CompanyRegisterRequest(
                 randomCompanyId,
-                "unique" + gen.randomAlphaString(5) + ".com",
-                "TIER_1",
-                "newowner@example.com",
-                "example.com"
+                "Company " + randomCompanyId,         // Company name
+                "123 Test Avenue",                    // Company address
+                "unique" + gen.randomAlphaString(5) + ".com", // Top level domain
+                "newowner@example.com",               // Owner email
+                "example.com",                        // Mail domain
+                "TIER_1"                              // Subscription
             );
             
             // Final randomCompanyId for use in lambda
@@ -274,11 +345,13 @@ public class AuthManagementControllerTest {
         
         // 2. Create and submit a company registration request
         CompanyRegisterRequest req = new CompanyRegisterRequest(
-            randomCompanyId,
-            domain,
-            "TIER_1",
-            ownerEmail,
-            domain
+            randomCompanyId,                      // ID
+            "New Test Company",                   // Company name
+            "456 Business Lane",                  // Company address
+            domain,                               // Top level domain
+            ownerEmail,                           // Owner email
+            domain,                               // Mail domain
+            "TIER_1"                              // Subscription
         );
         
         // Register the company and verify no exceptions are thrown
@@ -319,34 +392,41 @@ public class AuthManagementControllerTest {
 
     @Test
     void testRegisterUserInitialConstraints() {
-       // 1. Test that registration fails when the username already exists
-       // Loop through all existing users to test constraint
-       for (AppUser existingUser : userRepo.findAll()) {
+        // 1. Test that registration fails when the username already exists
+        // Loop through all existing users to test constraint
+        int i = 0;
+        for (AppUser existingUser : userRepo.findAll()) {
+            i += 1;
+            UserRegisterRequest existingUserRequest = new UserRegisterRequest(
+                        existingUser.getEmail()   ,          // email
+                        "someUsername",                       // username
+                        "password123",                        // password
+                        "firstName_" + i,
+                        "lastName_" + i,
+                        "middleName_" + i,
+                        existingUser.getCompany().getId(),    // companyId
+                        RoleManager.EMPLOYEE_ROLE,            // role
+                        "someToken"                           // roleToken
+            );
 
-           // Create request with existing username - FIXED PARAMETER ORDER
-           UserRegisterRequest existingUserRequest = new UserRegisterRequest(
-               existingUser.getCompany().getId(),    // companyId
-               "someUsername",                       // username
-               "password123",                        // password
-                existingUser.getEmail()   ,          // email
-               RoleManager.EMPLOYEE_ROLE,            // role
-               "someToken"                           // roleToken
-           );
-
-           assertThrows(
+            assertThrows(
                UserExceptions.AlreadyExistingUserException.class,
                () -> authCon.registerUser(existingUserRequest),
                "Should fail when a user with the email already exists: " + existingUser.getEmail()
-           );
+            );
        }
 
+        i += 1;
        // 2. Test that registration fails when the company does not exist - FIXED PARAMETER ORDER
        String nonExistentCompanyId = "non_existent_company_" + gen.randomAlphaString(8);
        UserRegisterRequest nonExistentCompanyRequest = new UserRegisterRequest(
-           nonExistentCompanyId,                // companyId
-           "newUser",                           // username
-           "password123",                       // password
-           "new_user@example.com",              // email
+               "new_user@example.com",              // email
+               "newUser",                           // username
+               "password123",                       // password
+               "firstName_" + i,
+               "lastName_" + i,
+               "middleName_" + i,
+               nonExistentCompanyId,                // companyId
            RoleManager.EMPLOYEE_ROLE,           // role
            "someToken"                          // roleToken
        );
@@ -357,14 +437,18 @@ public class AuthManagementControllerTest {
            "Should fail when the company ID doesn't exist"
        );
 
+       i += 1;
        // 3. Test that registration fails when the role does not exist - FIXED PARAMETER ORDER
        String invalidRole = "INVALID_ROLE_";
        Company existingCompany = companyRepo.findAll().getFirst();
        UserRegisterRequest invalidRoleRequest = new UserRegisterRequest(
-           existingCompany.getId(),             // companyId
-           "newUser",                           // username
-           "password123",                       // password
-           "new_user@example.com",              // email
+               "new_user@example.com",              // email
+               "newUser",                           // username
+               "password123",                       // password
+               "firstName_" + i,
+               "lastName_" + i,
+               "middleName_" + i,
+               existingCompany.getId(),             // companyId
            invalidRole,                         // role
            "someToken"                          // roleToken
        );
@@ -378,10 +462,13 @@ public class AuthManagementControllerTest {
        // 4. Test that registration fails when token is missing for non-owner roles - FIXED PARAMETER ORDER
        // Test for ADMIN role
        UserRegisterRequest missingTokenAdminRequest = new UserRegisterRequest(
-           existingCompany.getId(),             // companyId
-           "adminUser",                         // username
-           "password123",                       // password
-           "admin_user@example.com",            // email
+               "admin_user@example.com",            // email
+               "adminUser",                         // username
+               "password123",                       // password
+               "firstName_" + i,
+               "lastName_" + i,
+               "middleName_" + i,
+               existingCompany.getId(),             // companyId
            RoleManager.ADMIN_ROLE,              // role
            null                                 // roleToken
        );
@@ -394,10 +481,14 @@ public class AuthManagementControllerTest {
 
        // Test for EMPLOYEE role - FIXED PARAMETER ORDER
        UserRegisterRequest missingTokenEmployeeRequest = new UserRegisterRequest(
-           existingCompany.getId(),             // companyId
-           "employeeUser",                      // username
-           "password123",                       // password
-           "employee_user@example.com",         // email
+               "employee_user@example.com",         // email
+               "employeeUser",                      // username
+               "password123",                       // password
+               "firstName_" + i,
+               "lastName_" + i,
+               "middleName_" + i,
+
+               existingCompany.getId(),             // companyId
            RoleManager.EMPLOYEE_ROLE,           // role
            null
        );
@@ -411,25 +502,32 @@ public class AuthManagementControllerTest {
 
     @Test
     void testNonOwnerSecondConstraints() {
-       // 1. Create a verified company with email domain "example.com"
-       Company verifiedCompany = new Company(
-           "verified_company_id",
-           SubscriptionManager.getSubscription("TIER_1"),
-           "owner@example.com",
-           "example.com"
-       );
-       verifiedCompany.verify(); // Mark as verified
-       companyRepo.save(verifiedCompany);
+        int i = 0;
+        // 1. Create a verified company with email domain "example.com"
+        Company verifiedCompany = new Company(
+        "verified_company_id",
+        "companyName",
+        "companyAddress",
+        "owner@example.com",
+        "example.com",
+        SubscriptionManager.getSubscription("TIER_1")
+        );
+        verifiedCompany.verify(); // Mark as verified
+        companyRepo.save(verifiedCompany);
 
-       // 2. Test email domain mismatch - trying to register with gmail.com for a example.com company
-       UserRegisterRequest mismatchedEmailRequest = new UserRegisterRequest(
-           verifiedCompany.getId(),         // companyId (matching verified company)
-           "newAdmin",                      // username
-           "password123",                   // password
-           "admin@gmail.com",               // email (mismatched domain)
+        i += 1;
+        // 2. Test email domain mismatch - trying to register with gmail.com for example.com company
+        UserRegisterRequest mismatchedEmailRequest = new UserRegisterRequest(
+                "admin@gmail.com",               // email (mismatched domain)
+                "newAdmin",                      // username
+                "password123",                   // password
+                "firstName_" + i,
+                "lastName_" + i,
+                "middleName_" + i,
+                verifiedCompany.getId(),         // companyId (matching verified company)
            RoleManager.ADMIN_ROLE,          // role
            "admin_token_string"             // roleToken
-       );
+        );
 
        assertThrows(
            CompanyAndUserExceptions.UserCompanyMisalignedException.class,
@@ -460,12 +558,15 @@ public class AuthManagementControllerTest {
 
 
                     UserRegisterRequest unverifiedCompanyRequest = new UserRegisterRequest(
-                    company.getId(),                       // companyId (unverified company)
-                    "employee_" + company.getId(),         // username
-                    "password123",                         // password
-                    email,// email (matching domain)
-                    roleString,             // role (non-owner)
-                    "token_string_" + company.getId()      // roleToken
+                        email,// email (matching domain)
+                        "employee_" + company.getId(),         // username
+                        "password123",                         // password
+                        "firstName_" + i,
+                        "lastName_" + i,
+                        "middleName_" + i,
+                        company.getId(),                       // companyId (unverified company)
+                        roleString,             // role (non-owner)
+                        "token_string_" + company.getId()      // roleToken
                     );
 
                     assertThrows(
@@ -477,6 +578,7 @@ public class AuthManagementControllerTest {
         }
     }
 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     void testNonOwnerTokenConstraints() {
         // when a non-owner is registered his
@@ -497,6 +599,8 @@ public class AuthManagementControllerTest {
         // Clear existing users to avoid conflicts
         userRepo.deleteAll();
 
+        int i = 0;
+
         // 1. Test successful registration with admin token
         AppToken validAdminToken = new AppToken(
             "valid_admin_token",
@@ -506,11 +610,16 @@ public class AuthManagementControllerTest {
         );
         tokenRepo.save(validAdminToken);
 
+        i += 1;
+
         UserRegisterRequest validAdminRequest = new UserRegisterRequest(
-            youtube.getId(),
-            "new_admin",
-            "password123",
-            "new_admin@youtube.com",
+                "new_admin@youtube.com",
+                "new_admin",
+                "password123",
+                "firstName_" + i,
+                "lastName_" + i,
+                "middleName_" + i,
+                youtube.getId(),
             RoleManager.ADMIN_ROLE,
             "valid_admin_token_string"
         );
@@ -531,12 +640,15 @@ public class AuthManagementControllerTest {
         tokenRepo.save(adminTokenForEmployeeTest);
 
         UserRegisterRequest mismatchedRoleRequest = new UserRegisterRequest(
-            github.getId(),
-            "employee_with_admin_token",
-            "password123",
-            "employee@github.com",
-            RoleManager.EMPLOYEE_ROLE,
-            "admin_token_employee_string"
+                "employee_with_admin_token",
+                "password123",
+                "employee@github.com",
+                "firstName_" + i,
+                "lastName_" + i,
+                "middleName_" + i,
+                github.getId(),
+                RoleManager.EMPLOYEE_ROLE,
+                "admin_token_employee_string"
         );
 
         assertThrows(
@@ -555,12 +667,19 @@ public class AuthManagementControllerTest {
         activatedToken.activate(); // Activate the token
         tokenRepo.save(activatedToken);
 
+        i += 1;
+
         UserRegisterRequest activatedTokenRequest = new UserRegisterRequest(
-            youtube.getId(),
-            "admin_with_activated_token",
-            "password123",
-            "activated_admin@youtube.com",
-            RoleManager.ADMIN_ROLE,
+                "activated_admin@youtube.com",
+                "admin_with_activated_token",
+                "password123",
+
+                "firstName_" + i,
+                "lastName_" + i,
+                "middleName_" + i,
+
+                youtube.getId(),
+                RoleManager.ADMIN_ROLE,
             "activated_token_string"
         );
 
@@ -580,13 +699,17 @@ public class AuthManagementControllerTest {
         expiredToken.expire(); // Expire the token
         tokenRepo.save(expiredToken);
 
+        i += 1;
         UserRegisterRequest expiredTokenRequest = new UserRegisterRequest(
-            github.getId(),
-            "admin_with_expired_token",
-            "password123",
-            "expired_admin@github.com",
-            RoleManager.ADMIN_ROLE,
-            "expired_token_string"
+                "expired_admin@github.com",
+                "admin_with_expired_token",
+                "password123",
+                "firstName_" + i,
+                "lastName_" + i,
+                "middleName_" + i,
+                github.getId(),
+                RoleManager.ADMIN_ROLE,
+                "expired_token_string"
         );
 
         assertThrows(
@@ -610,6 +733,9 @@ public class AuthManagementControllerTest {
             "existing_admin@youtube.com",
             "existing_admin",
             "password123",
+            "firstName_" + i,
+            "lastName_" + i,
+            "middleName_" + i,
             youtube,
             RoleManager.getRole(RoleManager.ADMIN_ROLE)
         );
@@ -625,11 +751,14 @@ public class AuthManagementControllerTest {
 
         // Try to register another user with the same token
         UserRegisterRequest linkedTokenRequest = new UserRegisterRequest(
-            youtube.getId(),
-            "another_admin",
-            "password123",
-            "another_admin@youtube.com",
-            RoleManager.ADMIN_ROLE,
+                "another_admin@youtube.com",
+                "another_admin",
+                "password123",
+                "firstName_" + i,
+                "lastName_" + i,
+                "middleName_" + i,
+                youtube.getId(),
+                RoleManager.ADMIN_ROLE,
             "linked_token_string"
         );
 
@@ -683,11 +812,14 @@ public class AuthManagementControllerTest {
             String username = role + "_user_" + randomSuffix;
 
             UserRegisterRequest request = new UserRegisterRequest(
-                company.getId(),
-                username,
-                "password123",
-                email,
-                role,
+                    email,
+                    username,
+                    "password123",
+                    company.getId(),
+                    "firstName_" + i,
+                    "lastName_" + i,
+                    "middleName_" + i,
+                    role,
                 tokenString
             );
 
@@ -734,12 +866,15 @@ public class AuthManagementControllerTest {
             String differentEmail = "different_" + gen.randomAlphaString(5) + "@" + company.getEmailDomain();
             
             UserRegisterRequest mismatchedOwnerRequest = new UserRegisterRequest(
-                company.getId(),
-                "owner_" + gen.randomAlphaString(5),
-                "password123",
-                differentEmail, // Different than company.getOwnerEmail()
-                RoleManager.OWNER_ROLE,
-                null // Owner role doesn't need token
+                differentEmail,                       // Email
+                "owner_" + gen.randomAlphaString(5),  // Username
+                "password123",                        // Password
+                "Owner",                              // First name
+                "User",                               // Last name
+                "Test",                               // Middle name
+                company.getId(),                      // Company ID
+                RoleManager.OWNER_ROLE,               // Role
+                null                                  // Owner role doesn't need token
             );
             
             assertThrows(
@@ -759,20 +894,25 @@ public class AuthManagementControllerTest {
             
             Company verifiedCompany = new Company(
                 companyId,
-                SubscriptionManager.getSubscription("TIER_1"),
+                "New Company " + i,                 // Company name
+                "456 New Ave, Suite " + i,          // Company address
                 ownerEmail,
-                domain
+                domain,
+                SubscriptionManager.getSubscription("TIER_1")
             );
             verifiedCompany.verify(); // Set to verified status
             companyRepo.save(verifiedCompany);
             
             // Try to register owner for already verified company
             UserRegisterRequest verifiedCompanyOwnerRequest = new UserRegisterRequest(
-                companyId,
-                "owner_" + i,
-                "password123",
-                ownerEmail, // Matching owner email
-                RoleManager.OWNER_ROLE,
+                    ownerEmail, // Matching owner email
+                    companyId,
+                    "owner_" + i,
+                    "password123",
+                    "firstName_" + i,
+                    "lastName_" + i,
+                    "middleName_" + i,
+                    RoleManager.OWNER_ROLE,
                 null // Owner role doesn't need token
             );
             
@@ -784,6 +924,7 @@ public class AuthManagementControllerTest {
         }
     }
 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     void testSuccessfulOwnerRegistration() {
         // Clear existing data
@@ -806,7 +947,9 @@ public class AuthManagementControllerTest {
             // Create the company request
             CompanyRegisterRequest companyRequest = new CompanyRegisterRequest(
                 companyId,
-                domain,
+                    "companyName" + i,
+                    "companyAdd" + i,
+                    domain,
                 "TIER_1",
                 ownerEmail,
                 domain
@@ -835,11 +978,14 @@ public class AuthManagementControllerTest {
 
             // 2. Now register the owner for this company
             UserRegisterRequest ownerRequest = new UserRegisterRequest(
-                companyId,
-                "owner_" + i,
-                "password123",
-                ownerEmail, // Matching owner email
-                RoleManager.OWNER_ROLE,
+                    ownerEmail, // Matching owner email
+                    "owner_" + i,
+                    "password123",
+                    "firstName_" + i,
+                    "lastName_" + i,
+                    "middleName_" + i,
+                    companyId,
+                    RoleManager.OWNER_ROLE,
                 null // Owner role doesn't need token
             );
             
@@ -912,9 +1058,11 @@ public class AuthManagementControllerTest {
             
             Company newCompany = new Company(
                 companyId,
-                SubscriptionManager.getSubscription("TIER_1"),
+                "New Company " + i,                 // Company name
+                "456 New Ave, Suite " + i,          // Company address
                 ownerEmail,
-                domain
+                domain,
+                SubscriptionManager.getSubscription("TIER_1")
             );
             companyRepo.save(newCompany);
 
@@ -941,9 +1089,11 @@ public class AuthManagementControllerTest {
             
             Company newCompany = new Company(
                 companyId,
-                SubscriptionManager.getSubscription("TIER_1"),
+                "New Company " + i,                 // Company name
+                "456 New Ave, Suite " + i,          // Company address
                 ownerEmail,
-                domain
+                domain,
+                SubscriptionManager.getSubscription("TIER_1")
             );
             newCompany.verify();            
             companyRepo.save(newCompany);
@@ -973,9 +1123,11 @@ public class AuthManagementControllerTest {
             
             Company newCompany = new Company(
                 companyId,
-                SubscriptionManager.getSubscription("TIER_1"),
+                "New Company " + i,                 // Company name
+                "456 New Ave, Suite " + i,          // Company address
                 ownerEmail,
-                domain
+                domain,
+                SubscriptionManager.getSubscription("TIER_1")
             );
             companyRepo.save(newCompany);
 
@@ -1005,9 +1157,11 @@ public class AuthManagementControllerTest {
             
             Company newCompany = new Company(
                 companyId,
-                SubscriptionManager.getSubscription("TIER_1"),
+                "New Company " + i,                 // Company name
+                "456 New Ave, Suite " + i,          // Company address
                 ownerEmail,
-                domain
+                domain,
+                SubscriptionManager.getSubscription("TIER_1")
             );
             companyRepo.save(newCompany);
 
@@ -1015,7 +1169,10 @@ public class AuthManagementControllerTest {
                 ownerEmail,
                 "ownerUser_" + i,
                 "password123",
-                newCompany,
+                    "firstName_" + i,
+                    "lastName_" + i,
+                    "middleName_" + i,
+                    newCompany,
                 RoleManager.getRole(RoleManager.OWNER_ROLE)
                 );
 
@@ -1110,6 +1267,7 @@ public class AuthManagementControllerTest {
         }   
     }
 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     void verifySuccessfulCompanyVerification() {
         for (int i = 0; i < 10; i++) {
@@ -1119,9 +1277,11 @@ public class AuthManagementControllerTest {
             
             Company newCompany = new Company(
                 companyId,
-                SubscriptionManager.getSubscription("TIER_1"),
+                "New Company " + i,                 // Company name
+                "456 New Ave, Suite " + i,          // Company address
                 ownerEmail,
-                domain
+                domain,
+                SubscriptionManager.getSubscription("TIER_1")
             );
             companyRepo.save(newCompany);
 
@@ -1130,6 +1290,9 @@ public class AuthManagementControllerTest {
                 ownerEmail,
                 "ownerUser_" + i,
                 "password123",
+                "firstName_" + i,
+                "lastName_" + i,
+                "middleName_" + i,
                 newCompany,
                 RoleManager.getRole(RoleManager.OWNER_ROLE)
             );  
@@ -1189,6 +1352,7 @@ public class AuthManagementControllerTest {
         }   
     }
 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     void testFullRegistrationFlow() throws IllegalAccessException, NoSuchFieldException {
         // Clear existing data to ensure clean test environment
@@ -1205,6 +1369,8 @@ public class AuthManagementControllerTest {
             // 1. Create and register a company
             CompanyRegisterRequest companyRequest = new CompanyRegisterRequest(
                 companyId,
+                "companyName_" + i,
+                "companyAdd_" + i,
                 domain,
                 "TIER_1",
                 ownerEmail,
@@ -1232,10 +1398,13 @@ public class AuthManagementControllerTest {
 
             // 3. Register the owner user
             UserRegisterRequest ownerRequest = new UserRegisterRequest(
-                companyId,
-                "owner_" + i,
-                "password123",
-                ownerEmail,
+                    ownerEmail,
+                    "owner_" + i,
+                    "password123",
+                    "firstName_" + i,
+                    "lastName_" + i,
+                    "middleName_" + i,
+                    companyId,
                 RoleManager.OWNER_ROLE,
                 null // Owner doesn't need token
             );

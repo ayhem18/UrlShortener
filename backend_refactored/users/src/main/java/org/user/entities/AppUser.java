@@ -1,13 +1,15 @@
 package org.user.entities;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import org.access.Role;
 
-import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.company.entities.Company;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
+
+import java.time.LocalDateTime;
 
 
 @Document()
@@ -29,6 +31,7 @@ public class AppUser {
 
     private String middleName;
 
+    private LocalDateTime timeJoined;
 
     // user company information
     // each user is associated with a company (a specific site)
@@ -52,6 +55,7 @@ public class AppUser {
         this.company = company;
         this.role = role;
         this.urlEncodingCount = 0; // starts at 0...
+        this.timeJoined = LocalDateTime.now();
     }
 
     // the no-argument constructor is needed for Jackson de/serialization
@@ -98,6 +102,11 @@ public class AppUser {
         return role;
     }
 
+    @JsonGetter(value="timeJoined")
+    public LocalDateTime getTimeJoined() {
+        return timeJoined;
+    }
+
 
     ///////////////////////////////// Setters /////////////////////////////////////////////
     // can set first name
@@ -130,11 +139,15 @@ public class AppUser {
         this.role = role;
     }
 
-
     ///////////////////////////////// Jackson Setters /////////////////////////////////////////////
     @SuppressWarnings("unused")
     private void setCompany(Company company) {
         this.company = company;
+    }
+
+    @SuppressWarnings("unused")
+    private void setTimeJoined(LocalDateTime joinTime) {
+        this.timeJoined = joinTime;
     }
 
 

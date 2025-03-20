@@ -12,7 +12,6 @@ import org.authManagement.exceptions.CompanyAndUserExceptions;
 import org.authManagement.exceptions.CompanyExceptions;
 import org.authManagement.exceptions.TokenAndUserExceptions;
 import org.authManagement.exceptions.UserExceptions;
-import org.authManagement.repositories.CounterRepository;
 import org.authManagement.requests.CompanyRegisterRequest;
 import org.authManagement.requests.CompanyVerifyRequest;
 import org.authManagement.requests.UserRegisterRequest;
@@ -45,6 +44,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 @RestController
 @Validated
@@ -52,7 +52,7 @@ public class AuthController {
     private static final int ROLE_TOKEN_LENGTH = 64;
 
     private final CustomGenerator generator;
-    private final CounterRepository counterRepo;
+//    private final CounterRepository counterRepo;
     private final CompanyRepository companyRepo;
     private final TokenRepository tokenRepo;
     private final UserRepository userRepo;
@@ -65,7 +65,7 @@ public class AuthController {
             CompanyRepository companyRepo,
             TopLevelDomainRepository topLevelDomainRepo,
             UserRepository userRepo,
-            CounterRepository counterRepo,
+//            CounterRepository counterRepo,
             TokenRepository tokenRepo,
             TokenUserLinkRepository tokenUserLinkRepo,
             CustomGenerator generator, 
@@ -73,7 +73,7 @@ public class AuthController {
     ) {
         this.companyRepo = companyRepo;
         this.topLevelDomainRepo = topLevelDomainRepo;
-        this.counterRepo = counterRepo;
+//        this.counterRepo = counterRepo;
         this.userRepo = userRepo;
         this.tokenRepo = tokenRepo;
         this.tokenUserLinkRepo = tokenUserLinkRepo;
@@ -149,7 +149,7 @@ public class AuthController {
         Subscription subscription = SubscriptionManager.getSubscription(req.subscription());
 
         // 3. create the company
-        Company company = new Company(req.id(), subscription, req.ownerEmail(), req.mailDomain());
+        Company company = new Company(req.id(), req.companyName(), req.companyAddress(), req.ownerEmail(), req.mailDomain(), subscription);
 
         this.companyRepo.save(company);
 
@@ -157,12 +157,20 @@ public class AuthController {
         this.validateOwnerToken(company);
 
         // 5. create the top level domain
-        long topLevelDomainId = this.counterRepo.getCount(TopLevelDomain.TOP_LEVEL_DOMAIN_CLASS_NAME);
+        // TODO: fix the id generation
+//        long topLevelDomainId = this.counterRepo.getCount(TopLevelDomain.TOP_LEVEL_DOMAIN_CLASS_NAME);
+        long topLevelDomainId = (new Random()).nextInt(10000);
+
         TopLevelDomain topLevelDomain = new TopLevelDomain(this.generator.generateId(topLevelDomainId), req.topLevelDomain(), this.encoder().encode(req.topLevelDomain()), company);
         this.topLevelDomainRepo.save(topLevelDomain);
 
         // 6. create the owner role token
-        String ownerTokenId = this.generator.generateId(this.counterRepo.getCount(AppToken.TOKEN_CLASS_NAME));
+        // TODO: fix the owner token id
+//        String ownerTokenId = this.generator.generateId(this.counterRepo.getCount(AppToken.TOKEN_CLASS_NAME));
+
+        String ownerTokenId = this.generator.randomString(100);
+
+
 
         // Todo: use a safer token generation mechanism
         String ownerTokenString = this.generator.randomString(ROLE_TOKEN_LENGTH);
@@ -261,6 +269,7 @@ public class AuthController {
     }
     
 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @PostMapping("api/auth/register/company/verify")
     public ResponseEntity<String> verifyCompany(@Valid @RequestBody CompanyVerifyRequest req) throws JsonProcessingException {
         // 1. Validate the verification request
@@ -281,7 +290,11 @@ public class AuthController {
         AppUser ownerUser = this.userRepo.findById(req.email()).get();
 
         // Generate a random ID for the token-user link
-        String tokenUserLinkId = this.generator.generateId(this.counterRepo.getCount(TokenUserLink.TOKEN_USER_LINK_CLASS_NAME));
+        // TODO: fix id generation issues
+
+//        String tokenUserLinkId = this.generator.generateId(this.counterRepo.getCount(TokenUserLink.TOKEN_USER_LINK_CLASS_NAME));
+        String tokenUserLinkId = this.generator.randomString(100);
+    
         TokenUserLink tokenUserLink = new TokenUserLink(tokenUserLinkId, ownerToken, ownerUser);
         this.tokenUserLinkRepo.save(tokenUserLink);
 
@@ -315,6 +328,7 @@ public class AuthController {
         return claimedRole;
     }
 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     private AppUser registerOwner(UserRegisterRequest req) {
         // at this point, we know the company exists and the username does not exist
         // we need to check if the email matches the owner email
@@ -333,7 +347,10 @@ public class AuthController {
         AppUser owner = new AppUser(req.email(),
                                 req.username(),
                                 encoder().encode(req.password()),
-                                company, 
+                                req.firstName(),
+                                req.lastName(),
+                                req.middleName(),
+                                company,
                                 RoleManager.getRole(req.role()));
 
         this.userRepo.save(owner);
@@ -384,6 +401,7 @@ public class AuthController {
     }
 
 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     private AppUser registerNonOwner(UserRegisterRequest req) {
         // at this point, we know the company exists and the username does not exist 
         // the roleToken is not null, it needs to be verified
@@ -406,7 +424,10 @@ public class AuthController {
         AppUser user = new AppUser(req.email(),
                                 req.username(),
                                 encoder().encode(req.password()),
-                                company, 
+                                req.firstName(),
+                                req.lastName(),
+                                req.middleName(),
+                                company,
                                 RoleManager.getRole(req.role()));
 
         this.userRepo.save(user);
@@ -418,7 +439,12 @@ public class AuthController {
         this.tokenRepo.save(matchingToken);
 
         // Generate a random ID for the token-user link
-        String tokenUserLinkId = this.generator.generateId(this.counterRepo.getCount(TokenUserLink.TOKEN_USER_LINK_CLASS_NAME));
+
+
+//        String tokenUserLinkId = this.generator.generateId(this.counterRepo.getCount(TokenUserLink.TOKEN_USER_LINK_CLASS_NAME));
+        String tokenUserLinkId = this.generator.randomString(100);
+//                this.generator.generateId(this.counterRepo.getCount(TokenUserLink.TOKEN_USER_LINK_CLASS_NAME));
+
         TokenUserLink tokenUserLink = new TokenUserLink(tokenUserLinkId, matchingToken, user);
         this.tokenUserLinkRepo.save(tokenUserLink);
 

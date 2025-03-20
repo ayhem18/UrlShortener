@@ -1,9 +1,6 @@
 package org.authManagement.requests;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 
 public record CompanyRegisterRequest (
     @NotBlank
@@ -11,11 +8,15 @@ public record CompanyRegisterRequest (
     String id,
 
     @NotBlank
-    @Pattern(regexp = "(www\\.)*[a-zA-Z0-9_-]+\\.[a-zA-Z]{2,}", message = "the domain is in the wrong format")
-    String topLevelDomain,
+    String companyName,
 
     @NotBlank
-    String subscription,
+    String companyAddress,
+
+    @NotBlank
+    @Pattern(regexp = "(www\\.)[a-zA-Z0-9_-]+\\.[a-zA-Z]{2,}", message = "the domain is expected to start with www. and end with at least a 2 character top level domain e.g ('org', 'edu', 'eu'...)")
+    String topLevelDomain,
+
 
     @NotBlank
     // expecting a valid email
@@ -28,9 +29,12 @@ public record CompanyRegisterRequest (
     String ownerEmail,
 
     // the main domain of a company can be null.
-    String mailDomain
+    @NotEmpty
+    String mailDomain,
 
-) {};
+    @NotBlank
+    String subscription
+    ) {};
 
 
 

@@ -20,6 +20,9 @@ dependencies {
     // for jackson serialization
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.18.2'
 
+    // for jackson time serialization
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.18.2'
+
     // for jackarta validation
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: '3.4.2'
 

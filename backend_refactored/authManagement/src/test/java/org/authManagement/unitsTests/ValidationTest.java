@@ -17,7 +17,6 @@ import org.company.repositories.TopLevelDomainRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.CustomEditorConfigurer;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -90,7 +89,9 @@ public class ValidationTest {
 
             CompanyRegisterRequest request = new CompanyRegisterRequest(
                     this.customGenerator.randomAlphaString(n),
-                    this.customGenerator.randomAlphaString(n) + ".com",
+                    "www."+this.customGenerator.randomAlphaString(n) + ".com",
+                    this.customGenerator.randomAlphaString(n), // company name
+                    this.customGenerator.randomAlphaString(n), // company address
                     "TIER_1",
                     "owner@example.com",
                     "example.com"
@@ -103,7 +104,8 @@ public class ValidationTest {
                                     .content(new ObjectMapper().writeValueAsString(request)
                                     )
                     )
-                    .andExpect(MockMvcResultMatchers.status().isBadRequest());
+                    .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("The length of id is expected to be between 8 and 16"));
         }
     }
 
@@ -122,10 +124,12 @@ public class ValidationTest {
             // Create request with one missing field
             CompanyRegisterRequest request = new CompanyRegisterRequest(
                 companyId,
+                "Company " + i,                     // Company name
+                "Company Address " + i,             // Company address
                 topLevelDomain,
-                subscription,
                 ownerEmail,
-                topLevelDomain != null ? topLevelDomain.substring(topLevelDomain.indexOf('.') + 1) : null
+                topLevelDomain != null ? topLevelDomain.substring(topLevelDomain.indexOf('.') + 1) : null,
+                subscription
             );
             
             // Call API and verify result
@@ -163,11 +167,13 @@ public class ValidationTest {
             // Create valid request with invalid domain
             CompanyRegisterRequest request = new CompanyRegisterRequest(
                 "company_" + i,
+                "companyName_" + i,
+                "companyAddress_" + i,
                 invalidDomain,
-                "TIER_1",
                 "owner" + i + "@example.com",
-                "example.com"
-            );
+                "example.com",
+                "TIER_1"
+                );
             
             // Call API and verify result
             mockMvc.perform(
@@ -201,16 +207,20 @@ public class ValidationTest {
             "live.com",
             "msn.com"
         );
-        
+
+        int i = 0;
         // 2. Iterate through each provider
         for (String provider : standardProviders) {
+            i += 1;
             // Create a company request using a standard provider as domain
             CompanyRegisterRequest request = new CompanyRegisterRequest(
-                "company_" + provider.replaceAll("\\.", ""), // Remove dots for valid ID
-                provider,                              // Use provider as domain
-                "TIER_1",                              // Valid subscription tier
-                "owner@" + provider,                   // Owner email matching domain
-                provider                               // Mail domain matching top level domain
+                    "company_" + i,
+                    "companyName_" + i,
+                    "companyAddress_" + i,
+                    "www.some_domain.com",
+                    "owner@" + provider,                   // Owner email matching domain
+                    provider,                               // Mail domain matching top level domain
+                    "TIER_1"                              // Valid subscription tier
             );
             
             // Call API and verify result
@@ -235,13 +245,15 @@ public class ValidationTest {
             
             // Create valid company registration request
             CompanyRegisterRequest request = new CompanyRegisterRequest(
-                companyId,
-                domain,
-                "TIER_1",
-                "owner" + i + "@customdomain" + i + ".com", // Must not use standard provider
-                null
+                    "company_" + i,
+                    "companyName_" + i,
+                    "companyAddress_" + i,
+                    "www.some_domain.com",
+                    "owner@example.com" ,                   // Owner email matching domain
+                    null,                               // Mail domain matching top level domain
+                    "TIER_1"                              // Valid subscription tier
             );
-            
+
             // Call API to register company
             mockMvc.perform(
                 MockMvcRequestBuilders.post("/api/auth/register/company")
@@ -291,6 +303,8 @@ public class ValidationTest {
             // create a company
             CompanyRegisterRequest companyRequest = new CompanyRegisterRequest(
                 companyId,
+                "someCompanyName",
+                "someCompanyAddress",
                 "example.com",
                 "TIER_1",
                 "owner@example.com",
@@ -313,12 +327,15 @@ public class ValidationTest {
             String username = c + customGenerator.randomAlphaString(10);
 
             UserRegisterRequest request = new UserRegisterRequest(
-                companyId,
-                username, 
-                "some_password",
-                "owner@example.com",
-                "owner",
-                null
+                "user" + c + "@example.com",        // Email
+                username,                           // Username
+                "some_password",                    // Password
+                "User",                             // First name
+                "Test",                             // Last name
+                "Middle",                           // Middle name
+                companyId,                          // Company ID
+                "owner",                            // Role
+                null                                // Role token
             );
 
             mockMvc.perform(
@@ -337,10 +354,12 @@ public class ValidationTest {
         String companyId = "company_test";
         CompanyRegisterRequest companyRequest = new CompanyRegisterRequest(
             companyId,
-            "example.com",
-            "TIER_1",
-            "owner@example.com",
-            "example.com"
+            "Test Company",                       // Company name
+            "123 Company Street",                 // Company address
+            "example.com",                       // Top level domain
+            "owner@example.com",                 // Owner email
+            "example.com",                       // Mail domain
+            "TIER_1"                             // Subscription
         );
         
         mockMvc.perform(
@@ -360,12 +379,15 @@ public class ValidationTest {
         // Test each field one by one
         // 1. Missing companyId
         UserRegisterRequest missingCompanyIdRequest = new UserRegisterRequest(
-            "",  // Empty companyId
-            validUsername,
-            validPassword,
-            validEmail,
-            validRole,
-            validToken
+            validEmail,                          // Email
+            validUsername,                       // Username
+            validPassword,                       // Password
+            "First",                             // First name
+            "Last",                              // Last name
+            "Middle",                            // Middle name
+            "",                                  // Empty companyId
+            validRole,                           // Role
+            validToken                           // Role token
         );
         
         mockMvc.perform(
@@ -377,12 +399,15 @@ public class ValidationTest {
         
         // 2. Missing username
         UserRegisterRequest missingUsernameRequest = new UserRegisterRequest(
-            companyId,
-            "",  // Empty username
-            validPassword,
-            validEmail,
-            validRole,
-            validToken
+            validEmail,                          // Email
+            "",                                  // Empty username
+            validPassword,                       // Password
+            "First",                             // First name
+            "Last",                              // Last name
+            "Middle",                            // Middle name
+            companyId,                           // Company ID
+            validRole,                           // Role
+            validToken                           // Role token
         );
         
         mockMvc.perform(
@@ -394,12 +419,15 @@ public class ValidationTest {
         
         // 3. Missing password
         UserRegisterRequest missingPasswordRequest = new UserRegisterRequest(
-            companyId,
-            validUsername,
-            "",  // Empty password
-            validEmail,
-            validRole,
-            validToken
+            validEmail,                          // Email
+            validUsername,                       // Username
+            "",                                  // Empty password
+            "First",                             // First name
+            "Last",                              // Last name
+            "Middle",                            // Middle name
+            companyId,                           // Company ID
+            validRole,                           // Role
+            validToken                           // Role token
         );
         
         mockMvc.perform(
@@ -411,12 +439,15 @@ public class ValidationTest {
         
         // 4. Missing email
         UserRegisterRequest missingEmailRequest = new UserRegisterRequest(
-            companyId,
-            validUsername,
-            validPassword,
-            "",  // Empty email
-            validRole,
-            validToken
+            validEmail,                          // Email
+            validUsername,                       // Username
+            validPassword,                       // Password
+            "First",                             // First name
+            "Last",                              // Last name
+            "Middle",                            // Middle name
+            companyId,                           // Company ID
+            validRole,                           // Role
+            validToken                           // Role token
         );
         
         mockMvc.perform(
@@ -428,12 +459,15 @@ public class ValidationTest {
         
         // 5. Missing role
         UserRegisterRequest missingRoleRequest = new UserRegisterRequest(
-            companyId,
-            validUsername,
-            validPassword,
-            validEmail,
-            "",  // Empty role
-            validToken
+            validEmail,                          // Email
+            validUsername,                       // Username
+            validPassword,                       // Password
+            "First",                             // First name
+            "Last",                              // Last name
+            "Middle",                            // Middle name
+            companyId,                           // Company ID
+            "",                                  // Empty role
+            validToken                           // Role token
         );
         
         mockMvc.perform(
