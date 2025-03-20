@@ -42,8 +42,8 @@ public class StubUserRepo implements UserRepository {
         Company c2 = this.companyRepo.getDb().get(1);
 
         // create the owners of c1 and c2
-        AppUser ownerC1 = new AppUser("ownerc1@gmail.com", "ownerC1", "o_password1", c1, RoleManager.getRole("owner"));
-        AppUser ownerC2 = new AppUser("ownerc2@gmail.com", "ownerC2", "o_password2", c2, RoleManager.getRole("owner"));
+        AppUser ownerC1 = new AppUser("ownerc1@gmail.com", "ownerC1", "o_password1", "c1FirstName", "c1LastName", null, c1, RoleManager.getRole("owner"));
+        AppUser ownerC2 = new AppUser("ownerc2@gmail.com", "ownerC2", "o_password2", "c2FirstName", "c2LastName", null, c2, RoleManager.getRole("owner"));
 
         this.roleDb.put("owner", List.of(ownerC1, ownerC2));
         this.db.addAll(List.of(ownerC1, ownerC2));
@@ -54,8 +54,8 @@ public class StubUserRepo implements UserRepository {
         Company c2 = this.companyRepo.getDb().get(1);
 
         // create the owners of c1 and c2
-        AppUser adminC1 = new AppUser("adminc1@gmail.com", "adminC1", "a_password1", c1, RoleManager.getRole("admin"));
-        AppUser adminC2 = new AppUser("adminc2@gmail.com", "adminC2", "a_password2", c2, RoleManager.getRole("admin"));
+        AppUser adminC1 = new AppUser("adminc1@gmail.com", "adminC1", "a_password1", "c1FirstName", "c1LastName", null, c1, RoleManager.getRole("admin"));
+        AppUser adminC2 = new AppUser("adminc2@gmail.com", "adminC2", "a_password2", "c2FirstName", "c2LastName", null, c2, RoleManager.getRole("admin"));
 
         this.roleDb.put("admin", List.of(adminC1, adminC2));
         this.db.addAll(List.of(adminC1, adminC2));

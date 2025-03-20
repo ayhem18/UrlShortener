@@ -1,4 +1,4 @@
-package org.authManagement.configurations;
+package org.apiConfigurations;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;

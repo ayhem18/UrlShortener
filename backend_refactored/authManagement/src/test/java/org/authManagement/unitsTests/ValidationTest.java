@@ -1,9 +1,13 @@
 package org.authManagement.unitsTests;
 
+import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.access.RoleManager;
 import org.access.SubscriptionManager;
 import org.authManagement.configurations.WebTestConfig;
@@ -21,11 +25,13 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.tokens.repositories.TokenRepository;
 import org.tokens.repositories.TokenUserLinkRepository;
 import org.user.repositories.UserRepository;
+import org.utils.CustomErrorMessage;
 import org.utils.CustomGenerator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,7 +49,7 @@ public class ValidationTest {
     private final TokenRepository tokenRepo;
     private final TokenUserLinkRepository tokenUserLinkRepo;
     private final TopLevelDomainRepository topLevelDomainRepo;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper om;
 
     @Autowired
     public ValidationTest(
@@ -61,6 +67,14 @@ public class ValidationTest {
         this.tokenRepo = tokenRepo;
         this.tokenUserLinkRepo = tokenUserLinkRepo;
         this.topLevelDomainRepo = topLevelDomainRepo;
+
+        // set the object mapper to serialize LocalTimeDate objects
+        SimpleDateFormat df = new SimpleDateFormat("dd-MM-yyyy hh:mm");
+        this.om = new ObjectMapper();
+        this.om.setDateFormat(df);
+        this.om.registerModule(new JavaTimeModule());
+        this.om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
     }
     
     @BeforeEach
@@ -82,7 +96,7 @@ public class ValidationTest {
 
             int n;
             if (random < 0.5) {
-                n = (new Random()).nextInt(7);
+                n = 1 + (new Random()).nextInt(6);
             } else {
                 n = (new Random()).nextInt(10) + 17;
             }
@@ -98,14 +112,23 @@ public class ValidationTest {
             );
 
 
-            mockMvc.perform(
+            MvcResult res = mockMvc.perform(
                             MockMvcRequestBuilders.post("/api/auth/register/company")
                                     .contentType(MediaType.APPLICATION_JSON)
-                                    .content(new ObjectMapper().writeValueAsString(request)
+                                    .content(this.om.writeValueAsString(request)
                                     )
                     )
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("The length of id is expected to be between 8 and 16"));
+                    .andReturn();
+
+            CustomErrorMessage errorResponse = this.om.readValue(res.getResponse().getContentAsString(),
+                    CustomErrorMessage.class);
+
+            Map<String, String> errorMap = new ObjectMapper().readValue(
+                    errorResponse.getMessage(), Map.class
+            );
+
+            assertEquals("The length of id is expected to be between 8 and 16", errorMap.get("id"));
         }
     }
 
@@ -114,18 +137,21 @@ public class ValidationTest {
         
         for (int i = 0; i < 50; i++) {
             // Determine which field to omit 
-            int fieldToOmit = i % 4; 
+            int fieldToOmit = i % 6; 
             
             String companyId = fieldToOmit == 0 ? null : "company_" + i;
-            String topLevelDomain = fieldToOmit == 1 ? null : "example" + i + ".com";
+            String topLevelDomain = fieldToOmit == 1 ? null : "www.example" + i + ".com";
             String subscription = fieldToOmit == 2 ? null : "TIER_1";
             String ownerEmail = fieldToOmit == 3 ? null : "owner" + i + "@example" + i + ".com";
-            
+            String companyName = fieldToOmit == 4 ? null : "Company " + i;
+            String companyAddress = fieldToOmit == 5 ? null : "Company Address " + i;
+
+
             // Create request with one missing field
             CompanyRegisterRequest request = new CompanyRegisterRequest(
                 companyId,
-                "Company " + i,                     // Company name
-                "Company Address " + i,             // Company address
+                companyName,
+                companyAddress,
                 topLevelDomain,
                 ownerEmail,
                 topLevelDomain != null ? topLevelDomain.substring(topLevelDomain.indexOf('.') + 1) : null,
@@ -133,14 +159,65 @@ public class ValidationTest {
             );
             
             // Call API and verify result
-            mockMvc.perform(
+            MvcResult res = mockMvc.perform(
                 MockMvcRequestBuilders.post("/api/auth/register/company")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(new ObjectMapper().writeValueAsString(request))
 
             )
-            .andExpect(MockMvcResultMatchers.status().isBadRequest());
+            .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                    .andReturn();
+
+            CustomErrorMessage errorResponse = this.om.readValue(res.getResponse().getContentAsString(),
+                    CustomErrorMessage.class);
+
+            Map<String, String> errorMap = new ObjectMapper().readValue(
+                    errorResponse.getMessage(), Map.class
+            );
+
+            // determine which field to check depending on the fieldToOmit
+            String fieldToCheck = switch (fieldToOmit) {
+                case 0 -> "id";
+                case 1 -> "topLevelDomain";
+                case 2 -> "subscription";
+                case 3 -> "ownerEmail";
+                case 4 -> "companyName";
+                case 5 -> "companyAddress";
+                default -> "id";
+            };  
+
+            assertEquals(errorMap.get(fieldToCheck), "must not be blank");
         }
+
+        // make sure that passing an empty mailDomain raises an error
+
+        CompanyRegisterRequest request = new CompanyRegisterRequest(
+            "company_1",
+            "Company 1",
+            "Company Address 1",
+            "example.com",
+            "owner@example.com",
+            "",
+            "TIER_1"
+        );
+
+        MvcResult res = mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/register/company")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(request))
+        )
+        .andExpect(MockMvcResultMatchers.status().isBadRequest())
+        .andReturn();
+
+        CustomErrorMessage errorResponse = this.om.readValue(res.getResponse().getContentAsString(),
+                CustomErrorMessage.class);
+
+        Map<String, String> errorMap = new ObjectMapper().readValue(
+                errorResponse.getMessage(), Map.class
+        );
+
+        assertEquals(errorMap.get("mailDomain"), "must not be empty");
+
     }
     
     @Test
@@ -229,7 +306,9 @@ public class ValidationTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(new ObjectMapper().writeValueAsString(request))
             )
-            .andExpect(MockMvcResultMatchers.status().isBadRequest());
+            .andExpect(MockMvcResultMatchers.status().isBadRequest())
+//                    .andExpect(MockMvcResultMatchers.)
+            ;
         }
     }   
 
@@ -258,7 +337,7 @@ public class ValidationTest {
             mockMvc.perform(
                 MockMvcRequestBuilders.post("/api/auth/register/company")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request))
+                    .content(om.writeValueAsString(request))
             )
             .andExpect(MockMvcResultMatchers.status().isCreated()) // Should return 201 Created
             .andReturn();
@@ -314,7 +393,7 @@ public class ValidationTest {
             mockMvc.perform(
                 MockMvcRequestBuilders.post("/api/auth/register/company")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(companyRequest))
+                    .content(this.om.writeValueAsString(companyRequest))
             );
 
             // generate a username that start with a non-alphabetic character
@@ -341,7 +420,7 @@ public class ValidationTest {
             mockMvc.perform(
                 MockMvcRequestBuilders.post("/api/auth/register/user")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request))
+                    .content(om.writeValueAsString(request))
             )
                 .andExpect(MockMvcResultMatchers.status().isBadRequest());
 
@@ -365,7 +444,7 @@ public class ValidationTest {
         mockMvc.perform(
             MockMvcRequestBuilders.post("/api/auth/register/company")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(companyRequest))
+                .content(om.writeValueAsString(companyRequest))
         )
         .andExpect(MockMvcResultMatchers.status().isCreated());
         
@@ -393,7 +472,7 @@ public class ValidationTest {
         mockMvc.perform(
             MockMvcRequestBuilders.post("/api/auth/register/user")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(missingCompanyIdRequest))
+                .content(om.writeValueAsString(missingCompanyIdRequest))
         )
         .andExpect(MockMvcResultMatchers.status().isBadRequest());
         
@@ -413,7 +492,7 @@ public class ValidationTest {
         mockMvc.perform(
             MockMvcRequestBuilders.post("/api/auth/register/user")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(missingUsernameRequest))
+                .content(om.writeValueAsString(missingUsernameRequest))
         )
         .andExpect(MockMvcResultMatchers.status().isBadRequest());
         
@@ -433,7 +512,7 @@ public class ValidationTest {
         mockMvc.perform(
             MockMvcRequestBuilders.post("/api/auth/register/user")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(missingPasswordRequest))
+                .content(om.writeValueAsString(missingPasswordRequest))
         )
         .andExpect(MockMvcResultMatchers.status().isBadRequest());
         
@@ -453,7 +532,7 @@ public class ValidationTest {
         mockMvc.perform(
             MockMvcRequestBuilders.post("/api/auth/register/user")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(missingEmailRequest))
+                .content(om.writeValueAsString(missingEmailRequest))
         )
         .andExpect(MockMvcResultMatchers.status().isBadRequest());
         
@@ -473,7 +552,7 @@ public class ValidationTest {
         mockMvc.perform(
             MockMvcRequestBuilders.post("/api/auth/register/user")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(missingRoleRequest))
+                .content(om.writeValueAsString(missingRoleRequest))
         )
         .andExpect(MockMvcResultMatchers.status().isBadRequest());
     }

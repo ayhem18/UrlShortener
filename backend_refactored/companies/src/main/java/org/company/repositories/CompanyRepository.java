@@ -17,5 +17,8 @@ public interface CompanyRepository extends MongoRepository<Company, String> {
     @SuppressWarnings("null")
     boolean existsById(String id);
 
+    @SuppressWarnings("null")
     List<Company> findAll();
+
+    List<Company> findByCompanyName(String companyName);
 }

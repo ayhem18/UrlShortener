@@ -1,6 +1,5 @@
 package org.authManagement.internal;
 
-import org.access.SubscriptionManager;
 import org.company.entities.Company;
 import org.company.repositories.CompanyRepository;
 import org.springframework.data.domain.Example;
@@ -10,11 +9,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.FluentQuery;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Repository
 @SuppressWarnings({"unused", "null", "NullableProblems", "ConstantConditions"})
@@ -22,15 +21,9 @@ public class StubCompanyRepo implements CompanyRepository {
     private final List<Company> db;
     private final PasswordEncoder encoder;
 
-    public StubCompanyRepo() throws NoSuchFieldException, IllegalAccessException {
+    public StubCompanyRepo() {
         this.db = new ArrayList<>();
         this.encoder = new BCryptPasswordEncoder();
-
-//        // create 2 companies c1 and c2
-//        Company c1 = new Company("aaa", SubscriptionManager.getSubscription("TIER_1"), "owner@youtube.com", "youtube.com");
-//        Company c2 = new Company("bbb", SubscriptionManager.getSubscription("TIER_1"), "owner@github.com", "github.com");
-//
-//        this.db.addAll(List.of(c1, c2));
     }
 
     public PasswordEncoder getEncoder() {
@@ -138,6 +131,13 @@ public class StubCompanyRepo implements CompanyRepository {
     @Override
     public List<Company> findAll() {
         return this.db;
+    }
+
+    @Override
+    public List<Company> findByCompanyName(String companyName) {
+        return this.db.stream()
+            .filter(c -> c.getCompanyName().equalsIgnoreCase(companyName))
+            .collect(Collectors.toList());
     }
 
     @Override

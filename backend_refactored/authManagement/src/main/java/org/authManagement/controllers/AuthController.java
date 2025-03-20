@@ -2,11 +2,10 @@ package org.authManagement.controllers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.validation.Valid;
-import org.access.Role;
-import org.access.RoleManager;
-import org.access.Subscription;
-import org.access.SubscriptionManager;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.apiConfigurations.EmailService;
 import org.authManagement.exceptions.CompanyAndUserExceptions;
 import org.authManagement.exceptions.CompanyExceptions;
@@ -29,6 +28,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.InvalidUrlException;
 import org.tokens.entities.AppToken;
 import org.tokens.entities.TokenUserLink;
 import org.tokens.repositories.TokenRepository;
@@ -42,30 +42,34 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
+import org.access.Role;
+import org.access.RoleManager;
+import org.access.Subscription;
+import org.access.SubscriptionManager;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
+import java.util.UUID;
 
 @RestController
 @Validated
 public class AuthController {
-    private static final int ROLE_TOKEN_LENGTH = 64;
 
-    private final CustomGenerator generator;
-//    private final CounterRepository counterRepo;
     private final CompanyRepository companyRepo;
     private final TokenRepository tokenRepo;
     private final UserRepository userRepo;
     private final TopLevelDomainRepository topLevelDomainRepo;
     private final EmailService emailService;
     private final TokenUserLinkRepository tokenUserLinkRepo;
-            
+    private final UrlValidator urlValidator;
+
+    private final ObjectMapper om;
+
     @Autowired
     public AuthController(
             CompanyRepository companyRepo,
             TopLevelDomainRepository topLevelDomainRepo,
             UserRepository userRepo,
-//            CounterRepository counterRepo,
             TokenRepository tokenRepo,
             TokenUserLinkRepository tokenUserLinkRepo,
             CustomGenerator generator, 
@@ -73,12 +77,18 @@ public class AuthController {
     ) {
         this.companyRepo = companyRepo;
         this.topLevelDomainRepo = topLevelDomainRepo;
-//        this.counterRepo = counterRepo;
         this.userRepo = userRepo;
         this.tokenRepo = tokenRepo;
         this.tokenUserLinkRepo = tokenUserLinkRepo;
-        this.generator = generator;
         this.emailService = emailService;
+        this.urlValidator = new UrlValidator(); 
+
+        // set the object mapper to serialize LocalTimeDate objects
+        SimpleDateFormat df = new SimpleDateFormat("dd-MM-yyyy hh:mm");
+        this.om = new ObjectMapper();
+        this.om.setDateFormat(df);
+        this.om.registerModule(new JavaTimeModule());
+        this.om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
     @Bean("companyControllerEncoder")
@@ -86,20 +96,25 @@ public class AuthController {
         return new BCryptPasswordEncoder();
     }
 
-    private ObjectMapper objectMapper() {
-        ObjectMapper om = new ObjectMapper();
-        om.writerWithDefaultPrettyPrinter();
-        return om;
-    }
 
     ////////////////////////////////////// METHODS FOR REGISTERING A COMPANY //////////////////////////////////////
- 
     private void validateNewCompany(CompanyRegisterRequest req) {
         // any new company must satisfy the uniqueness constraints:
-        // unique id and unique site
+        // unique id, top level domain and company name
         if (this.companyRepo.existsById(req.id())) {
             throw new CompanyExceptions.ExistingCompanyException("There is already a company with the given id.");
         }
+
+        // check if the company name is already taken
+        if (!this.companyRepo.findByCompanyName(req.companyName()).isEmpty()) {
+            throw new CompanyExceptions.ExistingCompanyException("There is already a company with the given name.");
+        }
+
+        // check if the provided domain is valid    
+        if (!this.urlValidator.isValid(req.topLevelDomain())) {
+            throw new InvalidUrlException("The provided top level domain is invalid");
+        }
+
 
         if (this.topLevelDomainRepo.findByDomain(req.topLevelDomain()).isPresent()) {
             throw new CompanyExceptions.ExistingTopLevelDomainException("There is already a company with the given top level domain");
@@ -127,19 +142,19 @@ public class AuthController {
     private void sendCompanyVerificationEmail(String ownerEmail, String ownerToken) {
         String subject = "Company Verification";
         String body = "Here is your company verification token:\n" + ownerToken + "\nThe token expires in 1 hour.";
-        // this.emailService.sendEmail(ownerEmail, subject, body);  
+        this.emailService.sendEmail(ownerEmail, subject, body);  
     }
 
-    @PostMapping("api/auth/register/company")
     @Operation(summary = "Register a new company", 
-               description = "Creates a new company record and returns the company details")
+    description = "Creates a new company record and returns the company details")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "Company successfully created",
                     content = @Content(mediaType = "application/json", 
                     schema = @Schema(implementation = Company.class))),
-        @ApiResponse(responseCode = "400", description = "Invalid input provided", 
+                    @ApiResponse(responseCode = "400", description = "Invalid input provided", 
                     content = @Content)
-    })
+                })
+    @PostMapping("api/auth/register/company")
     public ResponseEntity<String> registerCompany(@Valid @RequestBody CompanyRegisterRequest req) throws JsonProcessingException {
         // registering a company is done through the following steps: 
         // 1. check the uniqueness constraints
@@ -157,23 +172,21 @@ public class AuthController {
         this.validateOwnerToken(company);
 
         // 5. create the top level domain
-        // TODO: fix the id generation
-//        long topLevelDomainId = this.counterRepo.getCount(TopLevelDomain.TOP_LEVEL_DOMAIN_CLASS_NAME);
-        long topLevelDomainId = (new Random()).nextInt(10000);
-
-        TopLevelDomain topLevelDomain = new TopLevelDomain(this.generator.generateId(topLevelDomainId), req.topLevelDomain(), this.encoder().encode(req.topLevelDomain()), company);
+        String idTopLevelDomain  = UUID.randomUUID().toString();        
+        while (this.topLevelDomainRepo.existsById(idTopLevelDomain)) {
+            idTopLevelDomain = UUID.randomUUID().toString();
+        }
+        
+        TopLevelDomain topLevelDomain = new TopLevelDomain(idTopLevelDomain, req.topLevelDomain(), this.encoder().encode(req.topLevelDomain()), company);
         this.topLevelDomainRepo.save(topLevelDomain);
 
-        // 6. create the owner role token
-        // TODO: fix the owner token id
-//        String ownerTokenId = this.generator.generateId(this.counterRepo.getCount(AppToken.TOKEN_CLASS_NAME));
+        // 6. create the owner token    
+        String idOwnerToken = UUID.randomUUID().toString();
+        while (this.tokenRepo.existsById(idOwnerToken)) {
+            idOwnerToken = UUID.randomUUID().toString();
+        }
 
-        String ownerTokenId = this.generator.randomString(100);
-
-
-
-        // Todo: use a safer token generation mechanism
-        String ownerTokenString = this.generator.randomString(ROLE_TOKEN_LENGTH);
+        String ownerTokenString = UUID.randomUUID().toString();
 
         // 7. send the owner token to the owner via email
         if (this.emailService != null) {
@@ -181,7 +194,7 @@ public class AuthController {
         }
 
         // 8. create the owner token
-        AppToken ownerToken = new AppToken(ownerTokenId, 
+        AppToken ownerToken = new AppToken(idOwnerToken, 
                                 this.encoder().encode(ownerTokenString), 
                                 company, 
                                 RoleManager.getRole(RoleManager.OWNER_ROLE)
@@ -190,8 +203,8 @@ public class AuthController {
         this.tokenRepo.save(ownerToken);
 
         // 9. serialize the company
-        String companySerialized = this.objectMapper().writeValueAsString(company);
-        
+        String companySerialized = this.om.writeValueAsString(company);
+
         return new ResponseEntity<>(companySerialized,
                 HttpStatus.CREATED);
     }
@@ -290,16 +303,16 @@ public class AuthController {
         AppUser ownerUser = this.userRepo.findById(req.email()).get();
 
         // Generate a random ID for the token-user link
-        // TODO: fix id generation issues
-
-//        String tokenUserLinkId = this.generator.generateId(this.counterRepo.getCount(TokenUserLink.TOKEN_USER_LINK_CLASS_NAME));
-        String tokenUserLinkId = this.generator.randomString(100);
-    
+        String tokenUserLinkId = UUID.randomUUID().toString();
+        while (this.tokenUserLinkRepo.existsById(tokenUserLinkId)) {
+            tokenUserLinkId = UUID.randomUUID().toString();
+        }
+        
         TokenUserLink tokenUserLink = new TokenUserLink(tokenUserLinkId, ownerToken, ownerUser);
         this.tokenUserLinkRepo.save(tokenUserLink);
 
         // 6. Return the serialized company
-        return ResponseEntity.ok(this.objectMapper().writeValueAsString(company));
+        return ResponseEntity.ok(this.om.writeValueAsString(company));
     }
 
 
@@ -439,11 +452,10 @@ public class AuthController {
         this.tokenRepo.save(matchingToken);
 
         // Generate a random ID for the token-user link
-
-
-//        String tokenUserLinkId = this.generator.generateId(this.counterRepo.getCount(TokenUserLink.TOKEN_USER_LINK_CLASS_NAME));
-        String tokenUserLinkId = this.generator.randomString(100);
-//                this.generator.generateId(this.counterRepo.getCount(TokenUserLink.TOKEN_USER_LINK_CLASS_NAME));
+        String tokenUserLinkId = UUID.randomUUID().toString();
+        while (this.tokenUserLinkRepo.existsById(tokenUserLinkId)) {
+            tokenUserLinkId = UUID.randomUUID().toString();
+        }
 
         TokenUserLink tokenUserLink = new TokenUserLink(tokenUserLinkId, matchingToken, user);
         this.tokenUserLinkRepo.save(tokenUserLink);
@@ -464,7 +476,7 @@ public class AuthController {
             newUser = registerNonOwner(req);
         }
 
-        return ResponseEntity.ok(objectMapper().writeValueAsString(newUser));
+        return ResponseEntity.ok(this.om.writeValueAsString(newUser));
     }
 
 }

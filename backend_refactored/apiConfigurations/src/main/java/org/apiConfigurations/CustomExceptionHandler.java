@@ -1,5 +1,6 @@
 package org.apiConfigurations;
 
+import org.eclipse.angus.mail.iap.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.context.request.WebRequest;
@@ -16,5 +17,14 @@ public abstract class CustomExceptionHandler {
                 e.getMessage(),
                 request.getDescription(false));
         return new ResponseEntity<>(body, s);
+    }
+
+    protected ResponseEntity<CustomErrorMessage> handle(HttpStatus status, String message, String description) {
+        CustomErrorMessage body = new CustomErrorMessage(
+                status.value(),
+                LocalDateTime.now(),
+                message,
+                description);
+        return new ResponseEntity<>(body, status);
     }
 }

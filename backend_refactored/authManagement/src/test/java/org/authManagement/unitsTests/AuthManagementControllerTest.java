@@ -26,9 +26,6 @@ import org.utils.CustomGenerator;
 
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 import org.access.Role;
 import org.access.RoleManager;
@@ -44,7 +41,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class AuthManagementControllerTest {
 
     private final StubCompanyRepo companyRepo;
-    // private final StubCounterRepo counterRepo;
     private final StubUserRepo userRepo;
     private final StubTopLevelDomainRepo topLevelDomainRepo;
     private final StubTokenRepo tokenRepo;
@@ -52,16 +48,6 @@ public class AuthManagementControllerTest {
 
     private final CustomGenerator gen = new CustomGenerator();
     private final AuthController authCon;
-    public static int COUNTER = 0;
-
-    private CustomGenerator setMockCG() {
-        CustomGenerator mockedCG = spy();
-        when(mockedCG.randomString(anyInt())).then(
-          invocation -> {
-              AuthManagementControllerTest.COUNTER += 1; return "RANDOM_STRING_" + AuthManagementControllerTest.COUNTER;}
-        );
-        return mockedCG;
-    }
 
     @BeforeEach
     public void setUp() {
@@ -174,10 +160,9 @@ public class AuthManagementControllerTest {
         // We might need to reset it to initial state instead
     }
 
-    public AuthManagementControllerTest() throws NoSuchFieldException, IllegalAccessException {
+    public AuthManagementControllerTest() {
         this.companyRepo = new StubCompanyRepo();
         this.topLevelDomainRepo = new StubTopLevelDomainRepo(this.companyRepo);
-//        this.counterRepo = new StubCounterRepo();
         this.userRepo = new StubUserRepo(this.companyRepo);
         this.tokenRepo = new StubTokenRepo(this.companyRepo);
         this.tokenUserLinkRepo = new StubTokenUserLinkRepo(this.tokenRepo, this.userRepo);
@@ -187,7 +172,6 @@ public class AuthManagementControllerTest {
         this.authCon = new AuthController(this.companyRepo,
                 this.topLevelDomainRepo,
                 this.userRepo,
-//                this.counterRepo,
                 this.tokenRepo,
                 this.tokenUserLinkRepo,
                 this.gen,
@@ -211,9 +195,9 @@ public class AuthManagementControllerTest {
                     "companyName_" + i,
                     "companyAddress" + i,
                     "random_domain.com",
-                    c.getSubscription().getTier(),
+                    "someEmail@gmail.com",
                     null,
-                    null);
+            c.getSubscription().getTier());
 
             Assertions.assertThrows(
                     CompanyExceptions.ExistingCompanyException.class,
@@ -233,10 +217,10 @@ public class AuthManagementControllerTest {
                     "companyName_" + i,
                     "companyAddress" + i,
                     domain.getDomain(),
-                    "TIER_1",
                     "owner@" + domain.getDomain(),  // Use matching email for domain
-                    domain.getDomain()
-            );
+                    domain.getDomain(),
+                    "TIER_1"
+                    );
 
             // Verify that an ExistingTopLevelDomainException is thrown
             Assertions.assertThrows(
@@ -252,8 +236,6 @@ public class AuthManagementControllerTest {
             // Get the user's email
             String userEmail = user.getEmail();
 
-            // Extract domain from email for consistent request
-            String emailDomain = userEmail.substring(userEmail.indexOf('@') + 1);
 
             // Generate unique domain and ID
             String uniqueId = "unique_" + this.gen.randomString(8);
@@ -265,14 +247,34 @@ public class AuthManagementControllerTest {
                     "companyName_" + i,
                     "companyAddress" + i,
                     uniqueDomain,
-                    "TIER_1",
                     userEmail,  // Existing user email
-                    emailDomain
-            );
+                    null,
+                    "TIER_1"
+                    );
 
             // Verify that a MultipleOwnersException is thrown
             Assertions.assertThrows(
                 CompanyAndUserExceptions.MultipleOwnersException.class,
+                () -> this.authCon.registerCompany(req)
+            );
+        }
+
+        // 4. company name uniqueness test
+        for (Company c : this.companyRepo.findAll()) {
+            i += 1;
+            // create a register request based on the given company
+            CompanyRegisterRequest req = new CompanyRegisterRequest(
+                    c.getId(),
+                    c.getCompanyName(),
+                    c.getCompanyAddress(),
+                    "unique" + this.gen.randomAlphaString(5) + ".com",
+                    "owner@" + "unique" + this.gen.randomAlphaString(5) + ".com",
+                    null,
+                    "TIER_1"
+                    );
+
+            Assertions.assertThrows(
+                CompanyExceptions.ExistingCompanyException.class,
                 () -> this.authCon.registerCompany(req)
             );
         }
@@ -282,67 +284,71 @@ public class AuthManagementControllerTest {
     void testTokenConstraintsRegisterCompany() {
         
         for (String roleString : RoleManager.ROLES_STRING) {
-            // 1. Generate a random company id that doesn't exist in the repo
-            String randomCompanyId = "test_company_" + gen.randomAlphaString(8);
-            while (companyRepo.existsById(randomCompanyId)) {
-                randomCompanyId = "test_company_" + gen.randomAlphaString(8);
+            for (int i = 0; i <= 10; i ++) {
+
+                // 1. Generate a random company id that doesn't exist in the repo
+                String randomCompanyId = "test_company_" + gen.randomAlphaString(8);
+                while (companyRepo.existsById(randomCompanyId)) {
+                    randomCompanyId = "test_company_" + gen.randomAlphaString(8);
+                }
+
+                // Create a dummy company to associate with the token
+                Company dummyCompany = new Company(
+                        randomCompanyId,
+                        "Test Company " + randomCompanyId,  // Meaningful company name
+                        "123 Test Street, TestCity",        // Physical address
+                        "owner@example.com",                // Owner email
+                        "example.com",                      // Email domain
+                        SubscriptionManager.getSubscription("TIER_1")
+                );
+
+                // 2. Create and save a token for this company with the current role
+                Role role = RoleManager.getRole(roleString);
+                AppToken token = new AppToken(
+                        "token_" + randomCompanyId,
+                        "hash_" + randomCompanyId,
+                        dummyCompany,
+                        role
+                );
+                tokenRepo.save(token);
+
+                // 3. Create a company register request with the same ID
+                CompanyRegisterRequest req = new CompanyRegisterRequest(
+                        randomCompanyId,
+                        "Company " + randomCompanyId,         // Company name
+                        "123 Test Avenue",                    // Company address
+                        "unique" + gen.randomAlphaString(5) + ".com", // Top level domain
+                        "newowner@example.com",               // Owner email
+                        "example.com",                        // Mail domain
+                        "TIER_1"                              // Subscription
+                );
+
+                // Final randomCompanyId for use in lambda
+                String finalCompanyId = randomCompanyId;
+
+                // Verify that registering a company with this ID throws an exception
+                assertThrows(
+                        CompanyAndUserExceptions.MultipleOwnersException.class,
+                        () -> authCon.registerCompany(req),
+                        "Should fail when token already exists for company ID " + finalCompanyId
+                );
+
             }
-            
-            // Create a dummy company to associate with the token
-            Company dummyCompany = new Company(
-                randomCompanyId, 
-                "Test Company " + randomCompanyId,  // Meaningful company name
-                "123 Test Street, TestCity",        // Physical address
-                "owner@example.com",                // Owner email
-                "example.com",                      // Email domain
-                SubscriptionManager.getSubscription("TIER_1")
-            );
-            
-            // 2. Create and save a token for this company with the current role
-            Role role = RoleManager.getRole(roleString);
-            AppToken token = new AppToken(
-                "token_" + randomCompanyId,
-                "hash_" + randomCompanyId,
-                dummyCompany,
-                role
-            );
-            tokenRepo.save(token);
-            
-            // 3. Create a company register request with the same ID
-            CompanyRegisterRequest req = new CompanyRegisterRequest(
-                randomCompanyId,
-                "Company " + randomCompanyId,         // Company name
-                "123 Test Avenue",                    // Company address
-                "unique" + gen.randomAlphaString(5) + ".com", // Top level domain
-                "newowner@example.com",               // Owner email
-                "example.com",                        // Mail domain
-                "TIER_1"                              // Subscription
-            );
-            
-            // Final randomCompanyId for use in lambda
-            String finalCompanyId = randomCompanyId;
-            
-            // Verify that registering a company with this ID throws an exception
-            assertThrows(
-                CompanyAndUserExceptions.MultipleOwnersException.class,
-                () -> authCon.registerCompany(req),
-                "Should fail when token already exists for company ID " + finalCompanyId
-            );
         }
     }
 
     @Test
     void testRegisterCompany() {
-        // 1. Generate a random company id that doesn't exist in the repo
-        String randomCompanyId = "new_company_" + gen.randomAlphaString(8);
-        while (companyRepo.existsById(randomCompanyId)) {
-            randomCompanyId = "new_company_" + gen.randomAlphaString(8);
-        }
+        // Clear existing data to ensure clean test environment
+        userRepo.deleteAll();
+        companyRepo.deleteAll();
         
         // Generate unique domain
         String domain = "unique" + gen.randomAlphaString(5) + ".com";
         String ownerEmail = "owner@" + domain;
-        
+
+        String randomCompanyId = gen.randomAlphaString(12);
+
         // 2. Create and submit a company registration request
         CompanyRegisterRequest req = new CompanyRegisterRequest(
             randomCompanyId,                      // ID
@@ -640,9 +646,9 @@ public class AuthManagementControllerTest {
         tokenRepo.save(adminTokenForEmployeeTest);
 
         UserRegisterRequest mismatchedRoleRequest = new UserRegisterRequest(
+                "employee@github.com",
                 "employee_with_admin_token",
                 "password123",
-                "employee@github.com",
                 "firstName_" + i,
                 "lastName_" + i,
                 "middleName_" + i,
@@ -815,10 +821,10 @@ public class AuthManagementControllerTest {
                     email,
                     username,
                     "password123",
-                    company.getId(),
                     "firstName_" + i,
                     "lastName_" + i,
                     "middleName_" + i,
+                    company.getId(),
                     role,
                 tokenString
             );
@@ -906,12 +912,12 @@ public class AuthManagementControllerTest {
             // Try to register owner for already verified company
             UserRegisterRequest verifiedCompanyOwnerRequest = new UserRegisterRequest(
                     ownerEmail, // Matching owner email
-                    companyId,
                     "owner_" + i,
                     "password123",
                     "firstName_" + i,
                     "lastName_" + i,
                     "middleName_" + i,
+                    companyId,
                     RoleManager.OWNER_ROLE,
                 null // Owner role doesn't need token
             );
@@ -941,19 +947,20 @@ public class AuthManagementControllerTest {
             
             // 1. Create a new company using registerCompany method
             String companyId = "company_" + randomSuffix;
-            String domain = "domain" + i + ".com";
-            String ownerEmail = "owner@" + domain;
-            
+            String emailDomain = "domain" + i + ".com";
+            String ownerEmail = "owner@" + emailDomain;
+            String topLevelDomain = "www.company" + randomSuffix + ".com";
+
             // Create the company request
             CompanyRegisterRequest companyRequest = new CompanyRegisterRequest(
                 companyId,
                     "companyName" + i,
                     "companyAdd" + i,
-                    domain,
-                "TIER_1",
-                ownerEmail,
-                domain
-            );
+                    topLevelDomain,
+                    ownerEmail,
+                    emailDomain,
+                    "TIER_1"
+                    );
             
             // Register company - this should create the company but not an owner user yet
             assertDoesNotThrow(
@@ -1363,18 +1370,19 @@ public class AuthManagementControllerTest {
         
         for (int i = 0; i < 10; i++) {
             String companyId = "full_flow_company_" + gen.randomAlphaString(5);
-            String domain = "flow" + i + ".com";
-            String ownerEmail = "owner@" + domain;
+            String topLevelDomain = "www.top_level_Domain_ " + i + ".com";
+            String emailDomain = "flow" + i + ".com";
+            String ownerEmail = "owner@" + emailDomain;
             
             // 1. Create and register a company
             CompanyRegisterRequest companyRequest = new CompanyRegisterRequest(
                 companyId,
                 "companyName_" + i,
                 "companyAdd_" + i,
-                domain,
-                "TIER_1",
+                topLevelDomain,
                 ownerEmail,
-                domain
+                emailDomain,
+                "TIER_1"
             );
             
             assertDoesNotThrow(

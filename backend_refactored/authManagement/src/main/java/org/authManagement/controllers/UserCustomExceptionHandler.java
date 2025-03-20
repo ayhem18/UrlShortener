@@ -12,6 +12,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.utils.CustomErrorMessage;
 
 
+@SuppressWarnings("unused")
 @ControllerAdvice
 public class UserCustomExceptionHandler extends CustomExceptionHandler {
     @ExceptionHandler(UserExceptions.UserWithNoCompanyException.class)

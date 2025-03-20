@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.utils.CustomErrorMessage;
 
+@SuppressWarnings("unused")
 @ControllerAdvice
 public class CompanyExceptionHandler extends CustomExceptionHandler {
     // Company Exceptions
