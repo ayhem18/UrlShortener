@@ -161,6 +161,19 @@ public class Company {
     private void setEmailDomain(String emailDomain) {
         this.emailDomain = emailDomain;
     }
+
+    ///////////////////////////////// OTHER /////////////////////////////////////////////
+    public boolean equals(Object other) {
+        if (other == null) {
+            return false;
+        } 
+        
+        if (other instanceof Company) {
+            Company otherCompany = (Company) other;
+            return this.id.equals(otherCompany.getId());
+        }
+        return false;
+    }
 }
 
 

@@ -1,11 +1,14 @@
 package org.authManagement.unitsTests;
 
 import org.authManagement.controllers.AuthController;
+import org.authManagement.entities.CompanyUrlData;
 import org.authManagement.exceptions.CompanyAndUserExceptions;
 import org.authManagement.exceptions.CompanyExceptions;
 import org.authManagement.exceptions.TokenAndUserExceptions;
 import org.authManagement.exceptions.UserExceptions;
 import org.authManagement.internal.StubCompanyRepo;
+import org.authManagement.internal.StubCompanyUrlDataRepo;
+import org.authManagement.internal.StubCounterRepo;
 import org.authManagement.internal.StubTokenRepo;
 import org.authManagement.internal.StubTokenUserLinkRepo;
 import org.authManagement.internal.StubTopLevelDomainRepo;
@@ -46,6 +49,9 @@ public class AuthManagementControllerTest {
     private final StubTokenRepo tokenRepo;
     private final StubTokenUserLinkRepo tokenUserLinkRepo;
 
+    private final StubCompanyUrlDataRepo companyUrlDataRepo;
+    private final StubCounterRepo counterRepo;
+
     private final CustomGenerator gen = new CustomGenerator();
     private final AuthController authCon;
 
@@ -71,77 +77,82 @@ public class AuthManagementControllerTest {
         
         // owners
         AppUser youtubeOwner = new AppUser(
-            "owner@youtube.com",                // Email
-            "ytowner",                          // Username
-            "password123",                      // Password
-            "YouTube",                          // First name
-            "Owner",                            // Last name
-            "Test",                             // Middle name
-            youtube,                            // Company
+            "owner@youtube.com",                
+            "ytowner",                          
+            "password123",                      
+            "YouTube",                          
+            "Owner",                            
+            "Test",                             
+            youtube,                            
             RoleManager.getRole(RoleManager.OWNER_ROLE)  // Role
         );
         AppUser githubOwner = new AppUser(
-            "owner@github.com",                // Email
-            "ghowner",                          // Username
-            "password123",                      // Password
-            "GitHub",                          // First name
-            "Owner",                            // Last name
-            null,                             // Middle name
-            github,                             // Company
-            RoleManager.getRole(RoleManager.OWNER_ROLE)  // Role
+            "owner@github.com",                
+            "ghowner",                          
+            "password123",                      
+            "GitHub",                          
+            "Owner",                            
+            null,                             
+            github,                             
+            RoleManager.getRole(RoleManager.OWNER_ROLE)  
         );
 
         // admins
 
         AppUser youtubeAdmin = new AppUser(
-            "admin@youtube.com",                // Email
-            "ytadmin",                          // Username
-            "password123",                      // Password
-            "YouTube",                          // First name
-            "Admin",                            // Last name
-            null,                             // Middle name
-            youtube,                            // Company
-            RoleManager.getRole(RoleManager.ADMIN_ROLE)  // Role
+            "admin@youtube.com",                
+            "ytadmin",                          
+            "password123",                      
+            "YouTube",                          
+            "Admin",                            
+            null,                             
+            youtube,                            
+            RoleManager.getRole(RoleManager.ADMIN_ROLE)  
         );
         
         AppUser githubAdmin = new AppUser(
-            "admin@github.com",                // Email
-            "ghadmin",                          // Username
-            "password123",                      // Password
-            "GitHub",                          // First name
-            "Admin",                            // Last name
-            null,                             // Middle name
-            github,                            // Company
-            RoleManager.getRole(RoleManager.ADMIN_ROLE)  // Role
+            "admin@github.com",                
+            "ghadmin",                          
+            "password123",                      
+            "GitHub",                          
+            "Admin",                            
+            null,                             
+            github,                             
+            RoleManager.getRole(RoleManager.ADMIN_ROLE)  
         );
 
         // employees
 
         
         AppUser youtubeEmployee = new AppUser(
-            "employee@youtube.com",                // Email
-            "ytemployee",                          // Username
-            "password123",                      // Password
-            "YouTube",                          // First name
-            "Employee",                            // Last name
-            null,                             // Middle name
-            youtube,                            // Company
-            RoleManager.getRole(RoleManager.EMPLOYEE_ROLE)  // Role
+            "employee@youtube.com",                
+            "ytemployee",                          
+            "password123",                      
+            "YouTube",                          
+            "Employee",                            
+            null,                             
+            youtube,                             
+            RoleManager.getRole(RoleManager.EMPLOYEE_ROLE)  
         );
 
         AppUser githubEmployee = new AppUser(
-            "employee@github.com",                // Email
-            "ghemployee",                          // Username
-            "password123",                      // Password
-            "GitHub",                          // First name
-            "Employee",                            // Last name
-            null,                             // Middle name
-            github,                            // Company
-            RoleManager.getRole(RoleManager.EMPLOYEE_ROLE)  // Role
+            "employee@github.com",                
+            "ghemployee",                          
+            "password123",                      
+            "GitHub",                          
+            "Employee",                            
+            null,                             
+            github,                             
+            RoleManager.getRole(RoleManager.EMPLOYEE_ROLE)  
         );
 
         userRepo.saveAll(List.of(youtubeOwner, githubOwner, youtubeAdmin, githubAdmin, youtubeEmployee, githubEmployee));
 
+        CompanyUrlData urlDataYoutube = new CompanyUrlData(youtube, "hash_youtube");
+        companyUrlDataRepo.save(urlDataYoutube);
+
+        CompanyUrlData urlDataGithub = new CompanyUrlData(github, "hash_github");
+        companyUrlDataRepo.save(urlDataGithub);
     }
 
     @AfterEach
@@ -156,6 +167,7 @@ public class AuthManagementControllerTest {
         userRepo.deleteAll(); 
         tokenRepo.deleteAll();
         tokenUserLinkRepo.deleteAll();
+        companyUrlDataRepo.deleteAll();
         // The counter repo might need special handling if it doesn't have a clear method
         // We might need to reset it to initial state instead
     }
@@ -166,7 +178,9 @@ public class AuthManagementControllerTest {
         this.userRepo = new StubUserRepo(this.companyRepo);
         this.tokenRepo = new StubTokenRepo(this.companyRepo);
         this.tokenUserLinkRepo = new StubTokenUserLinkRepo(this.tokenRepo, this.userRepo);
-        
+        this.companyUrlDataRepo = new StubCompanyUrlDataRepo(); 
+        this.counterRepo = new StubCounterRepo();
+    
         
         // set a stubCustomGenerator, so we can verify the registerCompany method properly
         this.authCon = new AuthController(this.companyRepo,
@@ -174,8 +188,10 @@ public class AuthManagementControllerTest {
                 this.userRepo,
                 this.tokenRepo,
                 this.tokenUserLinkRepo,
-                this.gen,
-                null);
+                this.counterRepo,
+                this.companyUrlDataRepo,
+                null,
+                this.gen);
     }
 
    // Helper method for password encoding
@@ -239,7 +255,7 @@ public class AuthManagementControllerTest {
 
             // Generate unique domain and ID
             String uniqueId = "unique_" + this.gen.randomString(8);
-            String uniqueDomain = "unique" + this.gen.randomString(5) + ".com";
+            String uniqueDomain = "unique" + this.gen.randomAlphaString(5) + ".com";
 
             // Create request with unique ID, unique domain, but existing email
             CompanyRegisterRequest req = new CompanyRegisterRequest(
@@ -337,61 +353,78 @@ public class AuthManagementControllerTest {
         }
     }
 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
-    void testRegisterCompany() {
+    void testSuccessRegisterCompany() {
         // Clear existing data to ensure clean test environment
         userRepo.deleteAll();
         companyRepo.deleteAll();
         
-        // Generate unique domain
-        String domain = "unique" + gen.randomAlphaString(5) + ".com";
-        String ownerEmail = "owner@" + domain;
+        for (int i = 0; i < 100; i++) {
+            // Generate unique domain
+            String domain = "unique" + i + gen.randomAlphaString(10) + ".com";
+            String ownerEmail = "owner" + i + "@" + "new_mail_domain.com";
 
-        String randomCompanyId = gen.randomAlphaString(12);
+            String randomCompanyId = gen.randomAlphaString(12);
 
-        // 2. Create and submit a company registration request
-        CompanyRegisterRequest req = new CompanyRegisterRequest(
-            randomCompanyId,                      // ID
-            "New Test Company",                   // Company name
-            "456 Business Lane",                  // Company address
-            domain,                               // Top level domain
-            ownerEmail,                           // Owner email
-            domain,                               // Mail domain
-            "TIER_1"                              // Subscription
-        );
-        
-        // Register the company and verify no exceptions are thrown
-        assertDoesNotThrow(() -> authCon.registerCompany(req));
-        
-        // 3. Verify that a company with this ID now exists
-        assertTrue(companyRepo.existsById(randomCompanyId), 
-            "Company should exist in repository after registration");
-        
-        // Get the newly created company
-        Company newCompany = companyRepo.findById(randomCompanyId).orElse(null);
-        assertNotNull(newCompany, "Company should not be null");
-        
-        // Verify company properties
-        assertEquals(randomCompanyId, newCompany.getId());
-        assertEquals(domain, newCompany.getEmailDomain());
-        assertEquals(ownerEmail, newCompany.getOwnerEmail());
-        assertFalse(newCompany.getVerified(), "New company should not be verified");
-        
-        // 4. Verify a token was created for this company
-        Role ownerRole = RoleManager.getRole(RoleManager.OWNER_ROLE);
-        List<AppToken> tokens = tokenRepo.findByCompanyAndRole(newCompany, ownerRole);
-        
-        assertEquals(1, tokens.size(), "There should be exactly one owner token");
-        
-        // Verify token properties
-        AppToken ownerToken = tokens.getFirst();
-        assertEquals(newCompany.getId(), ownerToken.getCompany().getId());
-        assertEquals(RoleManager.getRole(RoleManager.OWNER_ROLE).role(), ownerToken.getRole().role());
-        
-        // Verify that a TopLevelDomain was created
-        List<TopLevelDomain> domains = topLevelDomainRepo.findByCompany(newCompany);
-        assertFalse(domains.isEmpty(), "A domain should exist for the company");
-        assertEquals(domain, domains.getFirst().getDomain());
+            // 2. Create and submit a company registration request
+            CompanyRegisterRequest req = new CompanyRegisterRequest(
+                randomCompanyId,                      // ID
+                "New Test Company " + i,                   // Company name
+                "456 Business Lane " + i,                  // Company address
+                domain,                               // Top level domain
+                ownerEmail,                           // Owner email
+                "new_mail_domain.com",                               // Mail domain
+                "TIER_1"                              // Subscription
+            );
+            
+            // Register the company and verify no exceptions are thrown
+            assertDoesNotThrow(() -> authCon.registerCompany(req));
+            
+            // 3. Verify that a company with this ID now exists
+            assertTrue(companyRepo.existsById(randomCompanyId), 
+                "Company should exist in repository after registration");
+            
+            // Get the newly created company
+            Company newCompany = companyRepo.findById(randomCompanyId).orElse(null);
+            assertNotNull(newCompany, "Company should not be null");
+            
+            // Verify company properties
+            assertEquals(randomCompanyId, newCompany.getId());
+            assertEquals("new_mail_domain.com", newCompany.getEmailDomain());
+            assertEquals(ownerEmail, newCompany.getOwnerEmail());
+            assertFalse(newCompany.getVerified(), "New company should not be verified");
+            
+            // 4. Verify a token was created for this company
+            Role ownerRole = RoleManager.getRole(RoleManager.OWNER_ROLE);
+            List<AppToken> tokens = tokenRepo.findByCompanyAndRole(newCompany, ownerRole);
+            
+            assertEquals(1, tokens.size(), "There should be exactly one owner token");
+            
+            // Verify token properties
+            AppToken ownerToken = tokens.getFirst();
+            assertEquals(newCompany.getId(), ownerToken.getCompany().getId());
+            assertEquals(RoleManager.getRole(RoleManager.OWNER_ROLE).role(), ownerToken.getRole().role());
+            
+            // Verify that a TopLevelDomain was created
+            List<TopLevelDomain> domains = topLevelDomainRepo.findByCompany(newCompany);
+            assertFalse(domains.isEmpty(), "A domain should exist for the company");
+            assertEquals(domain, domains.getFirst().getDomain());
+
+            // verify the counterRepo was updated 
+            assertEquals(1, counterRepo.findAll().size(), "CounterRepo should have only one entry");
+            assertEquals(i + 1, counterRepo.findByCollectionName(Company.COMPANY_COLLECTION_NAME).get().getCount(), "the counter repo must track the count correctly");
+
+            // verify that the companyUrlData was created
+            Optional<CompanyUrlData> urlData = companyUrlDataRepo.findByCompany(newCompany);
+            assertTrue(urlData.isPresent(), "CompanyUrlData should exist for the company");
+            assertEquals(newCompany.getId(), urlData.get().getCompany().getId());
+            
+            String expectedHash = this.gen.generateId(counterRepo.findByCollectionName(Company.COMPANY_COLLECTION_NAME).get().getCount() - 1 + AuthController.companySiteHashOffset);
+            assertEquals(expectedHash, urlData.get().getCompanySiteHash());
+
+        }
+
     }
 
     //////////////////////// register a user ////////////////////////
@@ -1370,7 +1403,7 @@ public class AuthManagementControllerTest {
         
         for (int i = 0; i < 10; i++) {
             String companyId = "full_flow_company_" + gen.randomAlphaString(5);
-            String topLevelDomain = "www.top_level_Domain_ " + i + ".com";
+            String topLevelDomain = "www.top" + i + "LevelDomain" + ".com";
             String emailDomain = "flow" + i + ".com";
             String ownerEmail = "owner@" + emailDomain;
             

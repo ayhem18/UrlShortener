@@ -1,0 +1,41 @@
+package org.authManagement.repositories;
+
+import org.authManagement.entities.CollectionCounter;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
+
+
+@Repository
+public interface CounterRepository extends MongoRepository<CollectionCounter, String> {
+    @SuppressWarnings("null")
+    Optional<CollectionCounter> findById(String id);
+
+    @SuppressWarnings("null")
+    boolean existsById(String id);
+
+    Optional<CollectionCounter> findByCollectionName(String collectionName);
+
+    boolean existsByCollectionName(String collectionName);
+
+    // since the counter is usually used to determine ids of new objects,
+    // it should be treated as a transactional operation
+    @Transactional
+    default long nextId(String collectionName) {
+        if (! this.existsByCollectionName(collectionName)) {
+            CollectionCounter c = new CollectionCounter(collectionName);
+            this.save(c);
+            // first object created
+            c.setCount(1);
+            this.save(c);
+            return 0;
+        }
+        CollectionCounter c = this.findByCollectionName(collectionName).get();
+        long count = c.getCount();
+        c.setCount(count + 1);
+        this.save(c);
+        return count;
+    }
+}
