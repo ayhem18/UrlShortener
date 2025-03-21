@@ -2,12 +2,13 @@ package org.apiConfigurations;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 
 @Component
-// @PropertySource("classpath:mail.properties")
+@PropertySource("classpath:mail.properties") // necessary to load the @FROM_EMAIL property
 public class EmailService {
     @Value("${from.email}")
     private String FROM_EMAIL;

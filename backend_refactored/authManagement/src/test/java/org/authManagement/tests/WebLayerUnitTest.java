@@ -1,4 +1,4 @@
-package org.authManagement.unitsTests;
+package org.authManagement.tests;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -32,6 +32,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.tokens.repositories.TokenRepository;
 import org.tokens.repositories.TokenUserLinkRepository;
@@ -45,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringJUnitConfig(classes = WebTestConfig.class)
 @WebMvcTest(AuthController.class)
-public class ValidationTest {
+public class WebLayerUnitTest {
 
     private final MockMvc mockMvc;
     private final CustomGenerator customGenerator;
@@ -59,7 +60,7 @@ public class ValidationTest {
     private final CounterRepository counterRepo;
 
     @Autowired
-    public ValidationTest(
+    public WebLayerUnitTest(
             MockMvc mockMvc,
             CustomGenerator customGenerator,
             CompanyRepository companyRepo,
@@ -201,7 +202,6 @@ public class ValidationTest {
         }
 
         // make sure that passing an empty mailDomain raises an error
-
         CompanyRegisterRequest request = new CompanyRegisterRequest(
             "company_1",
             "Company 1",
@@ -544,7 +544,8 @@ public class ValidationTest {
                 "Only alpha numerical characters are allowed + '_'. The first character must be alphabetic"
             ),
             "password", List.of(
-                "must not be blank"
+                "must not be blank",
+                "password must of length between 8 and 16"
             ),
             "firstName", List.of(
                 "must not be blank"
@@ -560,10 +561,10 @@ public class ValidationTest {
                 "must not be blank"
             ),
             "middleName", List.of(
-                "must not be empty"
+                "can be null but not empty"
             ),
             "roleToken", List.of(
-                "must not be empty"
+                "can be null but not empty"
             )
         );
         
@@ -1104,5 +1105,181 @@ public class ValidationTest {
             assertNotNull(errorMap.get(fieldName), 
                 "Error message for " + fieldName + " should be present when it's null");
         }
+    }
+
+    @Test
+    void testNullableFieldsInUserRegisterRequest() throws Exception {
+        // Create a valid company first
+    String companyId = "company_id_123";
+    CompanyRegisterRequest companyRequest = new CompanyRegisterRequest(
+        companyId,
+        "Test Company",
+        "123 Company Street",
+        "www.example.com",
+        "owner@example.com",
+        "example.com",
+        "TIER_1"
+    );
+    
+    mockMvc.perform(
+        MockMvcRequestBuilders.post("/api/auth/register/company")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(om.writeValueAsString(companyRequest))
+    )
+    .andExpect(MockMvcResultMatchers.status().isCreated());
+    
+    // Valid base request parameters
+    String validEmail = "user@example.com";
+    String validUsername = "validUser123";
+    String validPassword = "password123";
+    String validFirstName = "John";
+    String validLastName = "Doe";
+    String validRole = "employee";
+    String validToken = "some_token";
+    
+    // Test 1: Verify null middleName is allowed (should pass validation)
+    UserRegisterRequest nullMiddleNameRequest = new UserRegisterRequest(
+        validEmail, 
+        validUsername,
+        validPassword,
+        validFirstName,
+        validLastName,
+        null,              // null middleName
+        companyId,
+        validRole,
+        validToken
+    );
+    
+    mockMvc.perform(
+        MockMvcRequestBuilders.post("/api/auth/register/user")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(om.writeValueAsString(nullMiddleNameRequest))
+    )
+    .andExpect(result -> assertFalse(
+        result.getResolvedException() instanceof MethodArgumentNotValidException,
+        "Request with null middleName should not fail validation"
+    ));
+    
+    // Test 2: Verify empty middleName is rejected
+    UserRegisterRequest emptyMiddleNameRequest = new UserRegisterRequest(
+        validEmail, 
+        validUsername,
+        validPassword,
+        validFirstName,
+        validLastName,
+        "",              // empty middleName
+        companyId,
+        validRole,
+        validToken
+    );
+    
+    mockMvc.perform(
+        MockMvcRequestBuilders.post("/api/auth/register/user")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(om.writeValueAsString(emptyMiddleNameRequest))
+    )
+    .andExpect(MockMvcResultMatchers.status().isBadRequest())
+    .andExpect(result -> assertTrue(
+        result.getResolvedException() instanceof MethodArgumentNotValidException,
+        "Request with empty middleName should fail validation"
+    ));
+    
+    // Test 3: Verify null roleToken for owner role is allowed
+    UserRegisterRequest ownerNullTokenRequest = new UserRegisterRequest(
+        validEmail, 
+        validUsername,
+        validPassword,
+        validFirstName,
+        validLastName,
+        validFirstName,    // using firstName as middleName
+        companyId,
+        "owner",           // owner role
+        null               // null roleToken
+    );
+    
+    mockMvc.perform(
+        MockMvcRequestBuilders.post("/api/auth/register/user")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(om.writeValueAsString(ownerNullTokenRequest))
+    )
+    .andExpect(result -> assertFalse(
+        result.getResolvedException() instanceof MethodArgumentNotValidException,
+        "Request with null roleToken for owner role should not fail validation"
+    ));
+    
+    // Test 4: Verify empty roleToken is rejected
+    UserRegisterRequest emptyTokenRequest = new UserRegisterRequest(
+        validEmail, 
+        validUsername,
+        validPassword,
+        validFirstName,
+        validLastName,
+        validFirstName,    // using firstName as middleName
+        companyId,
+        validRole,
+        ""                 // empty roleToken
+    );
+    
+    mockMvc.perform(
+        MockMvcRequestBuilders.post("/api/auth/register/user")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(om.writeValueAsString(emptyTokenRequest))
+    )
+    .andExpect(MockMvcResultMatchers.status().isBadRequest())
+    .andExpect(result -> assertTrue(
+            result.getResolvedException() instanceof MethodArgumentNotValidException,
+            "Request with empty roleToken should fail validation"
+        ));
+    }
+
+    @Test
+    void testJsonNullHandling() throws Exception {
+        // Create raw JSON with explicit null values
+        String jsonWithNulls = """
+            {
+              "email": "user@example.com",
+              "username": "validUser123",
+              "password": "password123",
+              "firstName": "John",
+              "lastName": "Doe",
+              "middleName": null,
+              "companyId": "company_id_123",
+              "role": "employee",
+              "roleToken": "some_token"
+            }
+            """;
+        
+        // Print the deserialized object to see how nulls are handled
+        UserRegisterRequest request = om.readValue(jsonWithNulls, UserRegisterRequest.class);
+        System.out.println("Deserialized middleName: " + (request.middleName() == null ? "null" : "'" + request.middleName() + "'"));
+        
+        // Perform the actual request
+        MvcResult result = mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/register/user")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonWithNulls)
+        )
+        .andReturn();
+        
+         // Check if we got a validation error
+         boolean hasValidationError = result.getResolvedException() instanceof MethodArgumentNotValidException;
+        
+         // Log detailed error information if validation failed
+         if (hasValidationError) {
+             MethodArgumentNotValidException ex = (MethodArgumentNotValidException) result.getResolvedException();
+             ex.getBindingResult().getAllErrors().forEach(error -> {
+                 if (error instanceof FieldError) {
+                     FieldError fieldError = (FieldError) error;
+                     System.out.println("Field: " + fieldError.getField() +
+                                       ", Error: " + fieldError.getDefaultMessage() +
+                                       ", Rejected value: '" + fieldError.getRejectedValue() + "'");
+                 }
+             });
+            
+             // Also log the raw request
+             System.out.println("Raw JSON sent: " + jsonWithNulls);
+         }
+        
+         assertFalse(hasValidationError, "Request with null middleName should not fail validation");
     }
 }

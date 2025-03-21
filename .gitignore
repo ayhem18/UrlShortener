@@ -37,3 +37,5 @@ out/
 backend_refactored/src/main/resources/application.properties
 backend_refactored/src/main/resources/mongodb.properties
 backend_refactored/src/main/resources/mail.properties
+
+**/*.properties

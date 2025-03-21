@@ -2,6 +2,7 @@ package org.urlService.controllers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.access.Subscription;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.authManagement.entities.CompanyUrlData;
@@ -63,6 +64,17 @@ public class UrlController {
         // limit the protocols to http and https and allow local urls
         String[] schemes = {"http", "https"};
         this.urlValidator = new UrlValidator(schemes, UrlValidator.ALLOW_LOCAL_URLS);
+    }
+
+    // added for unit testing without loading external resources
+    public UrlController(CompanyUrlDataRepository urlDataRepo,
+                        UrlEncodingRepository urlEncodingRepo, 
+                        TopLevelDomainRepository topLevelDomainRepo, 
+                        UserRepository userRepository,
+                        UrlProcessor urlProcessor,
+                        int port) {
+        this(urlDataRepo, urlEncodingRepo, topLevelDomainRepo, userRepository, urlProcessor);
+        this.applicationPort = port;
     }
 
 
@@ -184,6 +196,3 @@ public class UrlController {
     }
 
 }
-
-
-

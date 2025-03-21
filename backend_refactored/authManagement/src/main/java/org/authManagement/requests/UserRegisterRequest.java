@@ -1,6 +1,7 @@
 package org.authManagement.requests;
 
 import jakarta.validation.constraints.*;
+import org.authManagement.validation.AllowNullButNotEmpty;
 
 public record UserRegisterRequest (
         @NotBlank
@@ -14,6 +15,7 @@ public record UserRegisterRequest (
         String username,
 
         @NotBlank
+        @Size(min=8, max=16, message="password must of length between 8 and 16")
         String password,
 
         @NotBlank
@@ -22,7 +24,7 @@ public record UserRegisterRequest (
         @NotBlank
         String lastName,
 
-        @NotEmpty // middle name can be set to null but not an empty string
+        @AllowNullButNotEmpty(message = "middleName can be null but not empty") // Explicit message
         String middleName,
 
         @NotBlank
@@ -32,7 +34,7 @@ public record UserRegisterRequest (
         @NotBlank
         String role,
 
-        @NotEmpty // can be set to Null but not an empty string
+        @AllowNullButNotEmpty(message = "roleToken can be null but not empty") // Explicit message
         String roleToken) {};
 
 

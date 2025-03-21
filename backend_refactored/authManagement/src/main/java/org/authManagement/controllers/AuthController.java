@@ -168,7 +168,7 @@ public class AuthController {
     private void sendCompanyVerificationEmail(String ownerEmail, String ownerToken) {
         String subject = "Company Verification";
         String body = "Here is your company verification token:\n" + ownerToken + "\nThe token expires in 1 hour.";
-        this.emailService.sendEmail(ownerEmail, subject, body);  
+//        this.emailService.sendEmail(ownerEmail, subject, body);
     }
 
 
@@ -510,8 +510,10 @@ public class AuthController {
             newUser = registerNonOwner(req);
         }
 
-        return ResponseEntity.ok(this.om.writeValueAsString(newUser));
+        return new ResponseEntity<>(this.om.writeValueAsString(newUser),
+                HttpStatus.CREATED);
     }
+
 
 }
 

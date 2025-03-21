@@ -169,6 +169,27 @@ class CanEncodeUrl implements GrantedAuthority {
 }
 
 
+class CanViewHistory implements GrantedAuthority {
+    private static final String AUTHORITY = "CAN_VIEW_HISTORY";
+    private static volatile CanViewHistory instance;
+    
+    public CanViewHistory() {
+        if (instance == null) { 
+            synchronized (CanViewHistory.class) {
+                if (instance == null) {
+                    instance = this;
+                }
+            }
+        }
+    }   
+    
+    @Override
+    public String getAuthority() {
+        return AUTHORITY;
+    }
+}   
+
+
 
 
 

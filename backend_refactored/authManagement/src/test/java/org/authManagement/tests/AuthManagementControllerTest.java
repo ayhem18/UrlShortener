@@ -1,4 +1,4 @@
-package org.authManagement.unitsTests;
+package org.authManagement.tests;
 
 import org.authManagement.controllers.AuthController;
 import org.authManagement.entities.CompanyUrlData;
