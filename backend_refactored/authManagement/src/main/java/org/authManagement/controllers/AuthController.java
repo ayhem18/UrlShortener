@@ -155,6 +155,7 @@ public class AuthController {
         }
     }
 
+
     private void validateOwnerToken(Company company) {
         List<AppToken> companyTokens = this.tokenRepo.findByCompany(company);
 
@@ -163,11 +164,13 @@ public class AuthController {
         }            
     }
 
+
     private void sendCompanyVerificationEmail(String ownerEmail, String ownerToken) {
         String subject = "Company Verification";
         String body = "Here is your company verification token:\n" + ownerToken + "\nThe token expires in 1 hour.";
         this.emailService.sendEmail(ownerEmail, subject, body);  
     }
+
 
     @Operation(summary = "Register a new company", 
     description = "Creates a new company record and returns the company details")
@@ -178,6 +181,7 @@ public class AuthController {
                     @ApiResponse(responseCode = "400", description = "Invalid input provided", 
                     content = @Content)
                 })
+
 
     @PostMapping("api/auth/register/company")
     public ResponseEntity<String> registerCompany(@Valid @RequestBody CompanyRegisterRequest req) throws JsonProcessingException {

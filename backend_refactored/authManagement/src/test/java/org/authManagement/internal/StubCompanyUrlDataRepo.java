@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.FluentQuery;
+import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 @SuppressWarnings({"null", "NullableProblems", "ConstantConditions"})
+@Repository // make sure to add the @Repository annotation for the Stub repo to be found by the MockMVC context
 public class StubCompanyUrlDataRepo implements CompanyUrlDataRepository {
     private final List<CompanyUrlData> db;
 

@@ -155,7 +155,7 @@ public class StubCounterRepo implements CounterRepository {
 
     @Override
     public void deleteAll() {
-
+        this.db.clear();
     }
 
     @Override

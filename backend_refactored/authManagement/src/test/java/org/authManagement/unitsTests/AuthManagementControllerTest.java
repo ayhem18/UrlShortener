@@ -365,7 +365,7 @@ public class AuthManagementControllerTest {
             String domain = "unique" + i + gen.randomAlphaString(10) + ".com";
             String ownerEmail = "owner" + i + "@" + "new_mail_domain.com";
 
-            String randomCompanyId = gen.randomAlphaString(12);
+            String randomCompanyId = gen.randomAlphaString(20);
 
             // 2. Create and submit a company registration request
             CompanyRegisterRequest req = new CompanyRegisterRequest(
@@ -379,7 +379,7 @@ public class AuthManagementControllerTest {
             );
             
             // Register the company and verify no exceptions are thrown
-            assertDoesNotThrow(() -> authCon.registerCompany(req));
+            assertDoesNotThrow(() -> this.authCon.registerCompany(req));
             
             // 3. Verify that a company with this ID now exists
             assertTrue(companyRepo.existsById(randomCompanyId), 

@@ -12,7 +12,11 @@ import org.access.RoleManager;
 import org.access.SubscriptionManager;
 import org.authManagement.configurations.WebTestConfig;
 import org.authManagement.controllers.AuthController;
+import org.authManagement.entities.CompanyUrlData;
+import org.authManagement.repositories.CompanyUrlDataRepository;
+import org.authManagement.repositories.CounterRepository;
 import org.authManagement.requests.CompanyRegisterRequest;
+import org.authManagement.requests.CompanyVerifyRequest;
 import org.authManagement.requests.UserRegisterRequest;
 import org.company.entities.Company;
 import org.company.entities.TopLevelDomain;
@@ -28,6 +32,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.tokens.repositories.TokenRepository;
 import org.tokens.repositories.TokenUserLinkRepository;
 import org.user.repositories.UserRepository;
@@ -50,6 +55,8 @@ public class ValidationTest {
     private final TokenUserLinkRepository tokenUserLinkRepo;
     private final TopLevelDomainRepository topLevelDomainRepo;
     private final ObjectMapper om;
+    private final CompanyUrlDataRepository companyUrlDataRepo;
+    private final CounterRepository counterRepo;
 
     @Autowired
     public ValidationTest(
@@ -59,7 +66,9 @@ public class ValidationTest {
             UserRepository userRepo,
             TokenRepository tokenRepo,
             TokenUserLinkRepository tokenUserLinkRepo,
-            TopLevelDomainRepository topLevelDomainRepo) {
+            TopLevelDomainRepository topLevelDomainRepo,
+            CompanyUrlDataRepository companyUrlDataRepo,
+            CounterRepository counterRepo) {
         this.mockMvc = mockMvc;
         this.customGenerator = customGenerator;
         this.companyRepo = companyRepo;
@@ -67,6 +76,8 @@ public class ValidationTest {
         this.tokenRepo = tokenRepo;
         this.tokenUserLinkRepo = tokenUserLinkRepo;
         this.topLevelDomainRepo = topLevelDomainRepo;
+        this.companyUrlDataRepo = companyUrlDataRepo;
+        this.counterRepo = counterRepo;
 
         // set the object mapper to serialize LocalTimeDate objects
         SimpleDateFormat df = new SimpleDateFormat("dd-MM-yyyy hh:mm");
@@ -85,7 +96,6 @@ public class ValidationTest {
         userRepo.deleteAll();
         topLevelDomainRepo.deleteAll();
         companyRepo.deleteAll();
-        
     }
 
     @SuppressWarnings("unchecked")
@@ -139,8 +149,8 @@ public class ValidationTest {
         
         for (int i = 0; i < 50; i++) {
             // Determine which field to omit 
-            int fieldToOmit = i % 6; 
-            
+            int fieldToOmit = i % 6;
+
             String companyId = fieldToOmit == 0 ? null : "company_" + i;
             String topLevelDomain = fieldToOmit == 1 ? null : "www.example" + i + ".com";
             String subscription = fieldToOmit == 2 ? null : "TIER_1";
@@ -159,7 +169,7 @@ public class ValidationTest {
                 topLevelDomain != null ? topLevelDomain.substring(topLevelDomain.indexOf('.') + 1) : null,
                 subscription
             );
-            
+
             // Call API and verify result
             MvcResult res = mockMvc.perform(
                 MockMvcRequestBuilders.post("/api/auth/register/company")
@@ -179,7 +189,6 @@ public class ValidationTest {
 
             // determine which field to check depending on the fieldToOmit
             String fieldToCheck = switch (fieldToOmit) {
-                case 0 -> "id";
                 case 1 -> "topLevelDomain";
                 case 2 -> "subscription";
                 case 3 -> "ownerEmail";
@@ -221,7 +230,7 @@ public class ValidationTest {
         assertEquals(errorMap.get("mailDomain"), "must not be empty");
 
     }
-    
+
     @SuppressWarnings("unchecked")
     @Test
     void testInvalidDomainCompanyRegisterRequest() throws Exception {
@@ -334,23 +343,36 @@ public class ValidationTest {
         }
     }   
 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     void testSuccessfulCompanyRegistration() throws Exception {
-        // Test 50 successful company registrations
-        for (int i = 0; i < 50; i++) {
+        // Clear repositories for clean test state
+        userRepo.deleteAll();
+        companyRepo.deleteAll();
+        tokenRepo.deleteAll();
+        tokenUserLinkRepo.deleteAll();
+        topLevelDomainRepo.deleteAll();
+        counterRepo.deleteAll();
+        
+        // Test 100 successful company registrations (increased from 50)
+        for (int i = 0; i < 100; i++) {
             // Create unique company ID (ensure length is between 8-16 chars)
-            String companyId = "company_" + String.format("%04d", i); // Results in company_0000 to company_0049
+            String companyId = "company_" + String.format("%04d", i); // Results in company_0000 to company_0099
             
-            // Create unique domain
-            String domain = "www.example_" + i + ".com";
+            // Create unique domain with more randomization
+            String topLevelDomain = "www.exam" + i + "ple" + customGenerator.randomAlphaString(3) + ".com";
+            
+            // Create unique company name to avoid conflicts
+            String uniqueCompanyName = "Test Company " + i + "-" + customGenerator.randomAlphaString(5);
             
             // Create valid company registration request
             CompanyRegisterRequest request = new CompanyRegisterRequest(
-                    "company_" + i,
-                    "companyName_" + i,
-                    "companyAddress_" + i,
-                    "www.someDomain.com",
-                    "owner@example.com" ,
+                    companyId,
+                    uniqueCompanyName,                 // Unique company name
+                    "Company Address " + i,           // Unique address
+                    topLevelDomain,
+                    "owner" + i + "@example.com",
+
                     "example.com",
                     "TIER_1"
             );
@@ -361,36 +383,55 @@ public class ValidationTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(om.writeValueAsString(request))
             )
-            .andExpect(MockMvcResultMatchers.status().isCreated()) // Should return 201 Created
-            .andReturn();
-            
-            // Verify company was created in repository
+            .andExpect(MockMvcResultMatchers.status().isCreated()); // Should return 201 Created
+
+            // 1. Verify company was created in repository
             assertTrue(companyRepo.existsById(companyId), 
                       "Company with ID " + companyId + " should exist in repository");
             
-            // Retrieve and validate company data
+            // 2. Retrieve and validate company data
             Optional<Company> savedCompanyOpt = companyRepo.findById(companyId);
             assertTrue(savedCompanyOpt.isPresent(), "Company should be retrievable from repository");
             
             Company savedCompany = savedCompanyOpt.get();
             assertEquals(companyId, savedCompany.getId(), "Company ID should match request");
+            assertEquals(uniqueCompanyName, savedCompany.getCompanyName(), "Company name should match request");
             assertEquals(request.ownerEmail(), savedCompany.getOwnerEmail(), "Owner email should match request");
             assertEquals(request.mailDomain(), savedCompany.getEmailDomain(), "Email domain should match request");
             assertEquals(SubscriptionManager.getSubscription("TIER_1").toString(), 
                         savedCompany.getSubscription().toString(), "Subscription should match request");
             assertFalse(savedCompany.getVerified(), "Newly created company should not be verified yet");
             
-            // Verify top level domain was created
-            Optional<TopLevelDomain> savedDomainOpt = topLevelDomainRepo.findByDomain(domain);
+            // 3. Verify top level domain was created
+            Optional<TopLevelDomain> savedDomainOpt = topLevelDomainRepo.findByDomain(topLevelDomain);
             assertTrue(savedDomainOpt.isPresent(), "Top level domain should be created");
             assertEquals(companyId, savedDomainOpt.get().getCompany().getId(), 
                         "Domain should be associated with correct company");
             
-            // Verify token was created for the company (owner token)
-            assertEquals(1, tokenRepo.findByCompany(savedCompany).size(), "exactly one token should be created for the company");
-
-            // Verify token was created for the company (owner token)
-            assertEquals(1, tokenRepo.findByCompanyAndRole(savedCompany, RoleManager.getRole(RoleManager.OWNER_ROLE)).size(), "exactly one token should be created for the company");
+            // 4. Verify token was created for the company (owner token)
+            assertEquals(1, tokenRepo.findByCompany(savedCompany).size(), 
+                        "Exactly one token should be created for the company");
+            assertEquals(1, tokenRepo.findByCompanyAndRole(
+                        savedCompany, 
+                        RoleManager.getRole(RoleManager.OWNER_ROLE)).size(), 
+                        "Exactly one owner token should be created for the company");
+            
+            // 5. Verify the counterRepo was updated with the correct count
+            assertEquals(i + 1, counterRepo.findByCollectionName(Company.COMPANY_COLLECTION_NAME).get().getCount(), 
+                        "Counter should track the number of companies created");
+            
+            // 6. Verify that CompanyUrlData was created with correct hash
+            Optional<CompanyUrlData> urlData = companyUrlDataRepo.findByCompany(savedCompany);
+            assertTrue(urlData.isPresent(), "CompanyUrlData should exist for the company");
+            assertEquals(savedCompany.getId(), urlData.get().getCompany().getId(), 
+                        "CompanyUrlData should reference the correct company");
+            
+            // 7. Verify the hash was generated correctly
+            String expectedHash = customGenerator.generateId(
+                    counterRepo.findByCollectionName(Company.COMPANY_COLLECTION_NAME).get().getCount() - 1 
+                    + AuthController.companySiteHashOffset);
+            assertEquals(expectedHash, urlData.get().getCompanySiteHash(), 
+                        "Company site hash should be generated with the correct formula");
         }
     }
 
@@ -459,6 +500,7 @@ public class ValidationTest {
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     @Test
     void testRegisterUserMissingFields() throws Exception {
         // Create a valid company first to use in the tests
@@ -467,7 +509,7 @@ public class ValidationTest {
             companyId,
             "Test Company",
             "123 Company Street",
-            "example.com",
+            "www.example.com",
             "owner@example.com",
             "example.com",
             "TIER_1"
@@ -479,125 +521,588 @@ public class ValidationTest {
                 .content(om.writeValueAsString(companyRequest))
         )
         .andExpect(MockMvcResultMatchers.status().isCreated());
-        
-        // Valid base request (will modify field by field)
-        String validUsername = "validUser";
+
+        // Valid base request parameters
+        String validUsername = "validUser123";
         String validPassword = "password123";
         String validEmail = "user@example.com";
+        String validFirstName = "John";
+        String validLastName = "Doe";
+        String validMiddleName = "Robert";
+        String validRole = "employee";
+        String validToken = "some_token";
+
+        // 1. Define all possible error messages for each field
+        Map<String, List<String>> fieldErrorMessages = Map.of(
+            "email", List.of(
+                "must not be blank", 
+                "Please provide a valid email address"
+            ),
+            "username", List.of(
+                "must not be blank", 
+                "username must of length between 2 and 16", 
+                "Only alpha numerical characters are allowed + '_'. The first character must be alphabetic"
+            ),
+            "password", List.of(
+                "must not be blank"
+            ),
+            "firstName", List.of(
+                "must not be blank"
+            ),
+            "lastName", List.of(
+                "must not be blank"
+            ),
+            "companyId", List.of(
+                "must not be blank",
+                "The length of id is expected to be between 8 and 16"
+            ),
+            "role", List.of(
+                "must not be blank"
+            ),
+            "middleName", List.of(
+                "must not be empty"
+            ),
+            "roleToken", List.of(
+                "must not be empty"
+            )
+        );
+        
+        // 2. Testing fields with @NotBlank annotation (can't be null or empty string)
+        List<String> notBlankFields = List.of(
+            "email",
+            "username",
+            "password",
+            "firstName",
+            "lastName",
+            "companyId",
+            "role"
+        );
+        
+        // Test each @NotBlank field with empty string
+        for (String missingValue: List.of("", "null")) {
+        
+        for (String field : notBlankFields) {
+            UserRegisterRequest request = switch (field) {
+                case "email" -> new UserRegisterRequest(
+                        missingValue.equals("null") ? null : missingValue,
+                        validUsername,
+                        validPassword,
+                        validFirstName,
+                        validLastName,
+                        validMiddleName,
+                        companyId,
+                        validRole,
+                        validToken
+                );
+                case "username" -> new UserRegisterRequest(
+                        validEmail,
+                        missingValue.equals("null") ? null : missingValue,                  // Empty username
+                        validPassword,
+                        validFirstName,
+                        validLastName,
+                        validMiddleName,
+                        companyId,
+                        validRole,
+                        validToken
+                );
+                case "password" -> new UserRegisterRequest(
+                        validEmail,
+                        validUsername,
+                        missingValue.equals("null") ? null : missingValue,                  // Empty password
+                        validFirstName,
+                        validLastName,
+                        validMiddleName,
+                        companyId,
+                        validRole,
+                        validToken
+                );
+                case "firstName" -> new UserRegisterRequest(
+                        validEmail,
+                        validUsername,
+                        validPassword,
+                        missingValue.equals("null") ? null : missingValue,                  // Empty firstName
+                        validLastName,
+                        validMiddleName,
+                        companyId,
+                        validRole,
+                        validToken
+                );
+                case "lastName" -> new UserRegisterRequest(
+                        validEmail,
+                        validUsername,
+                        validPassword,
+                        validFirstName,
+                        missingValue.equals("null") ? null : missingValue,                  // Empty lastName
+                        validMiddleName,
+                        companyId,
+                        validRole,
+                        validToken
+                );
+                case "companyId" -> new UserRegisterRequest(
+                        validEmail,
+                        validUsername,
+                        validPassword,
+                        validFirstName,
+                        validLastName,
+                        validMiddleName,
+                        missingValue.equals("null") ? null : missingValue,                  // Empty companyId
+                        validRole,
+                        validToken
+                );
+                case "role" -> new UserRegisterRequest(
+                        validEmail,
+                        validUsername,
+                        validPassword,
+                        validFirstName,
+                        validLastName,
+                        validMiddleName,
+                        companyId,
+                        missingValue.equals("null") ? null : missingValue,                  // Empty role
+                        validToken
+                );
+                default ->
+                    // Should never reach here
+                        throw new IllegalStateException("Unexpected field: " + field);
+            };
+            
+            // Perform request and verify response
+            MvcResult result = mockMvc.perform(
+                MockMvcRequestBuilders.post("/api/auth/register/user")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(om.writeValueAsString(request))
+            )
+            .andExpect(MockMvcResultMatchers.status().isBadRequest())
+            .andReturn();
+            
+            // Verify the error message
+            CustomErrorMessage errorResponse = om.readValue(
+                result.getResponse().getContentAsString(),
+                CustomErrorMessage.class
+            );
+            
+            Map<String, String> errorMap = new ObjectMapper().readValue(
+                errorResponse.getMessage(), 
+                Map.class
+            );
+            
+            // Get the actual error message
+            String actualErrorMessage = errorMap.get(field);
+            
+            // Get possible error messages for this field
+            List<String> possibleErrorMessages = fieldErrorMessages.get(field);
+            
+            assertNotNull(actualErrorMessage, 
+                "Error message for " + field + " should be present");
+            
+            // Check if actual error message matches any of the possible messages
+            boolean matchesAnyExpectedMessage = possibleErrorMessages.stream()
+                .anyMatch(actualErrorMessage::contains);
+            
+            assertTrue(matchesAnyExpectedMessage, 
+                "Error message for " + field + " should match one of the expected messages. Actual: " + 
+                actualErrorMessage + ", Expected one of: " + possibleErrorMessages);
+            }
+        }
+
+        // 3. Testing fields with @NotEmpty annotation (can be non-null but empty string)        
+        List<String> notEmptyFields = List.of("middleName", "roleToken");
+
+        // Test each @NotEmpty field with empty string
+        for (String field : notEmptyFields) {
+            UserRegisterRequest request = switch (field) {
+                case "middleName" -> new UserRegisterRequest(
+                        validEmail,
+                        validUsername,
+                        validPassword,
+                        validFirstName,
+                        validLastName,
+                        "",                  // Empty middleName
+                        companyId,
+                        validRole,
+                        validToken
+                );
+                case "roleToken" -> new UserRegisterRequest(
+                        validEmail,
+                        validUsername,
+                        validPassword,
+                        validFirstName,
+                        validLastName,
+                        validMiddleName,
+                        companyId,
+                        validRole,
+                        ""                   // Empty roleToken
+                );
+                default ->
+                    // Should never reach here
+                        throw new IllegalStateException("Unexpected field: " + field);
+            };
+
+            // Perform request and verify response
+            MvcResult result = mockMvc.perform(
+                MockMvcRequestBuilders.post("/api/auth/register/user")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(om.writeValueAsString(request))
+            )
+            .andExpect(MockMvcResultMatchers.status().isBadRequest())
+            .andReturn();
+            
+            // Verify the error message
+            CustomErrorMessage errorResponse = om.readValue(
+                result.getResponse().getContentAsString(),
+                CustomErrorMessage.class
+            );
+            
+            Map<String, String> errorMap = new ObjectMapper().readValue(
+                errorResponse.getMessage(), 
+                Map.class
+            );
+            
+            // Get the actual error message
+            String actualErrorMessage = errorMap.get(field);
+            
+            // Get possible error messages for this field
+            List<String> possibleErrorMessages = fieldErrorMessages.get(field);
+            
+            assertNotNull(actualErrorMessage, 
+                "Error message for " + field + " should be present");
+            
+            // Check if actual error message matches any of the possible messages
+            boolean matchesAnyExpectedMessage = possibleErrorMessages.stream()
+                .anyMatch(actualErrorMessage::contains);
+            
+            assertTrue(matchesAnyExpectedMessage, 
+                "Error message for " + field + " should match one of the expected messages. Actual: " + 
+                actualErrorMessage + ", Expected one of: " + possibleErrorMessages);
+        }
+        
+    }    
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void testRegisterUserWithInvalidEmail() throws Exception {
+        // Create a valid company first to use in the tests
+        String companyId = "company_test";
+        CompanyRegisterRequest companyRequest = new CompanyRegisterRequest(
+            companyId,
+            "Test Company",
+            "123 Company Street",
+            "www.example.com",
+            "owner@example.com",
+            "example.com",
+            "TIER_1"
+        );
+        
+        mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/register/company")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(om.writeValueAsString(companyRequest))
+        )
+        .andExpect(MockMvcResultMatchers.status().isCreated());
+
+        // Valid parameters for user registration
+        String validUsername = "validUser123";
+        String validPassword = "password123";
+        String validFirstName = "John";
+        String validLastName = "Doe";
+        String validMiddleName = "Robert";
         String validRole = "employee";
         String validToken = "some_token";
         
-        // Test each field one by one
-        // 1. Missing companyId
-        UserRegisterRequest missingCompanyIdRequest = new UserRegisterRequest(
-            validEmail,
-            validUsername,
-            validPassword,
-            "First",
-            "Last",
-            "Middle",
-            "",
-            validRole,
-            validToken
+        // List of invalid email formats to test
+        List<String> invalidEmails = List.of(
+            "invalid-email",           // Missing @ symbol
+            "invalid@",                // Missing domain
+            "@missing-local.com",      // Missing local part
+            "inv alid@domain.com",     // Space in local part
+            "invalid@domain@com",      // Multiple @ symbols
+            "invalid@.com",            // Missing domain name
+            "invalid@domain.",         // Domain ending with dot
+            "invalid@domain..com",     // Consecutive dots
+            ".invalid@domain.com",     // Starting with dot
+            "invalid..email@domain.com" // Consecutive dots in local part
         );
         
-        mockMvc.perform(
-            MockMvcRequestBuilders.post("/api/auth/register/user")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(om.writeValueAsString(missingCompanyIdRequest))
-        )
-        .andExpect(MockMvcResultMatchers.status().isBadRequest());
-        
-        // 2. Missing username
-        UserRegisterRequest missingUsernameRequest = new UserRegisterRequest(
-            validEmail,
-            "",
-            validPassword,
-            "First",
-            "Last",
-            "Middle",
-            companyId,
-            validRole,
-            validToken
-        );
-        
-        mockMvc.perform(
-            MockMvcRequestBuilders.post("/api/auth/register/user")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(om.writeValueAsString(missingUsernameRequest))
-        )
-        .andExpect(MockMvcResultMatchers.status().isBadRequest());
-        
-        // 3. Missing password
-        UserRegisterRequest missingPasswordRequest = new UserRegisterRequest(
-            validEmail,
-            validUsername,
-            "",
-            "First",
-            "Last",
-            "Middle",
-            companyId,
-            validRole,
-            validToken
-        );
-        
-        mockMvc.perform(
-            MockMvcRequestBuilders.post("/api/auth/register/user")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(om.writeValueAsString(missingPasswordRequest))
-        )
-        .andExpect(MockMvcResultMatchers.status().isBadRequest());
-        
-        // 4. Missing email
-        UserRegisterRequest missingEmailRequest = new UserRegisterRequest(
-            validEmail,
-            validUsername,
-            validPassword,
-            "First",
-            "Last",
-            "Middle",
-            companyId,
-            validRole,
-            validToken
-        );
-        
-        mockMvc.perform(
-            MockMvcRequestBuilders.post("/api/auth/register/user")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(om.writeValueAsString(missingEmailRequest))
-        )
-        .andExpect(MockMvcResultMatchers.status().isBadRequest());
-        
-        // 5. Missing role
-        UserRegisterRequest missingRoleRequest = new UserRegisterRequest(
-            validEmail,
-            validUsername,
-            validPassword,
-            "First",
-            "Last",
-            "Middle",
-            companyId,
-            "",
-            validToken
-        );
-        
-        MvcResult res = mockMvc.perform(
-            MockMvcRequestBuilders.post("/api/auth/register/user")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(om.writeValueAsString(missingRoleRequest))
-        )
-        .andExpect(MockMvcResultMatchers.status().isBadRequest())
-        .andReturn();
+        for (String invalidEmail : invalidEmails) {
+            UserRegisterRequest request = new UserRegisterRequest(
+                invalidEmail,
+                validUsername,
+                validPassword,
+                validFirstName,
+                validLastName,
+                validMiddleName,
+                companyId,
+                validRole,
+                validToken
+            );
+            
+            MvcResult result = mockMvc.perform(
+                MockMvcRequestBuilders.post("/api/auth/register/user")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(om.writeValueAsString(request))
+            )
+            .andExpect(MockMvcResultMatchers.status().isBadRequest())
+            .andReturn();
+            
+            // Extract error message
+            CustomErrorMessage errorResponse = om.readValue(
+                result.getResponse().getContentAsString(),
+                CustomErrorMessage.class
+            );
+            
+            Map<String, String> errorMap = new ObjectMapper().readValue(
+                errorResponse.getMessage(),
+                Map.class
+            );
+            
+            // Verify email field has an error
+            assertNotNull(errorMap.get("email"), 
+                "Error message for email should be present for invalid format: " + invalidEmail);
+            
+            // Verify the error message mentions email validation
+            String errorMessage = errorMap.get("email");
+            assertTrue(
+                errorMessage.contains("Please provide a valid email address"),
+                "Error message should contain 'Please provide a valid email address' but was: " + errorMessage + 
+                    " for invalid email: " + invalidEmail
+                );
+            }
+        }
 
-        CustomErrorMessage errorResponse = this.om.readValue(res.getResponse().getContentAsString(),
-                CustomErrorMessage.class);
+    @SuppressWarnings("unchecked")
+    @Test
+    void testVerifyCompanyValidateId() throws Exception {
+        // Test with IDs of invalid lengths
+        List<String> invalidIds = List.of(
+            "short",                       // Too short (less than 8 chars)
+            "way_too_long_company_id_123"  // Too long (more than 16 chars)
+        );
+        
+        for (String invalidId : invalidIds) {
+            CompanyVerifyRequest request = new CompanyVerifyRequest(
+                invalidId,
+                "valid-token-123",
+                "owner@example.com"
+            );
+            
+            MvcResult result = mockMvc.perform(
+                MockMvcRequestBuilders.post("/api/auth/register/company/verify")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(om.writeValueAsString(request))
+            )
+            .andExpect(MockMvcResultMatchers.status().isBadRequest())
+            .andReturn();
+            
+            // Extract error message
+            CustomErrorMessage errorResponse = om.readValue(
+                result.getResponse().getContentAsString(),
+                CustomErrorMessage.class
+            );
+            
+            Map<String, String> errorMap = new ObjectMapper().readValue(
+                errorResponse.getMessage(),
+                Map.class
+            );
+            
+            // Verify companyId field has an error
+            assertNotNull(errorMap.get("companyId"), 
+                "Error message for companyId should be present for invalid ID: " + invalidId);
+            
+            // Verify the error message mentions length constraints
+            String errorMessage = errorMap.get("companyId");
+            assertTrue(
+                errorMessage.contains("The length of id is expected to be between 8 and 16"),
+                "Error message should contain length constraints but was: " + errorMessage
+            );
+        }
+        
+        // Test with a valid ID (should pass validation)
+        String validId = "company_12345";
+        CompanyVerifyRequest validRequest = new CompanyVerifyRequest(
+            validId,
+            "valid-token-123",
+            "owner@example.com"
+        );
+        
+        // This might fail with other errors (like company not found), but not with validation errors
+        mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/register/company/verify")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(om.writeValueAsString(validRequest))
+        )
+        .andExpect(result -> assertFalse(
+            result.getResolvedException() instanceof MethodArgumentNotValidException,
+            "Request with valid ID should not fail ID validation"
+        ));
+    }
 
-        assertEquals(errorResponse.getMessage(), "Invalid role");
-    }    
+    @SuppressWarnings("unchecked")
+    @Test
+    void testVerifyCompanyValidateEmail() throws Exception {
+        // List of invalid email formats to test
+        List<String> invalidEmails = List.of(
+            "invalid-email",           // Missing @ symbol
+            "invalid@",                // Missing domain
+            "@missing-local.com",      // Missing local part
+            "inv alid@domain.com",     // Space in local part
+            "invalid@domain@com",      // Multiple @ symbols
+            "invalid@.com",            // Missing domain name
+            "invalid@domain.",         // Domain ending with dot
+            "invalid@domain..com"      // Consecutive dots
+        );
+        
+        for (String invalidEmail : invalidEmails) {
+            CompanyVerifyRequest request = new CompanyVerifyRequest(
+                "company_12345",       // Valid ID
+                "valid-token-123",     // Valid token
+                invalidEmail           // Invalid email
+            );
+            
+            MvcResult result = mockMvc.perform(
+                MockMvcRequestBuilders.post("/api/auth/register/company/verify")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(om.writeValueAsString(request))
+            )
+            .andExpect(MockMvcResultMatchers.status().isBadRequest())
+            .andReturn();
+            
+            // Extract error message
+            CustomErrorMessage errorResponse = om.readValue(
+                result.getResponse().getContentAsString(),
+                CustomErrorMessage.class
+            );
+            
+            Map<String, String> errorMap = new ObjectMapper().readValue(
+                errorResponse.getMessage(),
+                Map.class
+            );
+            
+            // Verify email field has an error
+            assertNotNull(errorMap.get("email"), 
+                "Error message for email should be present for invalid format: " + invalidEmail);
+            
+            // Verify the error message mentions email validation
+            String errorMessage = errorMap.get("email");
+            assertTrue(
+                errorMessage.contains("Please provide a valid email address"),
+                "Error message should indicate valid email is required but was: " + errorMessage + 
+                " for invalid email: " + invalidEmail
+            );
+        }
+        
+        // Test with a valid email (should pass validation)
+        String validEmail = "owner@example.com";
+        CompanyVerifyRequest validRequest = new CompanyVerifyRequest(
+            "company_12345",
+            "valid-token-123",
+            validEmail
+        );
+        
+        // This might fail with other errors (like company not found), but not with email validation errors
+        mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/register/company/verify")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(om.writeValueAsString(validRequest))
+        )
+        .andExpect(result -> assertFalse(
+            result.getResolvedException() instanceof MethodArgumentNotValidException,
+            "Request with valid email should not fail email validation"
+        ));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void testVerifyCompanyMissingFields() throws Exception {
+        // Define all required fields
+        Map<String, List<String>> fieldErrorMessages = Map.of(
+            "companyId", List.of("must not be blank", "The length of id is expected to be between 8 and 16"),
+            "token", List.of("must not be blank"),
+            "email", List.of("must not be blank", "Please provide a valid email address")
+        );
+        
+        // Create requests with each field missing one at a time
+        String validId = "company_12345";
+        String validToken = "valid-token-123";
+        String validEmail = "owner@example.com";
+        
+        Map<String, CompanyVerifyRequest> requestsWithMissingFields = Map.of(
+            "companyId", new CompanyVerifyRequest("", validToken, validEmail),
+            "token", new CompanyVerifyRequest(validId, "", validEmail),
+            "email", new CompanyVerifyRequest(validId, validToken, "")
+        );
+        
+        // Test each field with empty value
+        for (Map.Entry<String, CompanyVerifyRequest> entry : requestsWithMissingFields.entrySet()) {
+            String fieldName = entry.getKey();
+            CompanyVerifyRequest request = entry.getValue();
+            
+            MvcResult result = mockMvc.perform(
+                MockMvcRequestBuilders.post("/api/auth/register/company/verify")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(om.writeValueAsString(request))
+            )
+            .andExpect(MockMvcResultMatchers.status().isBadRequest())
+            .andReturn();
+            
+            // Extract error message
+            CustomErrorMessage errorResponse = om.readValue(
+                result.getResponse().getContentAsString(),
+                CustomErrorMessage.class
+            );
+            
+            Map<String, String> errorMap = new ObjectMapper().readValue(
+                errorResponse.getMessage(),
+                Map.class
+            );
+            
+            // Verify the field has an error
+            assertNotNull(errorMap.get(fieldName), 
+                "Error message for " + fieldName + " should be present when it's missing");
+            
+            // Get the actual error message
+            String actualErrorMessage = errorMap.get(fieldName);
+            
+            // Get possible error messages for this field
+            List<String> possibleErrorMessages = fieldErrorMessages.get(fieldName);
+            
+            // Check if actual error message matches any of the possible messages
+            boolean matchesAnyExpectedMessage = possibleErrorMessages.stream()
+                .anyMatch(actualErrorMessage::contains);
+            
+            assertTrue(matchesAnyExpectedMessage, 
+                "Error message for " + fieldName + " should match one of the expected messages. Actual: " + 
+                actualErrorMessage + ", Expected one of: " + possibleErrorMessages);
+        }
+        
+        // Test with null values
+        ObjectMapper objectMapper = new ObjectMapper();
+        
+        for (String fieldName : fieldErrorMessages.keySet()) {
+            
+            CompanyVerifyRequest req = new CompanyVerifyRequest(fieldName.equals("companyId") ? null : validId,
+                    fieldName.equals("token") ? null : validToken,
+                    fieldName.equals("email") ? null : validEmail);
+            
+            MvcResult result = mockMvc.perform(
+                MockMvcRequestBuilders.post("/api/auth/register/company/verify") 
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(req))
+            )
+            .andExpect(MockMvcResultMatchers.status().isBadRequest())
+            .andReturn();
+            
+            // Similar validation as above
+            CustomErrorMessage errorResponse = om.readValue(
+                result.getResponse().getContentAsString(),
+                CustomErrorMessage.class
+            );
+            
+            Map<String, String> errorMap = new ObjectMapper().readValue(
+                errorResponse.getMessage(),
+                Map.class
+            );
+            
+            assertNotNull(errorMap.get(fieldName), 
+                "Error message for " + fieldName + " should be present when it's null");
+        }
+    }
 }
-
-
-
-
-
-
