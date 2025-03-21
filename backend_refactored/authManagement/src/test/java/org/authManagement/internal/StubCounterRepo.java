@@ -130,7 +130,7 @@ public class StubCounterRepo implements CounterRepository {
 
     @Override
     public long count() {
-        return 0;
+        return this.db.size();
     }
 
     @Override

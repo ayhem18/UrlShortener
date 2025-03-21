@@ -32,7 +32,6 @@ import org.tokens.repositories.TokenRepository;
 import org.tokens.repositories.TokenUserLinkRepository;
 import org.user.entities.AppUser;
 import org.user.repositories.UserRepository;
-import org.utils.CustomGenerator;
 
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
@@ -45,9 +44,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(classes = IntegrationTestConfig.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class IntegrationTest {
 
-//    @LocalServerPort
-//    private int localPort;
-
     private final TestRestTemplate restTemplate;
     private final CompanyRepository companyRepo;
     private final UserRepository userRepo;
@@ -56,7 +52,6 @@ public class IntegrationTest {
     private final TopLevelDomainRepository topLevelDomainRepo;
     private final CompanyUrlDataRepository companyUrlDataRepo;
     private final CounterRepository counterRepo;
-    private final CustomGenerator customGenerator;
     private final PasswordEncoder passwordEncoder;
     private final ObjectMapper objectMapper;
     
@@ -79,7 +74,6 @@ public class IntegrationTest {
             TopLevelDomainRepository topLevelDomainRepo,
             CompanyUrlDataRepository companyUrlDataRepo,
             CounterRepository counterRepo,
-            CustomGenerator customGenerator,
             PasswordEncoder passwordEncoder) {
         
         this.restTemplate = restTemplate;
@@ -90,7 +84,6 @@ public class IntegrationTest {
         this.topLevelDomainRepo = topLevelDomainRepo;
         this.companyUrlDataRepo = companyUrlDataRepo;
         this.counterRepo = counterRepo;
-        this.customGenerator = customGenerator;
         this.passwordEncoder = passwordEncoder;
         
         // Configure ObjectMapper
@@ -253,7 +246,6 @@ public class IntegrationTest {
             company,
             org.access.RoleManager.getRole(org.access.RoleManager.ADMIN_ROLE)
         );
-        adminToken.activate();   
         tokenRepo.save(adminToken);
 
         // Step 6: Register an admin user
@@ -298,7 +290,6 @@ public class IntegrationTest {
             company,
             org.access.RoleManager.getRole(org.access.RoleManager.EMPLOYEE_ROLE)
         );
-        employeeToken.activate();
         tokenRepo.save(employeeToken);
 
         // Step 8: Register an employee user

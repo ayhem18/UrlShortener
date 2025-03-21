@@ -195,10 +195,12 @@ public class AuthController {
         // 3. create the company
         Company company = new Company(req.id(), req.companyName(), req.companyAddress(), req.ownerEmail(), req.mailDomain(), subscription);
 
-        this.companyRepo.save(company);
-
         // 4. validate the owner token
         this.validateOwnerToken(company);
+
+        // make sure the companyRepo does not save the company object to the database until all checks are done
+        this.companyRepo.save(company);
+
 
         // 5. create the top level domain
         String idTopLevelDomain  = UUID.randomUUID().toString();        
@@ -327,11 +329,9 @@ public class AuthController {
         
         // 3. Verify the company
         company.verify();
-        this.companyRepo.save(company);
         
         // 4. Mark the token as active
         ownerToken.activate();
-        this.tokenRepo.save(ownerToken);
         
         // 5. create a link between the owner and the token
         AppUser ownerUser = this.userRepo.findById(req.email()).get();
@@ -343,6 +343,9 @@ public class AuthController {
         }
         
         TokenUserLink tokenUserLink = new TokenUserLink(tokenUserLinkId, ownerToken, ownerUser);
+        
+        this.companyRepo.save(company);
+        this.tokenRepo.save(ownerToken);
         this.tokenUserLinkRepo.save(tokenUserLink);
 
         // 6. Return the serialized company
@@ -477,13 +480,10 @@ public class AuthController {
                                 company,
                                 RoleManager.getRole(req.role()));
 
-        this.userRepo.save(user);
-
         // link the user to the token
         AppToken matchingToken = verifyToken(req, company);
         // activate the token
         matchingToken.activate();
-        this.tokenRepo.save(matchingToken);
 
         // Generate a random ID for the token-user link
         String tokenUserLinkId = UUID.randomUUID().toString();
@@ -492,6 +492,10 @@ public class AuthController {
         }
 
         TokenUserLink tokenUserLink = new TokenUserLink(tokenUserLinkId, matchingToken, user);
+
+        // persist all the objects at the end after all checks are done.
+        this.userRepo.save(user);
+        this.tokenRepo.save(matchingToken);
         this.tokenUserLinkRepo.save(tokenUserLink);
 
         return user;

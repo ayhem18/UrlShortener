@@ -14,6 +14,7 @@ public interface Role {
     
     @JsonValue
     String role();
+
 }
 
 
@@ -43,6 +44,11 @@ class Owner implements Role {
     public String toString() {
         return ROLE_NAME.toLowerCase();
     }
+
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof Owner;
+    }
 }
 
 class Admin implements Role {
@@ -67,8 +73,11 @@ class Admin implements Role {
         return ROLE_NAME.toLowerCase();
     }
 
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof Admin;
+    }
 }
-
 class Employee implements Role {
     private static final String ROLE_NAME = "EMPLOYEE";
 
@@ -88,5 +97,10 @@ class Employee implements Role {
     @Override
     public String toString() {
         return ROLE_NAME.toLowerCase();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof Employee;
     }
 }

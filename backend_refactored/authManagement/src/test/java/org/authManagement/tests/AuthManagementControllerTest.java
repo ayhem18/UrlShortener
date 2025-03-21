@@ -20,7 +20,6 @@ import org.company.entities.Company;
 import org.company.entities.TopLevelDomain;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.tokens.entities.AppToken;
 import org.tokens.entities.TokenUserLink;
@@ -46,6 +45,7 @@ public class AuthManagementControllerTest {
     private final StubCompanyRepo companyRepo;
     private final StubUserRepo userRepo;
     private final StubTopLevelDomainRepo topLevelDomainRepo;
+
     private final StubTokenRepo tokenRepo;
     private final StubTokenUserLinkRepo tokenUserLinkRepo;
 
@@ -55,7 +55,7 @@ public class AuthManagementControllerTest {
     private final CustomGenerator gen = new CustomGenerator();
     private final AuthController authCon;
 
-    @BeforeEach
+    // @BeforeEach
     public void setUp() {
         // Clear repositories to ensure a clean state
         clearRepositories();
@@ -215,10 +215,29 @@ public class AuthManagementControllerTest {
                     null,
             c.getSubscription().getTier());
 
+            // Count repositories before attempting operation
+            long companyCountBefore = companyRepo.count();
+            long tokenCountBefore = tokenRepo.count();
+            long userCountBefore = userRepo.count();
+            long domainCountBefore = topLevelDomainRepo.count();
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+            long companyUrlDataCountBefore = companyUrlDataRepo.count();
+            long counterCountBefore = counterRepo.count();
+
             Assertions.assertThrows(
                     CompanyExceptions.ExistingCompanyException.class,
                     () -> this.authCon.registerCompany(req)
             );
+            
+            // Verify no objects were saved
+            assertEquals(companyCountBefore, companyRepo.count(), "No new companies should be saved on failure");
+            assertEquals(tokenCountBefore, tokenRepo.count(), "No new tokens should be saved on failure");
+            assertEquals(userCountBefore, userRepo.count(), "No new users should be saved on failure");
+            assertEquals(domainCountBefore, topLevelDomainRepo.count(), "No new domains should be saved on failure");
+            assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), "No new token user links should be saved on failure");
+            assertEquals(companyUrlDataCountBefore, companyUrlDataRepo.count(), "No new company url data should be saved on failure");
+            assertEquals(counterCountBefore, counterRepo.count(), "No new counters should be saved on failure");
+
         }
 
         // 2. top level domain uniqueness test
@@ -238,11 +257,29 @@ public class AuthManagementControllerTest {
                     "TIER_1"
                     );
 
+            // Count repositories before attempting operation
+            long companyCountBefore = companyRepo.count();
+            long tokenCountBefore = tokenRepo.count();
+            long userCountBefore = userRepo.count();
+            long domainCountBefore = topLevelDomainRepo.count();
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+            long companyUrlDataCountBefore = companyUrlDataRepo.count();
+            long counterCountBefore = counterRepo.count();
+
             // Verify that an ExistingTopLevelDomainException is thrown
             Assertions.assertThrows(
                     CompanyExceptions.ExistingTopLevelDomainException.class,
                     () -> this.authCon.registerCompany(req)
             );
+            
+            // Verify no objects were saved
+            assertEquals(companyCountBefore, companyRepo.count(), "No new companies should be saved on failure");
+            assertEquals(tokenCountBefore, tokenRepo.count(), "No new tokens should be saved on failure");
+            assertEquals(userCountBefore, userRepo.count(), "No new users should be saved on failure");
+            assertEquals(domainCountBefore, topLevelDomainRepo.count(), "No new domains should be saved on failure");
+            assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), "No new token user links should be saved on failure");
+            assertEquals(companyUrlDataCountBefore, companyUrlDataRepo.count(), "No new company url data should be saved on failure");
+            assertEquals(counterCountBefore, counterRepo.count(), "No new counters should be saved on failure");
         }
 
 
@@ -268,11 +305,29 @@ public class AuthManagementControllerTest {
                     "TIER_1"
                     );
 
+            // Count repositories before attempting operation
+            long companyCountBefore = companyRepo.count();
+            long tokenCountBefore = tokenRepo.count();
+            long userCountBefore = userRepo.count();
+            long domainCountBefore = topLevelDomainRepo.count();
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+            long companyUrlDataCountBefore = companyUrlDataRepo.count();
+            long counterCountBefore = counterRepo.count();
+
             // Verify that a MultipleOwnersException is thrown
-            Assertions.assertThrows(
+            assertThrows(
                 CompanyAndUserExceptions.MultipleOwnersException.class,
                 () -> this.authCon.registerCompany(req)
             );
+            
+            // Verify no objects were saved
+            assertEquals(companyCountBefore, companyRepo.count(), "No new companies should be saved on failure");
+            assertEquals(tokenCountBefore, tokenRepo.count(), "No new tokens should be saved on failure");
+            assertEquals(userCountBefore, userRepo.count(), "No new users should be saved on failure");
+            assertEquals(domainCountBefore, topLevelDomainRepo.count(), "No new domains should be saved on failure");
+            assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), "No new token user links should be saved on failure");
+            assertEquals(companyUrlDataCountBefore, companyUrlDataRepo.count(), "No new company url data should be saved on failure");
+            assertEquals(counterCountBefore, counterRepo.count(), "No new counters should be saved on failure");
         }
 
         // 4. company name uniqueness test
@@ -289,10 +344,28 @@ public class AuthManagementControllerTest {
                     "TIER_1"
                     );
 
+            // Count repositories before attempting operation
+            long companyCountBefore = companyRepo.count();
+            long tokenCountBefore = tokenRepo.count();
+            long userCountBefore = userRepo.count();
+            long domainCountBefore = topLevelDomainRepo.count();
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+            long companyUrlDataCountBefore = companyUrlDataRepo.count();
+            long counterCountBefore = counterRepo.count();
+
             Assertions.assertThrows(
                 CompanyExceptions.ExistingCompanyException.class,
                 () -> this.authCon.registerCompany(req)
             );
+            
+            // Verify no objects were saved
+            assertEquals(companyCountBefore, companyRepo.count(), "No new companies should be saved on failure");
+            assertEquals(tokenCountBefore, tokenRepo.count(), "No new tokens should be saved on failure");
+            assertEquals(userCountBefore, userRepo.count(), "No new users should be saved on failure");
+            assertEquals(domainCountBefore, topLevelDomainRepo.count(), "No new domains should be saved on failure");
+            assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), "No new token user links should be saved on failure");
+            assertEquals(companyUrlDataCountBefore, companyUrlDataRepo.count(), "No new company url data should be saved on failure");
+            assertEquals(counterCountBefore, counterRepo.count(), "No new counters should be saved on failure");
         }
     }
 
@@ -339,6 +412,15 @@ public class AuthManagementControllerTest {
                         "TIER_1"                              // Subscription
                 );
 
+                // Count repositories before attempting operation
+                long companyCountBefore = companyRepo.count();
+                long tokenCountBefore = tokenRepo.count();
+                long userCountBefore = userRepo.count();
+                long domainCountBefore = topLevelDomainRepo.count();
+                long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+                long companyUrlDataCountBefore = companyUrlDataRepo.count();
+                long counterCountBefore = counterRepo.count();
+
                 // Final randomCompanyId for use in lambda
                 String finalCompanyId = randomCompanyId;
 
@@ -348,7 +430,15 @@ public class AuthManagementControllerTest {
                         () -> authCon.registerCompany(req),
                         "Should fail when token already exists for company ID " + finalCompanyId
                 );
-
+                
+                // Verify no objects were saved
+                assertEquals(companyCountBefore, companyRepo.count(), "No new companies should be saved on failure");
+                assertEquals(tokenCountBefore, tokenRepo.count(), "No new tokens should be saved on failure");
+                assertEquals(userCountBefore, userRepo.count(), "No new users should be saved on failure");
+                assertEquals(domainCountBefore, topLevelDomainRepo.count(), "No new domains should be saved on failure");
+                assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), "There should be no token user links");  
+                assertEquals(companyUrlDataCountBefore, companyUrlDataRepo.count(), "There should be no company url data");  
+                assertEquals(counterCountBefore, counterRepo.count(), "No new counters should be saved on failure");
             }
         }
     }
@@ -356,10 +446,8 @@ public class AuthManagementControllerTest {
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     void testSuccessRegisterCompany() {
-        // Clear existing data to ensure clean test environment
-        userRepo.deleteAll();
-        companyRepo.deleteAll();
-        
+        // everything is cleared, so no need to worry about clearing the repositories
+            
         for (int i = 0; i < 100; i++) {
             // Generate unique domain
             String domain = "unique" + i + gen.randomAlphaString(10) + ".com";
@@ -422,15 +510,27 @@ public class AuthManagementControllerTest {
             
             String expectedHash = this.gen.generateId(counterRepo.findByCollectionName(Company.COMPANY_COLLECTION_NAME).get().getCount() - 1 + AuthController.companySiteHashOffset);
             assertEquals(expectedHash, urlData.get().getCompanySiteHash());
-
+            
+            // verify the counts
+            assertEquals(0, tokenUserLinkRepo.count(), "There should be no token user links");  
+            assertEquals(0, userRepo.count(), "There should be no users");  
+            assertEquals(1, counterRepo.count(), "There should be exactly one counter");  
+            assertEquals(i + 1, tokenRepo.count(), "There should be exactly one token");
+            assertEquals(i + 1, companyRepo.count(), "There should be exactly one company");  
+            assertEquals(i + 1, counterRepo.findByCollectionName(Company.COMPANY_COLLECTION_NAME).get().getCount(), "the counter repo must track the count correctly");
+            assertEquals(i + 1, companyUrlDataRepo.count(), "There should be exactly one company url data");
+        
         }
-
     }
 
     //////////////////////// register a user ////////////////////////
 
     @Test
     void testRegisterUserInitialConstraints() {
+
+        // add a few companies and users to the repositories
+        setUp();
+
         // 1. Test that registration fails when the username already exists
         // Loop through all existing users to test constraint
         int i = 0;
@@ -448,55 +548,114 @@ public class AuthManagementControllerTest {
                         "someToken"                           // roleToken
             );
 
+            // Count repositories before attempting operation
+            long userCountBefore = userRepo.count();
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+            long counterCountBefore = counterRepo.count();
+            long companyUrlDataCountBefore = companyUrlDataRepo.count();
+            long companyCountBefore = companyRepo.count(); 
+            long topLevelDomainCountBefore = topLevelDomainRepo.count();
+            long tokenCountBefore = tokenRepo.count();
+
             assertThrows(
                UserExceptions.AlreadyExistingUserException.class,
                () -> authCon.registerUser(existingUserRequest),
                "Should fail when a user with the email already exists: " + existingUser.getEmail()
             );
-       }
+            
+            // Verify no objects were saved
+            assertEquals(userCountBefore, userRepo.count(), "No new users should be saved on failure");
+            assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), 
+                        "No new token-user links should be saved on failure");
+            assertEquals(companyUrlDataCountBefore, companyUrlDataRepo.count(), "No new company url data should be saved on failure");
+            assertEquals(counterCountBefore, counterRepo.count(), "No new counters should be saved on failure");
+            assertEquals(companyCountBefore, companyRepo.count(), "No new companies should be saved on failure");
+            assertEquals(topLevelDomainCountBefore, topLevelDomainRepo.count(), "No new top level domains should be saved on failure");
+            assertEquals(tokenCountBefore, tokenRepo.count(), "No new tokens should be saved on failure");
+        }
 
         i += 1;
-       // 2. Test that registration fails when the company does not exist - FIXED PARAMETER ORDER
+       // 2. Test that registration fails when the company does not exist
        String nonExistentCompanyId = "non_existent_company_" + gen.randomAlphaString(8);
        UserRegisterRequest nonExistentCompanyRequest = new UserRegisterRequest(
-               "new_user@example.com",              // email
-               "newUser",                           // username
-               "password123",                       // password
+               "new_user@example.com",             
+               "newUser",                          
+               "password123",                       
                "firstName_" + i,
                "lastName_" + i,
                "middleName_" + i,
-               nonExistentCompanyId,                // companyId
-           RoleManager.EMPLOYEE_ROLE,           // role
-           "someToken"                          // roleToken
+               nonExistentCompanyId,                
+           RoleManager.EMPLOYEE_ROLE,           
+           "someToken"                          
        );
+
+       // Count repositories before attempting operation
+       long userCountBefore1 = userRepo.count();
+       long tokenUserLinkCountBefore1 = tokenUserLinkRepo.count();
+       long counterCountBefore1 = counterRepo.count();
+       long companyUrlDataCountBefore1 = companyUrlDataRepo.count();
+       long companyCountBefore1 = companyRepo.count();
+       long topLevelDomainCountBefore1 = topLevelDomainRepo.count();
+       long tokenCountBefore1 = tokenRepo.count();
 
        assertThrows(
            UserExceptions.UserWithNoCompanyException.class,
            () -> authCon.registerUser(nonExistentCompanyRequest),
            "Should fail when the company ID doesn't exist"
        );
+       
+       // Verify no objects were saved
+       assertEquals(userCountBefore1, userRepo.count(), "No new users should be saved on failure");
+       assertEquals(tokenUserLinkCountBefore1, tokenUserLinkRepo.count(), 
+                   "No new token-user links should be saved on failure");
+       assertEquals(companyUrlDataCountBefore1, companyUrlDataRepo.count(), "No new company url data should be saved on failure");
+       assertEquals(counterCountBefore1, counterRepo.count(), "No new counters should be saved on failure");
+       assertEquals(companyCountBefore1, companyRepo.count(), "No new companies should be saved on failure");
+       assertEquals(topLevelDomainCountBefore1, topLevelDomainRepo.count(), "No new top level domains should be saved on failure");
+       assertEquals(tokenCountBefore1, tokenRepo.count(), "No new tokens should be saved on failure");
 
        i += 1;
-       // 3. Test that registration fails when the role does not exist - FIXED PARAMETER ORDER
+       // 3. Test that registration fails when the role does not exist
        String invalidRole = "INVALID_ROLE_";
        Company existingCompany = companyRepo.findAll().getFirst();
        UserRegisterRequest invalidRoleRequest = new UserRegisterRequest(
-               "new_user@example.com",              // email
-               "newUser",                           // username
-               "password123",                       // password
+               "new_user@example.com",              
+               "newUser",                           
+               "password123",                       
                "firstName_" + i,
                "lastName_" + i,
                "middleName_" + i,
-               existingCompany.getId(),             // companyId
-           invalidRole,                         // role
-           "someToken"                          // roleToken
+               existingCompany.getId(),            
+           invalidRole,                         
+           "someToken"                          
        );
+
+
+       // Count repositories before attempting operation
+       long userCountBefore2 = userRepo.count();
+       long tokenUserLinkCountBefore2 = tokenUserLinkRepo.count();
+       long counterCountBefore2 = counterRepo.count();
+       long companyUrlDataCountBefore2 = companyUrlDataRepo.count();
+       long companyCountBefore2 = companyRepo.count();
+       long topLevelDomainCountBefore2 = topLevelDomainRepo.count();
+       long tokenCountBefore2 = tokenRepo.count();
+
 
        assertThrows(
            RoleManager.NoExistingRoleException.class,
            () -> authCon.registerUser(invalidRoleRequest),
            "Should fail when the role doesn't exist"
        );
+       
+       // Verify no objects were saved
+       assertEquals(userCountBefore2, userRepo.count(), "No new users should be saved on failure");
+       assertEquals(tokenUserLinkCountBefore2, tokenUserLinkRepo.count(),
+                   "No new token-user links should be saved on failure");
+       assertEquals(companyUrlDataCountBefore2, companyUrlDataRepo.count(), "No new company url data should be saved on failure");  
+       assertEquals(counterCountBefore2, counterRepo.count(), "No new counters should be saved on failure");
+       assertEquals(companyCountBefore2, companyRepo.count(), "No new companies should be saved on failure");
+       assertEquals(topLevelDomainCountBefore2, topLevelDomainRepo.count(), "No new top level domains should be saved on failure");
+       assertEquals(tokenCountBefore2, tokenRepo.count(), "No new tokens should be saved on failure");
 
        // 4. Test that registration fails when token is missing for non-owner roles - FIXED PARAMETER ORDER
        // Test for ADMIN role
@@ -512,11 +671,30 @@ public class AuthManagementControllerTest {
            null                                 // roleToken
        );
 
+       // Count repositories before attempting operation
+       long userCountBefore3 = userRepo.count();
+       long tokenUserLinkCountBefore3 = tokenUserLinkRepo.count();
+       long companyUrlDataCountBefore3 = companyUrlDataRepo.count();
+       long counterCountBefore3 = counterRepo.count();
+       long companyCountBefore3 = companyRepo.count();
+       long topLevelDomainCountBefore3 = topLevelDomainRepo.count();
+       long tokenCountBefore3 = tokenRepo.count();
+
        assertThrows(
            TokenAndUserExceptions.MissingTokenException.class,
            () -> authCon.registerUser(missingTokenAdminRequest),
            "Should fail when token is missing for ADMIN role"
        );
+       
+       // Verify no objects were saved
+       assertEquals(userCountBefore3, userRepo.count(), "No new users should be saved on failure");
+       assertEquals(tokenUserLinkCountBefore3, tokenUserLinkRepo.count(), 
+                   "No new token-user links should be saved on failure");
+       assertEquals(companyUrlDataCountBefore3, companyUrlDataRepo.count(), "No new company url data should be saved on failure");  
+       assertEquals(counterCountBefore3, counterRepo.count(), "No new counters should be saved on failure");
+       assertEquals(companyCountBefore3, companyRepo.count(), "No new companies should be saved on failure");
+       assertEquals(topLevelDomainCountBefore3, topLevelDomainRepo.count(), "No new top level domains should be saved on failure");
+       assertEquals(tokenCountBefore3, tokenRepo.count(), "No new tokens should be saved on failure");
 
        // Test for EMPLOYEE role - FIXED PARAMETER ORDER
        UserRegisterRequest missingTokenEmployeeRequest = new UserRegisterRequest(
@@ -532,11 +710,30 @@ public class AuthManagementControllerTest {
            null
        );
 
+       // Count repositories before attempting operation
+       long userCountBefore4 = userRepo.count();
+       long tokenUserLinkCountBefore4 = tokenUserLinkRepo.count();
+       long companyUrlDataCountBefore4 = companyUrlDataRepo.count();
+       long counterCountBefore4 = counterRepo.count();
+       long companyCountBefore4 = companyRepo.count();
+       long topLevelDomainCountBefore4 = topLevelDomainRepo.count();
+       long tokenCountBefore4 = tokenRepo.count();
+
        assertThrows(
            TokenAndUserExceptions.MissingTokenException.class,
            () -> authCon.registerUser(missingTokenEmployeeRequest),
            "Should fail when token is missing for EMPLOYEE role"
        );
+       
+       // Verify no objects were saved
+       assertEquals(userCountBefore4, userRepo.count(), "No new users should be saved on failure");
+       assertEquals(tokenUserLinkCountBefore4, tokenUserLinkRepo.count(),
+                   "No new token-user links should be saved on failure");
+       assertEquals(companyUrlDataCountBefore4, companyUrlDataRepo.count(), "No new company url data should be saved on failure");  
+       assertEquals(counterCountBefore4, counterRepo.count(), "No new counters should be saved on failure");
+       assertEquals(companyCountBefore4, companyRepo.count(), "No new companies should be saved on failure");
+       assertEquals(topLevelDomainCountBefore4, topLevelDomainRepo.count(), "No new top level domains should be saved on failure");
+       assertEquals(tokenCountBefore4, tokenRepo.count(), "No new tokens should be saved on failure");
     }
 
     @Test
@@ -568,19 +765,39 @@ public class AuthManagementControllerTest {
            "admin_token_string"             // roleToken
         );
 
+       // Count repositories before attempting operation
+       long userCountBefore = userRepo.count();
+       long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+       long companyUrlDataCountBefore = companyUrlDataRepo.count();
+       long counterCountBefore = counterRepo.count();
+       long companyCountBefore = companyRepo.count();
+       long topLevelDomainCountBefore = topLevelDomainRepo.count();
+       long tokenCountBefore = tokenRepo.count();
+
+
        assertThrows(
            CompanyAndUserExceptions.UserCompanyMisalignedException.class,
            () -> authCon.registerUser(mismatchedEmailRequest),
            "Should fail when email domain doesn't match company domain"
        );
+       
+       // Verify no objects were saved
+       assertEquals(userCountBefore, userRepo.count(), "No new users should be saved on failure");
+       assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), 
+                   "No new token-user links should be saved on failure");
+       assertEquals(companyUrlDataCountBefore, companyUrlDataRepo.count(), "No new company url data should be saved on failure");  
+       assertEquals(counterCountBefore, counterRepo.count(), "No new counters should be saved on failure");
+       assertEquals(companyCountBefore, companyRepo.count(), "No new companies should be saved on failure");
+       assertEquals(topLevelDomainCountBefore, topLevelDomainRepo.count(), "No new top level domains should be saved on failure");
+       assertEquals(tokenCountBefore, tokenRepo.count(), "No new tokens should be saved on failure");
 
        // 3. Test unverified company constraint
        // since registering an owner requires passing the email of the owner, we need to delete all users
        // to avoid the AlreadyExistingUserException
+        //
+       this.userRepo.deleteAll();
 
-        this.userRepo.deleteAll();
-
-        for (Company company : companyRepo.findAll()) {
+       for (Company company : companyRepo.findAll()) {
             // Skip verified companies
             if (company.getVerified()) {
                 continue;
@@ -608,11 +825,30 @@ public class AuthManagementControllerTest {
                         "token_string_" + company.getId()      // roleToken
                     );
 
+                    // Count repositories before attempting operation
+                    long userCountBefore2 = userRepo.count();
+                    long tokenUserLinkCountBefore2 = tokenUserLinkRepo.count();
+                    long companyUrlDataCountBefore2 = companyUrlDataRepo.count();
+                    long counterCountBefore2 = counterRepo.count();
+                    long companyCountBefore2 = companyRepo.count();
+                    long topLevelDomainCountBefore2 = topLevelDomainRepo.count();
+                    long tokenCountBefore2 = tokenRepo.count();
+
                     assertThrows(
                         CompanyAndUserExceptions.UserBeforeOwnerException.class,
                         () -> authCon.registerUser(unverifiedCompanyRequest),
                         "Should fail when company is not verified yet"
                     );
+
+                    // Verify no objects were saved
+                    assertEquals(userCountBefore2, userRepo.count(), "No new users should be saved on failure");
+                    assertEquals(tokenUserLinkCountBefore2, tokenUserLinkRepo.count(),
+                                "No new token-user links should be saved on failure");
+                    assertEquals(companyUrlDataCountBefore2, companyUrlDataRepo.count(), "No new company url data should be saved on failure");  
+                    assertEquals(counterCountBefore2, counterRepo.count(), "No new counters should be saved on failure");
+                    assertEquals(companyCountBefore2, companyRepo.count(), "No new companies should be saved on failure");
+                    assertEquals(topLevelDomainCountBefore2, topLevelDomainRepo.count(), "No new top level domains should be saved on failure");
+                    assertEquals(tokenCountBefore2, tokenRepo.count(), "No new tokens should be saved on failure");
             }
         }
     }
@@ -620,6 +856,7 @@ public class AuthManagementControllerTest {
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     void testNonOwnerTokenConstraints() {
+        setUp();
         // when a non-owner is registered his
         // 1. token must match with one of the tokens in the company + Role
         // cannot be deprecated or activated
@@ -663,11 +900,29 @@ public class AuthManagementControllerTest {
             "valid_admin_token_string"
         );
 
+
+        long userCountBefore = userRepo.count();
+        long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+        long companyUrlDataCountBefore = companyUrlDataRepo.count();
+        long counterCountBefore = counterRepo.count();
+        long companyCountBefore = companyRepo.count();
+        long topLevelDomainCountBefore = topLevelDomainRepo.count();
+        long tokenCountBefore = tokenRepo.count();
+
         // This should succeed
         assertDoesNotThrow(
             () -> authCon.registerUser(validAdminRequest),
             "Should successfully register admin user with valid token"
         );
+
+        assertEquals(userCountBefore + 1, userRepo.count(), "No new users should be saved on failure");
+        assertEquals(tokenUserLinkCountBefore + 1, tokenUserLinkRepo.count(), 
+                    "No new token-user links should be saved on failure");
+        assertEquals(companyUrlDataCountBefore, companyUrlDataRepo.count(), "No new company url data should be saved on failure");  
+        assertEquals(counterCountBefore, counterRepo.count(), "No new counters should be saved on failure");
+        assertEquals(companyCountBefore, companyRepo.count(), "No new companies should be saved on failure");
+        assertEquals(topLevelDomainCountBefore, topLevelDomainRepo.count(), "No new top level domains should be saved on failure");
+        assertEquals(tokenCountBefore, tokenRepo.count(), "No new tokens should be saved on failure");
 
         // 2. Test mismatched role and token (admin token but employee role)
         AppToken adminTokenForEmployeeTest = new AppToken(
@@ -677,6 +932,7 @@ public class AuthManagementControllerTest {
             RoleManager.getRole(RoleManager.ADMIN_ROLE)
         );
         tokenRepo.save(adminTokenForEmployeeTest);
+
 
         UserRegisterRequest mismatchedRoleRequest = new UserRegisterRequest(
                 "employee@github.com",
@@ -690,11 +946,30 @@ public class AuthManagementControllerTest {
                 "admin_token_employee_string"
         );
 
+        // Count repositories before attempting operation
+        long userCountBefore1 = userRepo.count();
+        long tokenUserLinkCountBefore1 = tokenUserLinkRepo.count();
+        long companyUrlDataCountBefore1 = companyUrlDataRepo.count();
+        long counterCountBefore1 = counterRepo.count();
+        long companyCountBefore1 = companyRepo.count();
+        long topLevelDomainCountBefore1 = topLevelDomainRepo.count();
+        long tokenCountBefore1 = tokenRepo.count();
+
         assertThrows(
             TokenAndUserExceptions.TokenNotFoundForRoleException.class,
             () -> authCon.registerUser(mismatchedRoleRequest),
             "Should fail when token role doesn't match requested role"
         );
+        
+        // Verify no objects were saved
+        assertEquals(userCountBefore1, userRepo.count(), "No new users should be saved on failure");
+        assertEquals(tokenUserLinkCountBefore1, tokenUserLinkRepo.count(), 
+                    "No new token-user links should be saved on failure");
+        assertEquals(companyUrlDataCountBefore1, companyUrlDataRepo.count(), "No new company url data should be saved on failure");  
+        assertEquals(counterCountBefore1, counterRepo.count(), "No new counters should be saved on failure");
+        assertEquals(companyCountBefore1, companyRepo.count(), "No new companies should be saved on failure");
+        assertEquals(topLevelDomainCountBefore1, topLevelDomainRepo.count(), "No new top level domains should be saved on failure");
+        assertEquals(tokenCountBefore1, tokenRepo.count(), "No new tokens should be saved on failure");
 
         // 3. Test with activated token
         AppToken activatedToken = new AppToken(
@@ -722,11 +997,30 @@ public class AuthManagementControllerTest {
             "activated_token_string"
         );
 
+        // Count repositories before attempting operation
+        long userCountBefore2 = userRepo.count();
+        long tokenUserLinkCountBefore2 = tokenUserLinkRepo.count();
+        long companyUrlDataCountBefore2 = companyUrlDataRepo.count();
+        long counterCountBefore2 = counterRepo.count();
+        long companyCountBefore2 = companyRepo.count();
+        long topLevelDomainCountBefore2 = topLevelDomainRepo.count();
+        long tokenCountBefore2 = tokenRepo.count();
+
         assertThrows(
             TokenAndUserExceptions.TokenAlreadyUsedException.class,
             () -> authCon.registerUser(activatedTokenRequest),
             "Should fail when token is already activated"
         );
+        
+        // Verify no objects were saved
+        assertEquals(userCountBefore2, userRepo.count(), "No new users should be saved on failure");
+        assertEquals(tokenUserLinkCountBefore2, tokenUserLinkRepo.count(),
+                    "No new token-user links should be saved on failure");
+        assertEquals(companyUrlDataCountBefore2, companyUrlDataRepo.count(), "No new company url data should be saved on failure");     
+        assertEquals(counterCountBefore2, counterRepo.count(), "No new counters should be saved on failure");
+        assertEquals(companyCountBefore2, companyRepo.count(), "No new companies should be saved on failure");
+        assertEquals(topLevelDomainCountBefore2, topLevelDomainRepo.count(), "No new top level domains should be saved on failure");
+        assertEquals(tokenCountBefore2, tokenRepo.count(), "No new tokens should be saved on failure");
 
         // 4. Test with expired/deprecated token
         AppToken expiredToken = new AppToken(
@@ -751,11 +1045,30 @@ public class AuthManagementControllerTest {
                 "expired_token_string"
         );
 
+        // Count repositories before attempting operation
+        long userCountBefore3 = userRepo.count();
+        long tokenUserLinkCountBefore3 = tokenUserLinkRepo.count();
+        long companyUrlDataCountBefore3 = companyUrlDataRepo.count();
+        long counterCountBefore3 = counterRepo.count();
+        long companyCountBefore3 = companyRepo.count();
+        long topLevelDomainCountBefore3 = topLevelDomainRepo.count();
+        long tokenCountBefore3 = tokenRepo.count();
+
         assertThrows(
             TokenAndUserExceptions.TokenExpiredException.class,
             () -> authCon.registerUser(expiredTokenRequest),
             "Should fail when token is expired"
         );
+        
+        // Verify no objects were saved
+        assertEquals(userCountBefore3, userRepo.count(), "No new users should be saved on failure");
+        assertEquals(tokenUserLinkCountBefore3, tokenUserLinkRepo.count(),
+                    "No new token-user links should be saved on failure");
+        assertEquals(companyUrlDataCountBefore3, companyUrlDataRepo.count(), "No new company url data should be saved on failure");  
+        assertEquals(counterCountBefore3, counterRepo.count(), "No new counters should be saved on failure");
+        assertEquals(companyCountBefore3, companyRepo.count(), "No new companies should be saved on failure");
+        assertEquals(topLevelDomainCountBefore3, topLevelDomainRepo.count(), "No new top level domains should be saved on failure");
+        assertEquals(tokenCountBefore3, tokenRepo.count(), "No new tokens should be saved on failure");
 
         // 5. Test with token already linked to a user
         AppToken linkedToken = new AppToken(
@@ -801,16 +1114,37 @@ public class AuthManagementControllerTest {
             "linked_token_string"
         );
 
+        // Count repositories before attempting operation
+        long userCountBefore4 = userRepo.count();
+        long tokenUserLinkCountBefore4 = tokenUserLinkRepo.count();
+        long companyUrlDataCountBefore4 = companyUrlDataRepo.count();
+        long counterCountBefore4 = counterRepo.count();
+        long companyCountBefore4 = companyRepo.count();
+        long topLevelDomainCountBefore4 = topLevelDomainRepo.count();
+        long tokenCountBefore4 = tokenRepo.count();
+
         assertThrows(
             TokenAndUserExceptions.TokenAlreadyUsedException.class,
             () -> authCon.registerUser(linkedTokenRequest),
             "Should fail when token is already linked to another user"
         );
+        
+        // Verify no objects were saved
+        assertEquals(userCountBefore4, userRepo.count(), "No new users should be saved on failure");
+        assertEquals(tokenUserLinkCountBefore4, tokenUserLinkRepo.count(),
+                    "No new token-user links should be saved on failure");
+        assertEquals(companyUrlDataCountBefore4, companyUrlDataRepo.count(), "No new company url data should be saved on failure");  
+        assertEquals(counterCountBefore4, counterRepo.count(), "No new counters should be saved on failure");
+        assertEquals(companyCountBefore4, companyRepo.count(), "No new companies should be saved on failure");
+        assertEquals(topLevelDomainCountBefore4, topLevelDomainRepo.count(), "No new top level domains should be saved on failure");
+        assertEquals(tokenCountBefore4, tokenRepo.count(), "No new tokens should be saved on failure");
+    
     }
 
     @Test
     void testSuccessfulNonOwnerRegistration() {
-    // 1. Make all companies verified
+        setUp();
+        // 1. Make all companies verified
     for (Company company : companyRepo.findAll()) {
         company.verify();
         companyRepo.save(company);
@@ -824,75 +1158,91 @@ public class AuthManagementControllerTest {
     // Get companies to use in tests
     List<Company> companies = companyRepo.findAll();
 
+    long companyCountBefore = companyRepo.count();
+    long topLevelDomainCountBefore = topLevelDomainRepo.count(); 
+    long companyUrlDataCountBefore = companyUrlDataRepo.count();
+    long counterCountBefore = counterRepo.count();
+
     // Test for each non-owner role
     String[] roles = {RoleManager.ADMIN_ROLE, RoleManager.EMPLOYEE_ROLE};
 
+    int offset = -10;
     for (String role : roles) {
+        offset += 10;
         // Repeat registration test 5 times per role with random data
         for (int i = 0; i < 10; i++) {
-            Company company = companies.get(i % companies.size());
-            String randomSuffix = gen.randomAlphaString(5);
+                Company company = companies.get(i % companies.size());
+                String randomSuffix = gen.randomAlphaString(5);
 
-            // 1. Create token for the role
-            String tokenId = "token_" + role + "_" + randomSuffix;
-            String tokenString = "token_string_" + randomSuffix;
-            String tokenHash = encoder().encode(tokenString);
+                // 1. Create token for the role
+                String tokenId = "token_" + role + "_" + randomSuffix;
+                String tokenString = "token_string_" + randomSuffix;
+                String tokenHash = encoder().encode(tokenString);
 
-            AppToken token = new AppToken(
-                tokenId,
-                tokenHash,
-                company,
-                RoleManager.getRole(role)
-            );
-            tokenRepo.save(token);
+                AppToken token = new AppToken(
+                    tokenId,
+                    tokenHash,
+                    company,
+                    RoleManager.getRole(role)
+                );
+                tokenRepo.save(token);
 
-            // 2. Create registration request
-            String email = role + "_" + randomSuffix + "@" + company.getEmailDomain();
-            String username = role + "_user_" + randomSuffix;
+                // 2. Create registration request
+                String email = role + "_" + randomSuffix + "@" + company.getEmailDomain();
+                String username = role + "_user_" + randomSuffix;
 
-            UserRegisterRequest request = new UserRegisterRequest(
-                    email,
-                    username,
-                    "password123",
-                    "firstName_" + i,
-                    "lastName_" + i,
-                    "middleName_" + i,
-                    company.getId(),
-                    role,
-                tokenString
-            );
+                UserRegisterRequest request = new UserRegisterRequest(
+                        email,
+                        username,
+                        "password123",
+                        "firstName_" + i,
+                        "lastName_" + i,
+                        "middleName_" + i,
+                        company.getId(),
+                        role,
+                    tokenString
+                );
 
-            // 3. Test successful registration (no exception)
-            assertDoesNotThrow(() -> {
-                authCon.registerUser(request);
-            }, "User registration should succeed for " + role + " role");
+                // 3. Test successful registration (no exception)
+                assertDoesNotThrow(() -> {
+                    authCon.registerUser(request);
+                }, "User registration should succeed for " + role + " role");
 
-            // 4. Verify token is now active - using repository method
-            Optional<AppToken> updatedTokenOpt = tokenRepo.findById(tokenId);
-            assertTrue(updatedTokenOpt.isPresent(), "Token should exist after registration");
-            assertEquals(
-                AppToken.TokenState.ACTIVE,
-                updatedTokenOpt.get().getTokenState(),
-                "Token should be active after registration"
-            );
+                // 4. Verify token is now active - using repository method
+                Optional<AppToken> updatedTokenOpt = tokenRepo.findById(tokenId);
+                assertTrue(updatedTokenOpt.isPresent(), "Token should exist after registration");
+                assertEquals(
+                    AppToken.TokenState.ACTIVE,
+                    updatedTokenOpt.get().getTokenState(),
+                    "Token should be active after registration"
+                );
 
-            // 5. Verify user was created - using repository method
-            Optional<AppUser> createdUserOpt = userRepo.findById(email);
-            assertTrue(createdUserOpt.isPresent(), "User should be created in repository");
+                // 5. Verify user was created - using repository method
+                Optional<AppUser> createdUserOpt = userRepo.findById(email);
+                assertTrue(createdUserOpt.isPresent(), "User should be created in repository");
 
-            AppUser createdUser = createdUserOpt.get();
-            assertEquals(username, createdUser.getUsername(), "Username should match request");
-            assertEquals(role, createdUser.getRole().toString().toLowerCase(), "Role should match request");
-            assertEquals(company.getId(), createdUser.getCompany().getId(), "Company should match request");
+                AppUser createdUser = createdUserOpt.get();
+                assertEquals(username, createdUser.getUsername(), "Username should match request");
+                assertEquals(role, createdUser.getRole().toString().toLowerCase(), "Role should match request");
+                assertEquals(company.getId(), createdUser.getCompany().getId(), "Company should match request");
 
-            // 6. Verify token-user link was created - using repository method
-            AppToken updatedToken = updatedTokenOpt.get();
-            List<TokenUserLink> links = tokenUserLinkRepo.findByToken(updatedToken);
-            assertFalse(links.isEmpty(), "Token-user link should be created");
+                // 6. Verify token-user link was created - using repository method
+                AppToken updatedToken = updatedTokenOpt.get();
+                List<TokenUserLink> links = tokenUserLinkRepo.findByToken(updatedToken);
+                assertFalse(links.isEmpty(), "Token-user link should be created");
 
-            // Alternative verification approach
-            Optional<TokenUserLink> linkOpt = tokenUserLinkRepo.findByUserAndToken(createdUser, updatedToken);
-                assertTrue(linkOpt.isPresent(), "Should find token-user link for the specific user and token");
+                // Alternative verification approach
+                Optional<TokenUserLink> linkOpt = tokenUserLinkRepo.findByUserAndToken(createdUser, updatedToken);
+                    assertTrue(linkOpt.isPresent(), "Should find token-user link for the specific user and token");
+
+                // test the counts
+                assertEquals(offset + i + 1, userRepo.count(), "No new users should be saved on failure");
+                assertEquals(offset + i + 1, tokenUserLinkRepo.count(), "No new token-user links should be saved on failure");
+
+                assertEquals(companyUrlDataCountBefore, companyUrlDataRepo.count(), "register user does not save company url data");
+                assertEquals(counterCountBefore, counterRepo.count(), "register user does not save counters");
+                assertEquals(companyCountBefore, companyRepo.count(), "register user does not save companies");
+                assertEquals(topLevelDomainCountBefore, topLevelDomainRepo.count(), "register user does not save top level domains");
             }
         }
     }
@@ -916,11 +1266,32 @@ public class AuthManagementControllerTest {
                 null                                  // Owner role doesn't need token
             );
             
+            // Count repositories before attempting operation
+            long userCountBefore = userRepo.count();
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+            long companyUrlDataCountBefore = companyUrlDataRepo.count();
+            long counterCountBefore = counterRepo.count();
+            long companyCountBefore = companyRepo.count();
+            long topLevelDomainCountBefore = topLevelDomainRepo.count();
+
+            
+            // test the counts
             assertThrows(
                 CompanyAndUserExceptions.UserCompanyMisalignedException.class,
                 () -> authCon.registerUser(mismatchedOwnerRequest),
                 "Should fail when email doesn't match company owner email"
             );
+            
+            // Verify no objects were saved
+            assertEquals(userCountBefore, userRepo.count(), "No new users should be saved on failure");
+            assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), 
+                        "No new token-user links should be saved on failure");
+
+            assertEquals(companyUrlDataCountBefore, companyUrlDataRepo.count(), "register user does not save company url data");
+            assertEquals(counterCountBefore, counterRepo.count(), "register user does not save counters");
+            assertEquals(companyCountBefore, companyRepo.count(), "register user does not save companies");
+            assertEquals(topLevelDomainCountBefore, topLevelDomainRepo.count(), "register user does not save top level domains");
+            
         }
         
         // Part 2: Test company verification constraint
@@ -955,25 +1326,36 @@ public class AuthManagementControllerTest {
                 null // Owner role doesn't need token
             );
             
+            // Count repositories before attempting operation
+            long userCountBefore = userRepo.count();
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+            long companyUrlDataCountBefore = companyUrlDataRepo.count();
+            long counterCountBefore = counterRepo.count();
+            long companyCountBefore = companyRepo.count();
+            long topLevelDomainCountBefore = topLevelDomainRepo.count();
+            long tokenCountBefore = tokenRepo.count();
+
             assertThrows(
                 CompanyAndUserExceptions.MultipleOwnersException.class,
                 () -> authCon.registerUser(verifiedCompanyOwnerRequest),
                 "Should fail when company is already verified (has an owner)"
             );
+
+            // test the counts
+            assertEquals(userCountBefore, userRepo.count(), "No new users should be saved on failure");
+            assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), "No new token-user links should be saved on failure");
+
+            assertEquals(companyUrlDataCountBefore, companyUrlDataRepo.count(), "register user does not save company url data");
+            assertEquals(counterCountBefore, counterRepo.count(), "register user does not save counters");
+            assertEquals(companyCountBefore, companyRepo.count(), "register user does not save companies");
+            assertEquals(topLevelDomainCountBefore, topLevelDomainRepo.count(), "register user does not save top level domains");   
+            assertEquals(tokenCountBefore, tokenRepo.count(), "register user does not save tokens");
         }
     }
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
-    void testSuccessfulOwnerRegistration() {
-        // Clear existing data
-        userRepo.deleteAll();
-        tokenRepo.deleteAll();
-        tokenUserLinkRepo.deleteAll();
-        
-        // Remove all existing companies to avoid conflicts
-        companyRepo.deleteAll();
-        
+    void testSuccessfulOwnerRegistration() {        
         // Test successful owner registration 10 times with different companies
         for (int i = 0; i < 10; i++) {
             String randomSuffix = gen.randomAlphaString(5);
@@ -1068,10 +1450,23 @@ public class AuthManagementControllerTest {
             List<TokenUserLink> links = tokenUserLinkRepo.findByToken(ownerToken);
             assertTrue(links.isEmpty(), 
                       "There should be no token-user link for owner token");
+        
+            // test the counts
+
+            assertEquals(i + 1, companyRepo.count(), "track companies count correctly");
+            assertEquals(i + 1, topLevelDomainRepo.count(), "track top level domains count correctly");
+            assertEquals(i + 1, companyUrlDataRepo.count(), "track company url data count correctly");
+
+            assertEquals(i + 1, userRepo.count(), "track users count correctly");
+            assertEquals(i + 1, tokenRepo.count(), "track tokens count correctly");
+
+            assertEquals(0, tokenUserLinkRepo.count(), "No token-user links should be created without company verification");
+            assertEquals(1, counterRepo.count(), "create only one counter: for the company data");
         }
     }
 
-    @Test 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    @Test
     void testVerifyCompanyInitialConstraints() {
         // 1. Test with a non-existing company
         for (int i = 0; i < 10; i++) {
@@ -1082,11 +1477,18 @@ public class AuthManagementControllerTest {
                 "owner@example.com"
             );
         
+            // make sure the tokenUserLink count does not increase
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+
+            
             assertThrows(
                 CompanyExceptions.NoCompanyException.class,
                 () -> authCon.verifyCompany(nonExistentCompanyRequest),
                 "Should fail when company ID doesn't exist"
             );
+            
+            assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), 
+                        "No new token-user links should be saved on failure");
         }
         
         // 2. Test with email different from company owner email
@@ -1114,11 +1516,28 @@ public class AuthManagementControllerTest {
                 mismatchedEmail // Different from company.getOwnerEmail()
             );
 
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+
             assertThrows(
                 CompanyAndUserExceptions.UserCompanyMisalignedException.class,
                 () -> authCon.verifyCompany(mismatchedEmailRequest),
                 "Should fail when email doesn't match company owner email"
             );
+            
+            // Verify no objects were saved
+            assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), 
+                        "No new token-user links should be saved on failure");
+            
+            Company company = companyRepo.findById(companyId).get();
+            // assert all fields are the same
+            assertEquals(newCompany.getId(), company.getId(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getCompanyName(), company.getCompanyName(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getCompanyAddress(), company.getCompanyAddress(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getOwnerEmail(), company.getOwnerEmail(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getEmailDomain(), company.getEmailDomain(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getSubscription(), company.getSubscription(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getVerified(), company.getVerified(), "unsuccessful verification should not change the company state"); 
+
         }
                 
         // 3. Test with already verified company
@@ -1145,11 +1564,28 @@ public class AuthManagementControllerTest {
                 ownerEmail
             );
             
+            // Count repositories before attempting operation
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+
             assertThrows(
                 CompanyExceptions.CompanyAlreadyVerifiedException.class,
                 () -> authCon.verifyCompany(verifiedCompanyRequest),
                 "Should fail when company is already verified"
             );
+            
+            // Verify no objects were saved
+            assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), 
+                        "No new token-user links should be saved on failure"); 
+
+            Company company = companyRepo.findById(companyId).get();
+            // assert all fields are the same
+            assertEquals(newCompany.getId(), company.getId(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getCompanyName(), company.getCompanyName(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getCompanyAddress(), company.getCompanyAddress(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getOwnerEmail(), company.getOwnerEmail(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getEmailDomain(), company.getEmailDomain(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getSubscription(), company.getSubscription(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getVerified(), company.getVerified(), "unsuccessful verification should not change the company state");
         }
 
         // 4. Test with owner email that doesn't exist in the user repository
@@ -1178,16 +1614,34 @@ public class AuthManagementControllerTest {
                 ownerEmail
             );
             
+            // Count repositories before attempting operation
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+
             // Test that verification fails because the user doesn't exist
             assertThrows(
                 CompanyAndUserExceptions.UserBeforeOwnerException.class,
                 () -> authCon.verifyCompany(missingUserRequest),
                 "Should fail when owner hasn't registered as a user"
             );
+            
+            // Verify no objects were saved
+            assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), 
+                        "No new token-user links should be saved on failure");
+
+            Company company = companyRepo.findById(companyId).get();
+            // assert all fields are the same
+            assertEquals(newCompany.getId(), company.getId(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getCompanyName(), company.getCompanyName(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getCompanyAddress(), company.getCompanyAddress(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getOwnerEmail(), company.getOwnerEmail(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getEmailDomain(), company.getEmailDomain(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getSubscription(), company.getSubscription(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getVerified(), company.getVerified(), "unsuccessful verification should not change the company state");
         }
     }
 
 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     void testValidateOwnerToken() {
         for (int i = 0; i < 10; i++) {
@@ -1227,83 +1681,28 @@ public class AuthManagementControllerTest {
                 ownerEmail
             );
 
+            // Count repositories before attempting operation
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+
             assertThrows(
                 TokenAndUserExceptions.MissingTokenException.class,
                 () -> authCon.verifyCompany(companyVerifyRequest),
                 "Should fail when token doesn't exist"
             );
+            
+            assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), 
+                        "No new token-user links should be saved on failure");
 
-            // create multiple tokens for the company
-            AppToken ownerToken = new AppToken(
-                    "token_id",
-                    this.encoder().encode("token_id"),
-                    newCompany,
-                    RoleManager.getRole(RoleManager.OWNER_ROLE),
-                    null
-            );
+            Company company = companyRepo.findById(companyId).get();
+            // assert all fields are the same
+            assertEquals(newCompany.getId(), company.getId(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getCompanyName(), company.getCompanyName(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getCompanyAddress(), company.getCompanyAddress(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getOwnerEmail(), company.getOwnerEmail(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getEmailDomain(), company.getEmailDomain(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getSubscription(), company.getSubscription(), "unsuccessful verification should not change the company state");
+            assertEquals(newCompany.getVerified(), company.getVerified(), "unsuccessful verification should not change the company state");
 
-            AppToken ownerToken2 = new AppToken(
-                "token_id2",
-                this.encoder().encode("token_id2"),
-                newCompany,
-                RoleManager.getRole(RoleManager.OWNER_ROLE),
-                null
-            );
-
-            tokenRepo.save(ownerToken);
-            tokenRepo.save(ownerToken2);
-
-            // test the validateOwnerToken method
-            assertThrows(
-                CompanyAndUserExceptions.MultipleOwnersException.class,
-                () -> authCon.verifyCompany(companyVerifyRequest),
-                "Should fail when multiple tokens exist for the company"
-            );
-
-            // remove the second token
-            tokenRepo.delete(ownerToken2);
-
-            // test the validateOwnerToken method
-            // should fail because the token does not match
-            assertThrows(
-                TokenAndUserExceptions.InvalidTokenException.class,
-                () -> authCon.verifyCompany(companyVerifyRequest),
-                "Should fail when token does not match"
-            );  
-
-            // delete the token
-            tokenRepo.delete(ownerToken);
-
-            // create a new token with the same token id
-            AppToken ownerToken3 = new AppToken(
-                "some_id",
-                this.encoder().encode(companyVerifyRequest.token()),
-                newCompany,
-                RoleManager.getRole(RoleManager.OWNER_ROLE),
-                null
-            ); 
-
-            // activate the token
-            ownerToken3.activate();
-            tokenRepo.save(ownerToken3);
-
-            // test the validateOwnerToken method
-            assertThrows(
-                TokenAndUserExceptions.TokenAlreadyUsedException.class,
-                () -> authCon.verifyCompany(companyVerifyRequest),
-                "Should succeed when token is active"
-            );
-
-            // token expired
-            ownerToken3.expire();
-            tokenRepo.save(ownerToken3);
-
-            // test the validateOwnerToken method
-            assertThrows(
-                TokenAndUserExceptions.TokenExpiredException.class, 
-                () -> authCon.verifyCompany(companyVerifyRequest),
-                "Should fail when token is expired"
-            );            
         }   
     }
 
@@ -1391,6 +1790,7 @@ public class AuthManagementControllerTest {
             "Link should be associated with the correct token");
         }   
     }
+
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
