@@ -122,8 +122,13 @@ public class UrlProcessor {
                     int minParameterLength) {
         
         // make sure the prefix ends with a "/" character
-        if (!encodedUrlPrefix.endsWith("/") && !encodedUrlPrefix.isEmpty()) {
+        if (!encodedUrlPrefix.isEmpty() && !encodedUrlPrefix.endsWith("/")) {
             throw new IllegalArgumentException("The prefix must be either empty or ends with a '/' character");
+        }
+
+        // make sure the prefix is not itself a multi-segment path
+        if (encodedUrlPrefix.indexOf("/") != encodedUrlPrefix.length() - 1) {
+            throw new IllegalArgumentException("The prefix cannot have multiple path segments. The Only \\/ allowed is at the end of the prefix");
         }
 
         // 1. Breakdown the urlString into a list of UrlLevelEntity
@@ -142,7 +147,7 @@ public class UrlProcessor {
         // append the protocol
         encodedUrl.append(protocol);
 
-        // append the preifx
+        // append the prefix
         encodedUrl.append(encodedUrlPrefix);
 
         // Use the provided hash for the domain (second element)
@@ -302,7 +307,7 @@ public class UrlProcessor {
         List<UrlLevelEntity> levels = breakdown(encodedUrl);
         
         // Need at least protocol and domain to proceed
-        if (levels.size() < 3) {
+        if (levels.size() < 2 + (encodedUrlPrefix.isEmpty() ? 0 : 1)) {
             throw new IllegalArgumentException("Invalid encoded URL format");
         }
         
@@ -310,34 +315,39 @@ public class UrlProcessor {
         String protocol = levels.getFirst().levelName();
 
         // extract the encodedUrlPrefix as it is not encoded
-        String prefixToCompare = encodedUrlPrefix.charAt(encodedUrlPrefix.length() - 1) == '/' ? encodedUrlPrefix.substring(0, encodedUrlPrefix.length() - 1) : encodedUrlPrefix;
+        String prefixToCompare = "";
 
-        if (!levels.get(1).levelName().equals(prefixToCompare)) {
-            throw new IllegalArgumentException("The prefix extracted from the encded url does not match the expected prefix");
+        if (!encodedUrlPrefix.isEmpty()) {
+            prefixToCompare = encodedUrlPrefix.charAt(encodedUrlPrefix.length() - 1) == '/' ? encodedUrlPrefix.substring(0, encodedUrlPrefix.length() - 1) : encodedUrlPrefix;
+
+            if (!levels.get(1).levelName().equals(prefixToCompare)) {
+                throw new IllegalArgumentException("The prefix extracted from the ended url does not match the expected prefix");
+            }
         }
-        
+
         // Start building original URL
         StringBuilder originalUrl = new StringBuilder(protocol);
         originalUrl.append(originalTopLevelDomain);
 
         // make sure not to debug the url encode prefix
+        int defaultIndex = 2 + (encodedUrlPrefix.isEmpty() ? 0 : 1);
 
         // Process remaining path segments: skip protocol, prefix, domain
-        for (int i = 3; i < levels.size(); i++) {
+        for (int i = defaultIndex; i < levels.size(); i++) {
             UrlLevelEntity currentLevel = levels.get(i);
-            int segmentIndex = i - 3; // Adjust index to match decodedData
+            int segmentIndex = i - defaultIndex; // Adjust index to match decodedData
             
             // Add path separator
             originalUrl.append("/");
             
             if (segmentIndex >= decodedData.size()) {
-                throw new IllegalArgumentException("Either Inconsistent state or unvalid encoded url");
+                throw new IllegalArgumentException("Either Inconsistent state or invalid encoded url");
             }
 
             // We need to look up the original value for each segment
             Map<String, String> currentDecodedMap = decodedData.get(segmentIndex);
                 
-            // the exact type of the segment path does not matter (since the encoding is not meant to be human readable)
+            // the exact type of the segment path does not matter (since the encoding is not meant to be human-readable)
             String segmentPath = currentLevel.levelName() != null ? currentLevel.levelName() : currentLevel.pathVariable();
 
             originalUrl.append(currentDecodedMap.getOrDefault(segmentPath, segmentPath));
@@ -368,5 +378,54 @@ public class UrlProcessor {
         return originalUrl.toString();
     }
 
+    public String buildUrlFromUrlLevels(List<UrlLevelEntity> urlLevels) {
+        if (urlLevels.size() < 2) {
+            throw new IllegalArgumentException("Invalid URL structure: missing protocol or domain");
+        }
+        
+        // 1. extract the protocol
+        String protocol = urlLevels.getFirst().levelName();
+
+        // 2. extract the top level domain
+        String topLevelDomain = urlLevels.get(1).levelName();
+        
+        // Start building the URL with protocol and domain
+        StringBuilder urlBuilder = new StringBuilder(protocol);
+        urlBuilder.append(topLevelDomain);
+        
+        // 3. Process all remaining path segments (starting from index 2)
+        for (int i = 2; i < urlLevels.size(); i++) {
+            UrlLevelEntity level = urlLevels.get(i);
+            
+            // Add path separator
+            urlBuilder.append("/");
+            
+            // Add either level name or path variable (one of them should be non-null)
+            if (level.levelName() != null) {
+                urlBuilder.append(level.levelName());
+            } else if (level.pathVariable() != null) {
+                urlBuilder.append(level.pathVariable());
+            }
+            
+            // Add query parameters if present
+            if (level.queryParamNames() != null && !level.queryParamNames().isEmpty()) {
+                urlBuilder.append("?");
+                
+                for (int j = 0; j < level.queryParamNames().size(); j++) {
+                    // Add parameter separator if not the first parameter
+                    if (j > 0) {
+                        urlBuilder.append("&");
+                    }
+                    
+                    // Add parameter name and value
+                    urlBuilder.append(level.queryParamNames().get(j));
+                    urlBuilder.append("=");
+                    urlBuilder.append(level.queryParamValues().get(j));
+                }
+            }
+        }
+        
+        return urlBuilder.toString();
+    }
 
 }       

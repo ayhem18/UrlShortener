@@ -30,6 +30,7 @@ import org.user.repositories.UserRepository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,19 +79,10 @@ public class UrlController {
     }
 
 
-    @PostMapping("/api/url/encode/{url}")
-    @SuppressWarnings({"OptionalGetWithoutIsPresent"})
-    public ResponseEntity<String> encodeUrl(@PathVariable String url, @AuthenticationPrincipal UserDetails currentUserDetails) throws JsonProcessingException {
-        // 1. Validate the URL using Apache Commons Validator
-        if (!urlValidator.isValid(url)) {
-            throw new UrlExceptions.InvalidUrlException("Invalid URL");
-        }
-
-        // the fact that user is authenticated guarantees that the user exists (get does not return null)
-        AppUser currentUser = userRepository.findByUsername(currentUserDetails.getUsername()).get();
-        
-        // 2. extract the user information 
-        Company userCompany = currentUser.getCompany();
+    //////////////////////////////////////// Methods for the encode/url endpoint ////////////////////////////////////////   
+    
+    private Company verifyDailyLimit(AppUser user) {
+        Company userCompany = user.getCompany();
         
         Subscription sub = userCompany.getSubscription();
 
@@ -99,25 +91,29 @@ public class UrlController {
         if (userDailyLimit != null) {
             LocalDateTime atStartOfDay = LocalDateTime.from(LocalDate.now().atStartOfDay());
             
-            int todayCount = this.urlEncodingRepo.findByUserAndUrlEncodingTimeAfter(currentUser, atStartOfDay).size(); 
+            int todayCount = this.urlEncodingRepo.findByUserAndUrlEncodingTimeAfter(user, atStartOfDay).size(); 
 
             if (todayCount >= userDailyLimit) {
                 throw new UrlExceptions.DailyLimitExceededException("The user's current subscription encoding daily limit is hit: " + userDailyLimit);
             }
         }
 
+        return userCompany;
+    }
+
+
+    private Map.Entry<String, String> validateUrlCompanyConstraints(String url, Company userCompany) {
         // at this point, the user has not hit the daily limit
 
-        // 3. check whether the user is passing a url matching the user's company top level domain 
-
+        // break down the url into path segments
         List<UrlLevelEntity> urlLevels = this.urlProcessor.breakdown(url);
 
+        // check if the url matches the user's company top level domain
         String urlTopLevelDomain = urlLevels.get(1).levelName();
 
         if (!urlTopLevelDomain.startsWith("www.")) {
             urlTopLevelDomain = "www." + urlTopLevelDomain;
         }
-
 
         List<TopLevelDomain> companyDomains = this.topLevelDomainRepo.findByCompany(userCompany);
 
@@ -137,7 +133,7 @@ public class UrlController {
                 }
 
                 else if (d.getDomainState() == TopLevelDomain.DomainState.INACTIVE) {
-                    urlDomainPossibleWarning = "The top level domain is currently inactive. It might get deprecated in the future. The url was modified to use the activte domain";                    
+                    urlDomainPossibleWarning = "The top level domain is currently inactive. It might get deprecated in the future. The url was modified to use the active domain";                    
                 }
                 urlMatch = true;
             }
@@ -147,12 +143,43 @@ public class UrlController {
             }
         }
 
-        urlLevels.set(1, new UrlLevelEntity(companyActivateLevelDomain, null, null, null));
-
         if (!urlMatch) {
             throw new UrlExceptions.InvalidTopLevelDomainException("The Url does not match any of the user's company top level domains (active or inactive)");
         }
+
+        // make sure to work only with the active top level domain
+        urlLevels.set(1, new UrlLevelEntity(companyActivateLevelDomain, null, null, null));
+
+
+        // create a map entry to return the url level entity and the warning
+        return new AbstractMap.SimpleEntry<>(urlLevels.get(1), urlDomainPossibleWarning);
+    }
+
+
+
+    @GetMapping("/api/url/encode/{url}")
+    @SuppressWarnings({"OptionalGetWithoutIsPresent"})
+    public ResponseEntity<String> encodeUrl(@PathVariable String url, @AuthenticationPrincipal UserDetails currentUserDetails) throws JsonProcessingException {
+        // 1. Validate the URL using Apache Commons Validator
+        if (!urlValidator.isValid(url)) {
+            throw new UrlExceptions.InvalidUrlException("Invalid URL");
+        }
+
+        // the fact that user is authenticated guarantees that the user exists (get does not return null)
+        AppUser currentUser = userRepository.findByUsername(currentUserDetails.getUsername()).get();
         
+        Company userCompany = this.verifyDailyLimit(currentUser); 
+
+        Subscription sub = userCompany.getSubscription();
+
+
+        // 3. check whether the user is passing a url matching the user's company top level domain 
+        
+        Map.Entry<UrlLevelEntity, String> urlLevelEntity = this.validateUrlCompanyConstraints(url, userCompany);
+
+        UrlLevelEntity urlLevels = urlLevelEntity.getKey();
+        String urlDomainPossibleWarning = urlLevelEntity.getValue();
+
         // at this point, the url is valid and matches the user's company top level domain 
         // time to encode: extract the company url data from the repo
         CompanyUrlData companyUrlData = this.urlDataRepo.findByCompany(userCompany).get();
@@ -176,6 +203,7 @@ public class UrlController {
         else {
             res = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(encodedUrl);
         }
+
 
         return ResponseEntity.ok(res);
     }

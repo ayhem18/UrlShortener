@@ -16,6 +16,8 @@ class UrlUtilitiesTest {
 
     private final UrlProcessor processor = new UrlProcessor(new CustomGenerator());
     
+    /////////////////////// Variable Detection ///////////////////////
+
     @Test
     void testPathVariableDetection() {        
         // Test URLs with various segment patterns
@@ -49,6 +51,7 @@ class UrlUtilitiesTest {
         assertEquals(withSpecialChars, result3.get(3).pathVariable());
     }
 
+    /////////////////////// Url breakdown ///////////////////////
     @Test
     void testUrlDecoderOneLevel() {
         List<String> oneLevelUrls = List.of(
@@ -429,6 +432,8 @@ class UrlUtilitiesTest {
         assertEquals(expected20, processor.breakdown(url20));
     }
 
+
+    /////////////////////// Url encoding ///////////////////////    
     @Test
     void testEncodeMinimumLengthRequirements() {
         CustomGenerator cs = new CustomGenerator();
@@ -593,11 +598,6 @@ class UrlUtilitiesTest {
                 String encodedUrl = processor.encode(url, encodedUrlPrefix, domainHash, encodedData, decodedData, minVarLength, minParamLength);
                 
                 String levelName_id = cs.generateId(i);
-
-                // Verify the encoding follows expected pattern: protocol + prefix + domainHash/generatedId
-                if (!encodedUrlPrefix.endsWith("/")) {
-                    encodedUrlPrefix += "/";
-                }
 
                 String expectedPattern = protocol + encodedUrlPrefix + domainHash + "/" + levelName_id;
                 assertEquals(expectedPattern, encodedUrl, 
@@ -821,7 +821,7 @@ class UrlUtilitiesTest {
         assertEquals(3, paramValueCount, "Should have 3 encoded parameter values");
     }
 
-
+    /////////////////////// Url encoding ///////////////////////    
     private  List<String> getTestUrls() {
         List<String> testUrls = new ArrayList<>();
 
@@ -858,51 +858,131 @@ class UrlUtilitiesTest {
         return testUrls;
     }
 
-
-    @Test
-//    @Disabled
-    public void testEncodeDecode() {
+    // Inner method for testing encoding/decoding with a specific prefix
+    private void testEncodeDecodeWithPrefix(String encodedUrlPrefix) {
         // Setup encoding/decoding data structures
         List<Map<String, String>> encodedData = new ArrayList<>();
         List<Map<String, String>> decodedData = new ArrayList<>();
-        
+
         // Configuration
         String originalDomain = "example.com";
         String domainHash = "sh.rt";
-        String encodedUrlPrefix = "prefix/"; // Add URL prefix
-        
+
         int minVarLength = 8;
         int minParamLength = 6;
-        
+
         // Create a variety of test URLs
         List<String> testUrls = getTestUrls();
 
         // Test each URL
         for (String originalUrl : testUrls) {
-            // 1. Encode the URL with the new prefix parameter
+            // 1. Encode the URL with the provided prefix parameter
             String encodedUrl = processor.encode(originalUrl, encodedUrlPrefix, domainHash, encodedData, decodedData, minVarLength, minParamLength);
-            
+
             // 2. Decode the encoded URL
             String decodedUrl = processor.decode(encodedUrl, originalDomain, encodedUrlPrefix, decodedData);
-            
+
             // 3. Verify the decoded URL matches the original
-            assertEquals(originalUrl, decodedUrl, 
-                "The decoded URL should match the original URL for: " + originalUrl);
+            assertEquals(originalUrl, decodedUrl,
+                    "The decoded URL should match the original URL for: " + originalUrl);
         }
-        
+
         // Additional test: Encode the same URL twice - should reuse encodings
         String repeatUrl = "https://example.com/users/profile?settings=privacy";
-        
+
         // First encoding (with prefix)
         String encoded1 = processor.encode(repeatUrl, encodedUrlPrefix, domainHash, encodedData, decodedData, minVarLength, minParamLength);
-        
+
         // Second encoding - should produce identical result
         String encoded2 = processor.encode(repeatUrl, encodedUrlPrefix, domainHash, encodedData, decodedData, minVarLength, minParamLength);
-        
+
         assertEquals(encoded1, encoded2, "Encoding the same URL twice should produce identical results");
-        
+
         // Decode and verify
         String decoded = processor.decode(encoded1, originalDomain, encodedUrlPrefix, decodedData);
         assertEquals(repeatUrl, decoded, "The decoded URL should match the original after repeated encoding");
+    }
+
+
+    @Test
+    public void testEncodeDecode() {
+        // Test with valid prefixes (all ending with "/")
+        String[] validPrefixes = {
+            "",                  // empty prefix
+            "prefix/",           // standard prefix
+            "custom-prefix/",    // with hyphen
+            "s/"                 // short prefix
+        };
+        
+        for (String prefix : validPrefixes) {
+            testEncodeDecodeWithPrefix(prefix);
+        }
+        
+        // Test with invalid prefixes (not ending with "/")
+        String[] invalidPrefixes = {
+            "nested/path/",      // with multiple segments
+            "prefix",            // missing trailing slash
+            "invalid-prefix",    // with hyphen but no slash
+            "p",                 // single character
+        };
+        
+        for (String invalidPrefix : invalidPrefixes) {
+            Exception exception = assertThrows(IllegalArgumentException.class, 
+                () -> testEncodeDecodeWithPrefix(invalidPrefix),
+                "Should throw IllegalArgumentException for invalid prefix: " + invalidPrefix);
+
+            assertTrue(
+            exception.getMessage().contains("The prefix cannot have multiple path segments. The Only \\/ allowed is at the end of the prefix") ||
+                    exception.getMessage().contains("The prefix must be either empty or ends with a '/' character"),
+                    "Exception message should mention the prefix format requirement");
+        }
+    }
+
+
+    @Test
+    public void testBuildFromUrls() {
+        // Setup encoding/decoding data structures
+        List<Map<String, String>> encodedData = new ArrayList<>();
+        List<Map<String, String>> decodedData = new ArrayList<>();
+        
+        // Configuration
+        String domainHash = "sh.rt";
+        String emptyPrefix = ""; // Use empty prefix for this test
+        
+        int minVarLength = 8;
+        int minParamLength = 6;
+        
+        // Get test URLs
+        List<String> testUrls = getTestUrls();
+        
+        for (String originalUrl : testUrls) {
+            // 1. Encode the URL
+            String encodedUrl = processor.encode(
+                originalUrl, 
+                emptyPrefix, 
+                domainHash, 
+                encodedData, 
+                decodedData, 
+                minVarLength, 
+                minParamLength
+            );
+            
+            // 2. Breakdown the encoded URL
+            List<UrlLevelEntity> urlLevels = processor.breakdown(encodedUrl);
+            
+            // 3. Rebuild URL from levels
+            String rebuiltUrl = processor.buildUrlFromUrlLevels(urlLevels);
+            
+            // 4. Verify the rebuilt URL matches the encoded URL
+            assertEquals(encodedUrl, rebuiltUrl, 
+                "The URL built from UrlLevelEntity list should match the original encoded URL");
+            
+            // Additional verification: we can also test rebuilding the original URL
+            // by breaking it down first
+            List<UrlLevelEntity> originalLevels = processor.breakdown(originalUrl);
+            String rebuiltOriginal = processor.buildUrlFromUrlLevels(originalLevels);
+            assertEquals(originalUrl, rebuiltOriginal,
+                "The URL built from breakdown of original URL should match the original URL");
+        }
     }
 }
