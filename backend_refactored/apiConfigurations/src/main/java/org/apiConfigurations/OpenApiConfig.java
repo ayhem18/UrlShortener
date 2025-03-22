@@ -13,30 +13,39 @@ import java.util.List;
 @Configuration
 public class OpenApiConfig {
 
-    @Bean
-    public OpenAPI myOpenAPI() {
-        Server devServer = new Server();
-        devServer.setUrl("http://localhost:8018");
-        devServer.setDescription("Server URL in Development environment");
+        @Bean
+        public OpenAPI myOpenAPI() {
+                Server devServer = new Server();
+                devServer.setUrl("http://localhost:8018");
+                devServer.setDescription("Server URL in Development environment");
 
-        Contact contact = new Contact();
-        contact.setEmail("contact@yourcompany.com");
-        contact.setName("API Support");
-        // contact.setUrl("https://www.yourcompany.com");
+                Contact contact = new Contact();
+                contact.setEmail("contact@yourcompany.com");
+                contact.setName("API Support");
+                // contact.setUrl("https://www.yourcompany.com");
 
-        License mitLicense = new License()
-                .name("MIT License")
-                .url("https://choosealicense.com/licenses/mit/");
+                License mitLicense = new License()
+                        .name("MIT License")
+                        .url("https://choosealicense.com/licenses/mit/");
 
-        Info info = new Info()
-                .title("Company Management API")
-                .version("1.0")
-                .contact(contact)
-                .description("This API exposes endpoints to manage companies, users, and authentication.")
-                .license(mitLicense);
+                Info info = new Info()
+                        .title("Company Management API")
+                        .version("1.0")
+                        .contact(contact)
+                        .description("This API exposes endpoints to manage companies, users, and authentication.")
+                        .license(mitLicense);
 
-        return new OpenAPI()
-                .info(info)
-                .servers(List.of(devServer));
-    }
+                return new OpenAPI()
+                        .info(info)
+                        .servers(List.of(devServer));
+        }
+        
+//        // If you're using Spring Security, this allows Swagger UI resources to be loaded
+//        @Bean
+//        public GroupedOpenApi publicApi() {
+//                return GroupedOpenApi.builder()
+//                        .group("public-api")
+//                        .pathsToMatch("/**")
+//                        .build();
+//        }
 } 
