@@ -91,24 +91,44 @@ public class SubscriptionTest {
     }
 
     @Test
-    void testTierOneLimits() {
-        Subscription sub = SubscriptionManager.getSubscription("TIER_1");
-        assertEquals(10, sub.getMaxNumLevels());
-        assertEquals(10, sub.getMaxLevelNames());
-        assertEquals(10, sub.getMaxPathVariables());
-        assertEquals(10, sub.getMaxQueryParameters());
-        assertEquals(10, sub.getMaxQueryValues());
+    void testFreeLimits() {
+        Subscription sub = SubscriptionManager.getSubscription("FREE");
+        assertEquals(5, sub.getMaxNumLevels());
+        assertEquals(1, sub.getMaxAdmins());
+        assertEquals(2, sub.getMaxEmployees());
+        assertEquals(0, sub.getMaxHistorySize());
+        assertEquals(20, sub.getEncodingDailyLimit());
+        assertEquals(40, sub.getMinUrlLength());
+        assertEquals(15, sub.getMinParameterLength());
+        assertEquals(20, sub.getMinVariableLength());
     }
 
     @Test
-    void testFreeLimits() {
-        Subscription sub = SubscriptionManager.getSubscription("FREE");
-        assertEquals(3, sub.getMaxNumLevels());
-        assertEquals(3, sub.getMaxLevelNames());
-        assertEquals(3, sub.getMaxPathVariables());
-        assertEquals(3, sub.getMaxQueryParameters());
-        assertEquals(3, sub.getMaxQueryValues());
+    void testTierOneLimits() {
+        Subscription sub = SubscriptionManager.getSubscription("TIER_1");
+        assertEquals(10, sub.getMaxNumLevels());
+        assertEquals(2, sub.getMaxAdmins());
+        assertEquals(6, sub.getMaxEmployees());
+        assertEquals(10, sub.getMaxHistorySize());
+        assertEquals(100, sub.getEncodingDailyLimit());
+        assertEquals(25, sub.getMinUrlLength());
+        assertEquals(15, sub.getMinParameterLength());
+        assertEquals(15, sub.getMinVariableLength());
     }
+
+    @Test
+    void testTierInfinityLimits() {
+        Subscription sub = SubscriptionManager.getSubscription("TIER_INFINITY");
+        assertEquals(null, sub.getMaxNumLevels());
+        assertEquals(3, sub.getMaxAdmins());
+        assertEquals(10, sub.getMaxEmployees());
+        assertEquals(100, sub.getMaxHistorySize());
+        assertEquals(null, sub.getEncodingDailyLimit());
+        assertEquals(0, sub.getMinUrlLength());
+        assertEquals(5, sub.getMinParameterLength());
+        assertEquals(5, sub.getMinVariableLength());
+    }
+
 
     @Test
     void testSubscriptionSerialization() throws JsonProcessingException {

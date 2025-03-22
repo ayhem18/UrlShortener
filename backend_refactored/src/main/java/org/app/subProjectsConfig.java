@@ -1,9 +1,9 @@
 package org.app;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.utils.CustomGenerator;
@@ -13,11 +13,9 @@ import java.util.Properties;
 
 // this class is created just to import the beans defined across all subprojects
 
-@Configuration
 @ComponentScan(basePackages = {
     "org.apiConfigurations",
-    "org.authManagement.controllers",
-    "org.authManagement.configurations"  
+    "org.authManagement.controllers",  
 })
 
 @EnableMongoRepositories(basePackages = {"org.company.repositories", 
@@ -27,21 +25,34 @@ import java.util.Properties;
                                     }
 )
 
-@EntityScan(basePackages = {"org.company.entities", 
-                    "org.user.entities", 
-                    "org.tokens.entities", 
-                    "org.authManagement.entities"
-                }
+@EntityScan(basePackages = {"org.company.entities",
+        "org.user.entities",
+        "org.tokens.entities",
+        "org.authManagement.entities",
+}
 )
 @PropertySource("classpath:mail.properties")
 public class subProjectsConfig {
-    // create some beans needed for the app
-    @Bean
-    public CustomGenerator customGenerator() {
-        return new CustomGenerator();
-    }
+    // Inject properties from mail.properties
+    @Value("${smtp.host:localhost}")
+    private String smtpHost;
+    
+    @Value("${smtp.port:25}")
+    private int smtpPort;
+    
+    @Value("${smtp.username:}")
+    private String smtpUsername;
+    
+    @Value("${smtp.password:}")
+    private String smtpPassword;
+    
+    @Value("${smtp.auth:false}")
+    private String smtpAuth;
+    
+    @Value("${smtp.starttls.enable:false}")
+    private String smtpStartTlsEnable;
 
-    // not exactly sure how to make java spring boot auto-configure the java MailSender Bean.
+
     @Bean
     public JavaMailSender javaMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
@@ -56,5 +67,11 @@ public class subProjectsConfig {
         props.put("mail.smtp.starttls.enable", "${smtp.starttls.enable}");
         
         return mailSender;
+    }
+
+    // create some beans needed for the app
+    @Bean
+    public CustomGenerator customGenerator() {
+        return new CustomGenerator();
     }
 }

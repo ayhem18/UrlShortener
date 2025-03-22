@@ -38,6 +38,7 @@ import org.tokens.repositories.TokenRepository;
 import org.tokens.repositories.TokenUserLinkRepository;
 import org.user.entities.AppUser;
 import org.user.repositories.UserRepository;
+import org.utils.CustomErrorMessage;
 import org.utils.CustomGenerator;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,6 +46,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.access.Role;
 import org.access.RoleManager;
@@ -57,6 +59,7 @@ import java.util.UUID;
 
 @RestController
 @Validated
+@Tag(name = "Authentication Management", description = "APIs for company registration, user registration, and company verification")
 public class AuthController {
 
     private final CompanyRepository companyRepo;
@@ -173,16 +176,24 @@ public class AuthController {
 
 
     @Operation(summary = "Register a new company", 
-    description = "Creates a new company record and returns the company details")
+               description = "Creates a new company with owner information and generates an owner token")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Company successfully created",
-                    content = @Content(mediaType = "application/json", 
-                    schema = @Schema(implementation = Company.class))),
-                    @ApiResponse(responseCode = "400", description = "Invalid input provided", 
-                    content = @Content)
-                })
-
-
+        @ApiResponse(responseCode = "201", description = "Company successfully registered",
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = Company.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid request parameters",
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class))),
+        @ApiResponse(responseCode = "400", description = "Company with the same ID already exists", 
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class))),
+        @ApiResponse(responseCode = "400", description = "Top level domain is already registered to another company", 
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid URL domain format", 
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class)))
+    })
     @PostMapping("api/auth/register/company")
     public ResponseEntity<String> registerCompany(@Valid @RequestBody CompanyRegisterRequest req) throws JsonProcessingException {
         // registering a company is done through the following steps: 
@@ -318,7 +329,34 @@ public class AuthController {
     }
     
 
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    @Operation(summary = "Verify a company", 
+               description = "Verifies a company using the token sent to the owner's email")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Company successfully verified",
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = Company.class))),
+        @ApiResponse(responseCode = "400", description = "Company does not exist", 
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class))),
+        @ApiResponse(responseCode = "400", description = "Company is already verified", 
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class))),
+        @ApiResponse(responseCode = "400", description = "Token is missing for the specified company", 
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid token value", 
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class))),
+        @ApiResponse(responseCode = "400", description = "Token has expired", 
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class))),
+        @ApiResponse(responseCode = "400", description = "Token is already in use", 
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class))),
+        @ApiResponse(responseCode = "400", description = "Token verification failed", 
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class)))
+    })
     @PostMapping("api/auth/register/company/verify")
     public ResponseEntity<String> verifyCompany(@Valid @RequestBody CompanyVerifyRequest req) throws JsonProcessingException {
         // 1. Validate the verification request
@@ -502,6 +540,37 @@ public class AuthController {
     }
 
 
+    @Operation(summary = "Register a new user", 
+               description = "Registers a user with a company. Owner registration does not require a token, while other roles do")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "User successfully registered",
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = AppUser.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid request parameters",
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class))),
+        @ApiResponse(responseCode = "400", description = "User's company does not exist", 
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid role requested", 
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class))),
+        @ApiResponse(responseCode = "400", description = "User email domain does not match company domain", 
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class))),
+        @ApiResponse(responseCode = "400", description = "Multiple owners not allowed for a company", 
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class))),
+        @ApiResponse(responseCode = "400", description = "Token validation failed (various reasons)", 
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "User with the same email already exists", 
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class))),
+        @ApiResponse(responseCode = "403", description = "Cannot register user before company owner has verified the company", 
+                     content = @Content(mediaType = "application/json", 
+                                       schema = @Schema(implementation = CustomErrorMessage.class)))
+    })
     @PostMapping("api/auth/register/user")
     public ResponseEntity<String> registerUser(@Valid @RequestBody UserRegisterRequest req) throws JsonProcessingException {
         Role role = initialVerification(req); 
@@ -517,7 +586,5 @@ public class AuthController {
         return new ResponseEntity<>(this.om.writeValueAsString(newUser),
                 HttpStatus.CREATED);
     }
-
-
 }
 

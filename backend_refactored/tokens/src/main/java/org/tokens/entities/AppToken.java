@@ -10,12 +10,15 @@ import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Document("tokens")
+@Schema(description = "Token entity used for user authentication and verification")
 public class AppToken {
     public final static String TOKEN_CLASS_NAME = "AppToken";
 
+    @Schema(description = "Possible states of a token")
     public enum TokenState {
         ACTIVE,
         INACTIVE,
@@ -23,20 +26,25 @@ public class AppToken {
     }
 
     @Id
+    @Schema(description = "Unique identifier for the token", example = "token_5f3e2a1b", accessMode = Schema.AccessMode.WRITE_ONLY)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String tokenId;
 
-    // write only property  
+    @Schema(description = "Hashed token value for verification", accessMode = Schema.AccessMode.WRITE_ONLY)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String tokenHash;
 
+    @Schema(description = "Current state of the token", example = "ACTIVE")
     private TokenState tokenState;
 
+    @Schema(description = "Time when the token expires (null for non-expiring tokens)", example = "2023-12-31T23:59:59")
     private LocalDateTime expirationTime;
     
+    @Schema(description = "Company this token is associated with")
     @DocumentReference
     private Company company;
     
+    @Schema(description = "Role this token grants")
     private Role role;
 
     public AppToken(String tokenId, String tokenHash, Company company, Role role, LocalDateTime expirationTime) {

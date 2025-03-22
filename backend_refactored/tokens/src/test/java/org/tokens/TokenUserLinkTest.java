@@ -44,9 +44,9 @@ public class TokenUserLinkTest {
     @BeforeEach
     void setUp() {
         // Create common dependencies for tests
-        this.company = new Company("123", SubscriptionManager.getSubscription("TIER_1"), "admin@example.com", "example.com");
+        this.company = new Company("123", "companyName", "companyAddress", "admin@example.com", "example.com", SubscriptionManager.getSubscription("TIER_1"));
         this.role = RoleManager.getRole(RoleManager.OWNER_ROLE);
-        this.user = new AppUser("admin@example.com", "admin", "password123", company, role);
+        this.user = new AppUser("admin@example.com", "admin", "password123", "firstName", "lastName", "middleName", company, role);
         this.token = new AppToken("token-123", "hashed-token-456", company, role);
         
         // Activate the token for valid link creation
@@ -113,7 +113,7 @@ public class TokenUserLinkTest {
     @Test
     void testValidationCompanyMismatch() {
         // Create a token for a different company
-        Company otherCompany = new Company("456", SubscriptionManager.getSubscription("TIER_1"), "admin@other.com", "other.com");
+        Company otherCompany = new Company("456", "otherCompany", "otherAddress", "admin@other.com", "other.com", SubscriptionManager.getSubscription("TIER_1"));
         AppToken otherCompanyToken = new AppToken("token-other", "hash-other", otherCompany, role);
         otherCompanyToken.activate();
         
@@ -187,14 +187,14 @@ public class TokenUserLinkTest {
     @Test
     void testDifferentTokens() throws JsonProcessingException {
         // Create user and token with owner role
-        AppUser ownerUser = new AppUser("owner@example.com", "owner", "password123", company, 
+        AppUser ownerUser = new AppUser("owner@example.com", "owner", "password123", "firstName", "lastName", "middleName", company, 
                 RoleManager.getRole(RoleManager.OWNER_ROLE));
         AppToken ownerToken = new AppToken("token-owner", "hash-owner", company, 
                 RoleManager.getRole(RoleManager.OWNER_ROLE));
         ownerToken.activate();
         
         // Create user and token with admin role
-        AppUser adminUser = new AppUser("admin@example.com", "admin", "password123", company, 
+        AppUser adminUser = new AppUser("admin@example.com", "admin", "password123", "firstName", "lastName", "middleName", company, 
                 RoleManager.getRole(RoleManager.ADMIN_ROLE));
         AppToken adminToken = new AppToken("token-admin", "hash-admin", company, 
                 RoleManager.getRole(RoleManager.ADMIN_ROLE));

@@ -10,38 +10,50 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 import java.time.LocalDateTime;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 
 @Document()
+@Schema(description = "User entity representing a system user")
 public class AppUser {
     // login credentials
     @Id
+    @Schema(description = "Email address of the user (primary identifier)", example = "user@example.com")
     private String email;
 
+    @Schema(description = "Username for login", example = "johnsmith")
     private String username;
 
     // the password should be written :Json to obj, but not read: obj to json
+    @Schema(description = "Hashed password", example = "$2a$10$...", accessMode = Schema.AccessMode.WRITE_ONLY)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     // user personal information
+    @Schema(description = "User's first name", example = "John")
     private String firstName;
 
+    @Schema(description = "User's last name", example = "Smith")
     private String lastName;
 
+    @Schema(description = "User's middle name (optional)", example = "Robert")
     private String middleName;
 
+    @Schema(description = "Timestamp when user joined", example = "2023-07-15T14:30:00")
     private LocalDateTime timeJoined;
 
     // user company information
     // each user is associated with a company (a specific site)
+    @Schema(description = "Company the user belongs to")
     @DocumentReference
     private Company company;
 
     // the role the user plays in this company (determines the authorities !!)
+    @Schema(description = "User's role in the company")
     private Role role;
 
     // user extra information for functional purposes 
+    @Schema(description = "Count of URL encodings performed by this user", example = "42")
     private long urlEncodingCount;
 
 

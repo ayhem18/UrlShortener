@@ -4,30 +4,40 @@ import com.fasterxml.jackson.annotation.*;
 import org.access.Subscription;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Document("Company")
 @JsonInclude(JsonInclude.Include.NON_NULL) // a class-wide annotation Making Jackson ignore all null fields
+@Schema(description = "Company entity representing a business organization")
 public class Company {
     public static final String COMPANY_COLLECTION_NAME = "COMPANY";
 
+    @Schema(description = "Unique identifier for the company", example = "company_12345")
     @Id
     private String id; // must be unique
 
     // the name of the company
+    @Schema(description = "Name of the company", example = "Example Corp")
     private String companyName; // must be unique
 
+    @Schema(description = "Physical address of the company", example = "123 Business St, Suite 100")
     private String companyAddress; // not sure worth adding the unique constraint here 
 
+    @Schema(description = "Domain for company emails", example = "example.com")
     private String emailDomain; // determines the email domain enforced by the company (if any)
 
+    @Schema(description = "Email of the company owner", example = "owner@example.com")
     private String ownerEmail; // the email of the owner of the company
 
     // write only: a field used to track the number of times the sensitive fields are serialized 
+    @Schema(description = "Counter for sensitive field serialization", hidden = true)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private int serializeSensitiveCount = 0;
 
+    @Schema(description = "Company's subscription level", implementation = Subscription.class)
     private Subscription subscription;
 
+    @Schema(description = "Verification status of the company", example = "true")
     private boolean verified;
 
     // Updated constructor to include ownerEmail

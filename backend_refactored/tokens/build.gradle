@@ -35,6 +35,9 @@ dependencies {
     // for jsonpath: verifying and querying Json strings / objects
     implementation group: 'com.jayway.jsonpath', name: 'json-path', version: '2.9.0'
 
+    // for the swagger ui
+    implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.8.5'
+
     testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.11.1'
     // for tests: no need to import the entire spring boot toolkit
     // for junit: https://docs.gradle.org/current/userguide/java_testing.html

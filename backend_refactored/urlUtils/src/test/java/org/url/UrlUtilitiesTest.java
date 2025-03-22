@@ -628,7 +628,7 @@ class UrlUtilitiesTest {
                 String pathVar_id = cs.generateId(i + 3);
                 
                 // Verify the encoding follows expected pattern: protocol://domainHash/generatedId
-                String expectedPattern = protocol + domainHash + "/" + pathVar_id;
+                String expectedPattern = protocol + encodedUrlPrefix + domainHash + "/" + pathVar_id;
                 assertEquals(expectedPattern, encodedUrl, 
                     "Encoded URL should match pattern with generated ID for path variable");
                 
@@ -665,7 +665,7 @@ class UrlUtilitiesTest {
                 String pathVar_id = cs.generateId(i);
                 
                 // Verify the encoding follows expected pattern: protocol://domainHash/generatedId
-                String expectedPattern = protocol + domainHash + "/" + pathVar_id;
+                String expectedPattern = protocol + encodedUrlPrefix + domainHash + "/" + pathVar_id;
                 assertEquals(expectedPattern, encodedUrl, 
                     "Encoded URL should match pattern with generated ID for path variable after clearing data");
                 
@@ -709,7 +709,7 @@ class UrlUtilitiesTest {
                 String paramValue_id = cs.generateId(3 * i + 2);
                 
                 // Verify the encoding follows expected pattern
-                String expectedPattern = protocol + domainHash + "/" + levelName_id + "?" + paramName_id + "=" + paramValue_id;
+                String expectedPattern = protocol + encodedUrlPrefix + domainHash + "/" + levelName_id + "?" + paramName_id + "=" + paramValue_id;
                 assertEquals(expectedPattern, encodedUrl, 
                     "Encoded URL should match pattern with generated IDs for level name and query params");
                 
@@ -771,7 +771,7 @@ class UrlUtilitiesTest {
                 String paramValue_id = cs.generateId(3 * i + 2);    // From the first loop in this set
                 
                 // Verify the encoding follows expected pattern
-                String expectedPattern = protocol + domainHash + "/" + pathVar_id + "?" + paramName_id + "=" + paramValue_id;
+                String expectedPattern = protocol + encodedUrlPrefix + domainHash + "/" + pathVar_id + "?" + paramName_id + "=" + paramValue_id;
                 assertEquals(expectedPattern, encodedUrl, 
                     "Encoded URL should match pattern with correct IDs for path variable and query params");
                 

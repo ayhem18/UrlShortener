@@ -5,7 +5,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -14,28 +13,23 @@ import org.utils.CustomGenerator;
 
 import java.util.Properties;
 
-
-@Configuration
+@SpringBootApplication
 @ComponentScan(basePackages = {
     "org.apiConfigurations",
     "org.authManagement.controllers",  
 })
-
 @EnableMongoRepositories(basePackages = {"org.company.repositories", 
                                         "org.user.repositories", 
                                         "org.tokens.repositories",
                                         "org.authManagement.repositories"
                                     }
 )
-
 @EntityScan(basePackages = {"org.company.entities",
         "org.user.entities",
         "org.tokens.entities",
         "org.authManagement.entities",
-}
-)
+})
 @PropertySource("classpath:mail.properties")
-@SpringBootApplication
 public class IntegrationTestConfig {
     // Inject properties from mail.properties
     @Value("${smtp.host:localhost}")

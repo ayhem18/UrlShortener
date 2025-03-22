@@ -139,8 +139,10 @@ public class UrlProcessor {
 
         // Keep the protocol as is (first element)
         String protocol = urlLevels.getFirst().levelName();
+        // append the protocol
         encodedUrl.append(protocol);
 
+        // append the preifx
         encodedUrl.append(encodedUrlPrefix);
 
         // Use the provided hash for the domain (second element)
@@ -308,21 +310,22 @@ public class UrlProcessor {
         String protocol = levels.getFirst().levelName();
 
         // extract the encodedUrlPrefix as it is not encoded
-        if (!levels.get(1).levelName().equals(encodedUrlPrefix)) {
+        String prefixToCompare = encodedUrlPrefix.charAt(encodedUrlPrefix.length() - 1) == '/' ? encodedUrlPrefix.substring(0, encodedUrlPrefix.length() - 1) : encodedUrlPrefix;
+
+        if (!levels.get(1).levelName().equals(prefixToCompare)) {
             throw new IllegalArgumentException("The prefix extracted from the encded url does not match the expected prefix");
         }
         
         // Start building original URL
         StringBuilder originalUrl = new StringBuilder(protocol);
-        
-        originalUrl.append(encodedUrlPrefix);
-        
         originalUrl.append(originalTopLevelDomain);
-        
-        // Process remaining path segments
-        for (int i = 2; i < levels.size(); i++) {
+
+        // make sure not to debug the url encode prefix
+
+        // Process remaining path segments: skip protocol, prefix, domain
+        for (int i = 3; i < levels.size(); i++) {
             UrlLevelEntity currentLevel = levels.get(i);
-            int segmentIndex = i - 2; // Adjust index to match decodedData
+            int segmentIndex = i - 3; // Adjust index to match decodedData
             
             // Add path separator
             originalUrl.append("/");

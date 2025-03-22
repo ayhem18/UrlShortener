@@ -92,7 +92,7 @@ public class WebLayerUnitTest {
     @BeforeEach
     void setUp() {
         // Clear all repositories to ensure a clean state before each test
-        tokenUserLinkRepo.deleteAll();  // Clear links first due to references
+        tokenUserLinkRepo.deleteAll(); 
         tokenRepo.deleteAll();
         userRepo.deleteAll();
         topLevelDomainRepo.deleteAll();
@@ -1191,10 +1191,10 @@ public class WebLayerUnitTest {
         validPassword,
         validFirstName,
         validLastName,
-        validFirstName,    // using firstName as middleName
+        validFirstName,    
         companyId,
-        "owner",           // owner role
-        null               // null roleToken
+        "owner",           
+        null               
     );
     
     mockMvc.perform(
@@ -1214,10 +1214,10 @@ public class WebLayerUnitTest {
         validPassword,
         validFirstName,
         validLastName,
-        validFirstName,    // using firstName as middleName
+        validFirstName,    
         companyId,
         validRole,
-        ""                 // empty roleToken
+        "" // empty role              
     );
     
     mockMvc.perform(

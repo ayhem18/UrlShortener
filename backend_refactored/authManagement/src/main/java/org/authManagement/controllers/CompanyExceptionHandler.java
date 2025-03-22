@@ -9,8 +9,9 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.utils.CustomErrorMessage;
+import io.swagger.v3.oas.annotations.Hidden;
 
-@SuppressWarnings("unused")
+@Hidden // Hide from Swagger UI as these are implementation details
 @ControllerAdvice
 public class CompanyExceptionHandler extends CustomExceptionHandler {
     // Company Exceptions
