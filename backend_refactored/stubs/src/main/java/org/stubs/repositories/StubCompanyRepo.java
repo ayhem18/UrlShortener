@@ -16,7 +16,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Repository
-@SuppressWarnings({"unused", "null", "NullableProblems", "ConstantConditions"})
+@SuppressWarnings({"null", "NullableProblems", "ConstantConditions"})
 public class StubCompanyRepo implements CompanyRepository {
     private final List<Company> db;
     private final PasswordEncoder encoder;
@@ -71,9 +71,7 @@ public class StubCompanyRepo implements CompanyRepository {
     }
 
 
-
     // the rest was generated automatically and does not currently (26.01.2024) concern me...
-
     @Override
     public <S extends Company> S insert(S entity) {
         return null;

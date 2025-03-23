@@ -32,21 +32,6 @@ public class StubTopLevelDomainRepo implements TopLevelDomainRepository {
         return db;
     }
 
-    public void addDefaultDomains() {
-        if (!companyRepo.getDb().isEmpty()) {
-            Company c1 = companyRepo.getDb().getFirst();
-            Company c2 = companyRepo.getDb().get(1);
-            
-            TopLevelDomain domain1 = new TopLevelDomain("id1", "youtube.com", "hash1", c1);
-//            domain1.verify();
-            
-            TopLevelDomain domain2 = new TopLevelDomain("id2", "github.com", "hash2", c2);
-//            domain2.verify();
-            
-            this.db.addAll(List.of(domain1, domain2));
-        }
-    }
-
     @Override
     public Optional<TopLevelDomain> findById(String id) {
         return this.db.stream()
@@ -105,6 +90,16 @@ public class StubTopLevelDomainRepo implements TopLevelDomainRepository {
         return this.db.stream().anyMatch(domain -> domain.getId().equals(id));
     }
 
+    @Override
+    public <S extends TopLevelDomain> List<S> saveAll(Iterable<S> entities) {
+        List<S> saved = new ArrayList<>();
+        for (S entity : entities) {
+            saved.add(this.save(entity));
+        }
+        return saved;
+    }
+
+
     // Stub implementations for other required methods
     @Override
     public <S extends TopLevelDomain> S insert(S entity) { return null; }
@@ -124,14 +119,6 @@ public class StubTopLevelDomainRepo implements TopLevelDomainRepository {
     public <S extends TopLevelDomain> boolean exists(Example<S> example) { return false; }
     @Override
     public <S extends TopLevelDomain, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) { return null; }
-    @Override
-    public <S extends TopLevelDomain> List<S> saveAll(Iterable<S> entities) {
-        List<S> saved = new ArrayList<>();
-        for (S entity : entities) {
-            saved.add(this.save(entity));
-        }
-        return saved;
-    }
     @Override
     public List<TopLevelDomain> findAll() { return new ArrayList<>(this.db); }
     @Override

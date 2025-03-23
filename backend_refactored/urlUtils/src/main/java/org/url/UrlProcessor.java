@@ -216,7 +216,6 @@ public class UrlProcessor {
                         // Generate a new encoding
                         String encodedVar = customGenerator.generateId(currentEncodedMap.size());
 
-
                         // Store in both maps
                         currentEncodedMap.put(pathVar, encodedVar);
                         currentDecodedMap.put(encodedVar, pathVar);
@@ -284,6 +283,10 @@ public class UrlProcessor {
                     }
                 }
             }
+
+            // make sure to save the chances to the hashmap
+            encodedData.set(segmentIndex, currentEncodedMap);
+            decodedData.set(segmentIndex, currentDecodedMap);
 
         }
 

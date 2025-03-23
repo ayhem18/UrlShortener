@@ -16,7 +16,7 @@ import java.util.function.Function;
 
 
 @Repository
-@SuppressWarnings({"unused", "null", "NullableProblems", "ConstantConditions"})
+@SuppressWarnings({"null", "NullableProblems", "ConstantConditions"})
 public class StubUserRepo implements UserRepository {
 
     private final StubCompanyRepo companyRepo;
@@ -116,10 +116,24 @@ public class StubUserRepo implements UserRepository {
     }
 
     @Override
-    public Optional<AppUser> findByUsername(String id) {
+    public Optional<AppUser> findByUsername(String username) {
+        for (AppUser u : this.db) {
+            if (u.getUsername().equals(username)) {
+                return Optional.of(u);
+            }
+        }
         return Optional.empty();
     }
 
+    @Override
+    public Optional<AppUser> findByEmail(String email) {
+        for (AppUser u : this.db) {
+            if (u.getEmail().equals(email)) {
+                return Optional.of(u);
+            }
+        }
+        return Optional.empty();
+    }
 
     @Override
     public <S extends AppUser> S insert(S entity) {

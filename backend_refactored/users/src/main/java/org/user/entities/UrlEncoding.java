@@ -19,15 +19,15 @@ public class UrlEncoding {
 
     private String urlEncoded;
 
-    private int urlEncodingCount;
+    private long urlEncodingCount;
 
     private LocalDateTime urlEncodingTime;
 
-    public UrlEncoding(AppUser user, String url, String urlEncoded) {
+    public UrlEncoding(AppUser user, String url, String urlEncoded, long urlEncodingCount) {
         this.user = user;
         this.url = url;
         this.urlEncoded = urlEncoded;
-        this.urlEncodingCount = 0;
+        this.urlEncodingCount = urlEncodingCount;
         this.urlEncodingTime = LocalDateTime.now();
     }
 
@@ -59,7 +59,7 @@ public class UrlEncoding {
     
     
     @SuppressWarnings("unused")
-    private void setUrlEncodingCount(int urlEncodingCount) {
+    private void setUrlEncodingCount(long urlEncodingCount) {
         this.urlEncodingCount = urlEncodingCount;
     }
 
@@ -81,7 +81,7 @@ public class UrlEncoding {
         return urlEncoded;
     }
 
-    public int getUrlEncodingCount() {
+    public long getUrlEncodingCount() {
         return urlEncodingCount;
     }   
     

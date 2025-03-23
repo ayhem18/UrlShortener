@@ -58,6 +58,13 @@ public class StubUrlEncodingRepo implements UrlEncodingRepository {
         
         return new PageImpl<>(userContent, pageable, total);
     }
+
+    @Override
+    public List<UrlEncoding> findByUser(AppUser user) {
+        return urlEncodings.stream()
+                .filter(encoding -> encoding.getUser().getEmail().equals(user.getEmail()))
+                .collect(Collectors.toList());
+    }
     
     @Override
     public Page<UrlEncoding> findByUserAndUrlEncodingCountGreaterThan(AppUser user, int urlEncodingCount, Pageable pageable) {

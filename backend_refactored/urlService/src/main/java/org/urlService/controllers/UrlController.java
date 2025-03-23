@@ -41,7 +41,6 @@ import java.util.Map;
 @RestController
 @Validated
 @PropertySource("classpath:app.properties")
-@SuppressWarnings("unused")
 public class UrlController {
 
     private final CompanyUrlDataRepository urlDataRepo;
@@ -136,7 +135,7 @@ public class UrlController {
                 // check the state of the topLevelDomain
                 // if it is deprecated: raise an error
                 if (d.getDomainState() == TopLevelDomain.DomainState.DEPRECATED) {
-                    throw new UrlExceptions.UrlCompanyDomainExpired ("The URL does not match the user's company top level domain");
+                    throw new UrlExceptions.UrlCompanyDomainExpired ("The url top level domain is deprecated");
                 }
 
                 else if (d.getDomainState() == TopLevelDomain.DomainState.INACTIVE) {
@@ -166,7 +165,7 @@ public class UrlController {
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Transactional
-    private String _encodeUrl(Company userCompany, AppUser currentUser, Subscription sub, String urlWithActiveDomain) {
+    private String encodeUrlTransaction(Company userCompany, AppUser currentUser, Subscription sub, String urlWithActiveDomain) {
         CompanyUrlData companyUrlData = this.urlDataRepo.findByCompany(userCompany).get();
 
         List<Map<String, String>> encodedData = companyUrlData.getDataEncoded();
@@ -176,7 +175,7 @@ public class UrlController {
                 encodedData, decodedData, sub.getMinParameterLength(), sub.getMinVariableLength());
 
         // make sure to update the urlEncodingRepo with the new encoded url
-        this.urlEncodingRepo.save(new UrlEncoding(currentUser, encodedUrl, encodedUrl));
+        this.urlEncodingRepo.save(new UrlEncoding(currentUser, urlWithActiveDomain, encodedUrl, currentUser.getUrlEncodingCount() + 1));
         // persist the changes to the url company data
         this.urlDataRepo.save(companyUrlData);
         return encodedUrl;
@@ -192,12 +191,11 @@ public class UrlController {
         }
 
         // the fact that user is authenticated guarantees that the user exists (get does not return null)
-        AppUser currentUser = userRepository.findByUsername(currentUserDetails.getUsername()).get();
-        
+        AppUser currentUser = userRepository.findByEmail(currentUserDetails.getUsername()).get();
+
         Company userCompany = this.verifyDailyLimit(currentUser); 
 
         Subscription sub = userCompany.getSubscription();
-
 
         // 3. check whether the user is passing an url matching the user's company top level domain
         Map.Entry<String, String> urlLevelEntity = this.validateUrlCompanyConstraints(url, userCompany);
@@ -206,26 +204,20 @@ public class UrlController {
         String urlDomainPossibleWarning = urlLevelEntity.getValue();
 
         // at this point, all constraints are met, time for the encoding transaction
-        String encodedUrl = this._encodeUrl(userCompany, currentUser, sub, urlWithActiveDomain);
+        String encodedUrl = this.encodeUrlTransaction(userCompany, currentUser, sub, urlWithActiveDomain);
         
         // update the user's url encoding count
         currentUser.incrementUrlEncodingCount();
         this.userRepository.save(currentUser);
 
-        // return the encoded url
-        String res;
+
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("encoded_url", encodedUrl);
         if (urlDomainPossibleWarning != null) {
-            HashMap<String, Object> map = new HashMap<>();
-            map.put("encoded_url", encodedUrl);
             map.put("warning", urlDomainPossibleWarning);
-
-            res = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(map);
-        }
-        else {
-            res = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(encodedUrl);
         }
 
-        return ResponseEntity.ok(res);
+        return ResponseEntity.ok(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(map));
     }
 
 
