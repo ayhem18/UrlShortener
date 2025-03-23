@@ -103,7 +103,7 @@ public class UrlControllerTest {
         TopLevelDomain inactiveDomain = new TopLevelDomain(
             gen.randomAlphaString(10),
             inactiveDomainName,
-            encoder.encode(inactiveDomainName),
+            encoder.encode(inactiveDomainName).replaceAll("/", "_"),
             testCompany
         );
         inactiveDomain.deactivate();
@@ -114,7 +114,7 @@ public class UrlControllerTest {
         TopLevelDomain deprecatedDomain = new TopLevelDomain(
             gen.randomAlphaString(10),
             deprecatedDomainName,
-            encoder.encode(deprecatedDomainName),
+            encoder.encode(deprecatedDomainName).replaceAll("/", "_"),
             testCompany
         );
         deprecatedDomain.deprecate();
@@ -123,7 +123,7 @@ public class UrlControllerTest {
         // Create company URL data
         CompanyUrlData companyUrlData = new CompanyUrlData(
             testCompany,
-            this.encoder.encode(activeDomainName)
+            this.encoder.encode(activeDomainName).replaceAll("/", "_")
         );
         companyUrlDataRepo.save(companyUrlData);
         return testCompany;
@@ -574,11 +574,15 @@ public class UrlControllerTest {
             UserDetails userDetails = new UserDetailsImp(user);
             
             for (int j = 0; j <= 5; j++) {
+
+                String sp1 = this.gen.randomAlphaString(25);
+                String sp2 = this.gen.randomAlphaString(25);
+
                 // 4. Create a URL with inactive domain
-                String originalUrl = "https://" + inactiveDomain + "/" + this.gen.randomAlphaString(25) + "/" + this.gen.randomAlphaString(25);
+                String originalUrl = "https://" + inactiveDomain + "/" + sp1 + "/" + sp2;
                 
                 // Create the equivalent URL with active domain
-                String activeEquivalentUrl = "https://" + activeDomain + "/" + this.gen.randomAlphaString(25) + "/" + this.gen.randomAlphaString(25);
+                String activeEquivalentUrl = "https://" + activeDomain + "/" + sp1 + "/" + sp2;
                 
                 // 5. Capture state before encoding
                 long companyCount = companyRepo.count();
@@ -587,7 +591,8 @@ public class UrlControllerTest {
                 long userEncodingCount = user.getUrlEncodingCount();
                 CompanyUrlData dataBefore = companyUrlDataRepo.findByCompany(company).get();
 
-                List<String> keysBefore = new ArrayList<>(dataBefore.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+                List<String> keysBeforeEncoded = new ArrayList<>(dataBefore.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+                List<String> keysBeforeDecoded = new ArrayList<>(dataBefore.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
 
                 // 6. Call the encoding endpoint
                 String responseBody = null;
@@ -623,7 +628,7 @@ public class UrlControllerTest {
                 List<UrlEncoding> userUrlEncodings = urlEncodingRepo.findByUser(user);
                 assertEquals(userUrlEncodings.size(), j + 1, "There should be exactly one UrlEncoding object for the user");
                 UrlEncoding urlEncoding = userUrlEncodings.get(j);
-                assertEquals(urlEncoding.getUrl(), originalUrl, "The UrlEncoding object should have the correct original URL");
+                assertEquals(urlEncoding.getUrl(), activeEquivalentUrl, "The UrlEncoding object should have the correct original URL");
                 assertEquals(urlEncoding.getUrlEncoded(), encodedUrl, "The UrlEncoding object should have the correct encoded URL");
                 assertEquals(urlEncoding.getUrlEncodingCount(), j + 1, "The UrlEncoding object should have the correct url encoding count");
 
@@ -637,18 +642,18 @@ public class UrlControllerTest {
                 CompanyUrlData dataAfter = companyUrlDataRepo.findByCompany(company).get();
 
                 // make sure the data encoded changes
-                List<String> keysAfter = new ArrayList<>(dataAfter.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+                List<String> keysAfterEncoded = new ArrayList<>(dataAfter.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+                // make sure the data decoded changes
+                List<String> keysAfterDecoded = new ArrayList<>(dataAfter.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
 
-                assertTrue (! keysBefore.containsAll(keysAfter) && keysAfter.containsAll(keysBefore),
+
+                assertTrue (! keysBeforeEncoded.containsAll(keysAfterEncoded) && keysAfterEncoded.containsAll(keysBeforeEncoded),
                     "data encoded keys should change");
 
-                // make sure the data decoded changes
-                keysAfter = new ArrayList<>(dataAfter.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
-
-                assertTrue (! keysBefore.containsAll(keysAfter) && keysAfter.containsAll(keysBefore),
+                assertTrue (! keysBeforeDecoded.containsAll(keysAfterDecoded) && keysAfterDecoded.containsAll(keysBeforeDecoded),
                     "data decoded keys should change");
             
-                assertEquals(this.urlEncodingRepo.count(), i + 1, "Encoded URL should match the active domain version");
+                assertEquals(this.urlEncodingRepo.count(), i * 6 + j + 1, "Encoded URL should match the active domain version");
 
                 // 13. Decode URL to verify it matches the active domain version, not the original
                 String decodedUrl = urlProcessor.decode(encodedUrl, 
