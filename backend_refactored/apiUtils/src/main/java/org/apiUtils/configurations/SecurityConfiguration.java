@@ -1,4 +1,4 @@
-package org.apiConfigurations;
+package org.apiUtils.configurations;
 
 import org.access.AuthoritiesManager;
 import org.springframework.context.annotation.Bean;

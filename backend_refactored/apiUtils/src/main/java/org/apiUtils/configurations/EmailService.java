@@ -1,4 +1,4 @@
-package org.apiConfigurations;
+package org.apiUtils.configurations;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

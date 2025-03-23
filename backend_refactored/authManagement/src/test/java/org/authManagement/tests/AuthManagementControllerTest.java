@@ -1,7 +1,6 @@
 package org.authManagement.tests;
 
 import org.authManagement.controllers.AuthController;
-import org.authManagement.entities.CompanyUrlData;
 import org.authManagement.exceptions.CompanyAndUserExceptions;
 import org.authManagement.exceptions.CompanyExceptions;
 import org.authManagement.exceptions.TokenAndUserExceptions;
@@ -15,8 +14,9 @@ import org.authManagement.internal.StubTopLevelDomainRepo;
 import org.authManagement.internal.StubUserRepo;
 import org.authManagement.requests.CompanyRegisterRequest;
 import org.authManagement.requests.CompanyVerifyRequest;
-import org.authManagement.requests.UserRegisterRequest; 
+import org.authManagement.requests.UserRegisterRequest;
 import org.company.entities.Company;
+import org.company.entities.CompanyUrlData;
 import org.company.entities.TopLevelDomain;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;

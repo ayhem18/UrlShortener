@@ -1,6 +1,6 @@
-package org.authManagement.repositories;
+package org.apiUtils.repositories;
 
-import org.authManagement.entities.CollectionCounter;
+import apiUtils.entities.CollectionCounter;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;

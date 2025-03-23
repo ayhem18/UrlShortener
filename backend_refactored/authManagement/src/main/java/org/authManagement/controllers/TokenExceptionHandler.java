@@ -1,6 +1,6 @@
 package org.authManagement.controllers;
 
-import org.apiConfigurations.CustomExceptionHandler;
+import apiUtils.configurations.CustomExceptionHandler;
 import org.authManagement.exceptions.TokenAndUserExceptions;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +11,7 @@ import org.utils.CustomErrorMessage;
 import io.swagger.v3.oas.annotations.Hidden;
 
 @Hidden // Hide from Swagger UI as these are implementation details
+@SuppressWarnings("unused")
 @ControllerAdvice
 public class TokenExceptionHandler extends CustomExceptionHandler {
     

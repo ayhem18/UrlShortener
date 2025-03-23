@@ -21,7 +21,7 @@ public class AppUser {
     @Schema(description = "Email address of the user (primary identifier)", example = "user@example.com")
     private String email;
 
-    @Schema(description = "Username for login", example = "johnsmith")
+    @Schema(description = "Username for login", example = "john10277")
     private String username;
 
     // the password should be written :Json to obj, but not read: obj to json
@@ -151,7 +151,16 @@ public class AppUser {
         this.role = role;
     }
 
+    public void incrementUrlEncodingCount() {
+        this.urlEncodingCount++;
+    }   
+
     ///////////////////////////////// Jackson Setters /////////////////////////////////////////////
+    @SuppressWarnings("unused")
+    private void setUrlEncodingCount(long urlEncodingCount) {
+        this.urlEncodingCount = urlEncodingCount;
+    }
+
     @SuppressWarnings("unused")
     private void setCompany(Company company) {
         this.company = company;

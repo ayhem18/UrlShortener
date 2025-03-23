@@ -1,7 +1,7 @@
 package org.authManagement.internal;
 
-import org.authManagement.entities.CompanyUrlData;
-import org.authManagement.repositories.CompanyUrlDataRepository;
+import org.company.entities.CompanyUrlData;
+import org.company.repositories.CompanyUrlDataRepository;
 import org.bson.types.ObjectId;
 import org.company.entities.Company;
 import org.springframework.data.domain.Example;

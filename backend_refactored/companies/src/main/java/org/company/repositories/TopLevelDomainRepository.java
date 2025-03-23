@@ -1,8 +1,7 @@
 package org.company.repositories;
 
-import org.company.entities.TopLevelDomain;
 import org.company.entities.Company;
-import org.company.entities.TopLevelDomain.DomainState;
+import org.company.entities.TopLevelDomain;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
@@ -18,7 +17,7 @@ public interface TopLevelDomainRepository extends MongoRepository<TopLevelDomain
     
     List<TopLevelDomain> findByCompany(Company company);
     
-    List<TopLevelDomain> findByCompanyAndDomainState(Company company, DomainState domainState);
+    List<TopLevelDomain> findByCompanyAndDomainState(Company company, TopLevelDomain.DomainState domainState);
     
-    Optional<TopLevelDomain> findByDomainAndDomainState(String domain, DomainState domainState);
+    Optional<TopLevelDomain> findByDomainAndDomainState(String domain, TopLevelDomain.DomainState domainState);
 } 

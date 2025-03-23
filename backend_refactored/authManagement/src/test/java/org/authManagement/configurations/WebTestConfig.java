@@ -1,4 +1,4 @@
-package org.authManagement.configurations;
+package apiUtils.authManagement.configurations;
 
 import org.mockito.Mockito;
 import org.springframework.boot.autoconfigure.domain.EntityScan;

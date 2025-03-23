@@ -1,12 +1,13 @@
-package org.authManagement.tests;
+package apiUtils.authManagement.tests;
 
+import org.access.RoleManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.authManagement.configurations.IntegrationTestConfig;
-import org.authManagement.entities.CompanyUrlData;
-import org.authManagement.repositories.CompanyUrlDataRepository;
-import org.authManagement.repositories.CounterRepository;
+import apiUtils.authManagement.configurations.IntegrationTestConfig;
+import org.company.entities.CompanyUrlData;
+import org.company.repositories.CompanyUrlDataRepository;
+import org.apiUtils.repositories.CounterRepository;
 import org.authManagement.requests.CompanyRegisterRequest;
 import org.authManagement.requests.CompanyVerifyRequest;
 import org.authManagement.requests.UserRegisterRequest;
@@ -168,7 +169,7 @@ public class IntegrationTest {
         // Step 2: Find the owner token that was created
         List<AppToken> ownerTokens = tokenRepo.findByCompanyAndRole(
                 company,
-            org.access.RoleManager.getRole(org.access.RoleManager.OWNER_ROLE)
+            RoleManager.getRole(RoleManager.OWNER_ROLE)
         );
 
         assertEquals(1, ownerTokens.size());
@@ -244,7 +245,7 @@ public class IntegrationTest {
             "admin-token-123",
             passwordEncoder.encode("admin-token-value"),
             company,
-            org.access.RoleManager.getRole(org.access.RoleManager.ADMIN_ROLE)
+            RoleManager.getRole(RoleManager.ADMIN_ROLE)
         );
         tokenRepo.save(adminToken);
 
@@ -288,7 +289,7 @@ public class IntegrationTest {
             "employee-token-123",    
             passwordEncoder.encode("employee-token-value"),
             company,
-            org.access.RoleManager.getRole(org.access.RoleManager.EMPLOYEE_ROLE)
+            RoleManager.getRole(RoleManager.EMPLOYEE_ROLE)
         );
         tokenRepo.save(employeeToken);
 

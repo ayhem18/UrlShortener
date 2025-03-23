@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.access.Subscription;
 import org.apache.commons.validator.routines.UrlValidator;
-import org.authManagement.entities.CompanyUrlData;
-import org.authManagement.repositories.CompanyUrlDataRepository;
+import org.company.entities.CompanyUrlData;
+import org.company.repositories.CompanyUrlDataRepository;
 import org.company.entities.Company;
 import org.company.entities.TopLevelDomain;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,11 +15,13 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
+import org.urlService.entities.UrlEncoding;
 import org.urlService.exceptions.UrlExceptions;
 import org.urlService.repositories.UrlEncodingRepository;
 import org.url.UrlLevelEntity;
@@ -34,6 +36,7 @@ import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 
 @RestController
 @Validated
@@ -80,7 +83,10 @@ public class UrlController {
 
 
     //////////////////////////////////////// Methods for the encode/url endpoint ////////////////////////////////////////   
-    
+    public String getUrlEncodePrefix() {
+        return "localhost:" + applicationPort + "/";
+    }
+
     private Company verifyDailyLimit(AppUser user) {
         Company userCompany = user.getCompany();
         
@@ -150,11 +156,29 @@ public class UrlController {
         // make sure to work only with the active top level domain
         urlLevels.set(1, new UrlLevelEntity(companyActivateLevelDomain, null, null, null));
 
+        // build the url from the url levels 
+        String urlString = this.urlProcessor.buildUrlFromUrlLevels(urlLevels);
 
         // create a map entry to return the url level entity and the warning
-        return new AbstractMap.SimpleEntry<>(urlLevels.get(1), urlDomainPossibleWarning);
+        return new AbstractMap.SimpleEntry<>(urlString, urlDomainPossibleWarning);
     }
 
+    @Transactional 
+    private String _encodeUrl(Company userCompany, AppUser currentUser, Subscription sub, String urlWithActiveDomain) {
+        CompanyUrlData companyUrlData = this.urlDataRepo.findByCompany(userCompany).get();
+
+        List<Map<String, String>> encodedData = companyUrlData.getDataEncoded();
+        List<Map<String, String>> decodedData = companyUrlData.getDataDecoded();
+
+        String encodedUrl = this.urlProcessor.encode(urlWithActiveDomain, getUrlEncodePrefix(), companyUrlData.getCompanySiteHash(),
+                encodedData, decodedData, sub.getMinParameterLength(), sub.getMinVariableLength());
+
+        // make sure to update the urlEncodingRepo with the new encoded url
+        this.urlEncodingRepo.save(new UrlEncoding(currentUser, encodedUrl, encodedUrl));
+        // persist the changes to the url company data
+        this.urlDataRepo.save(companyUrlData);
+        return encodedUrl;
+    }
 
 
     @GetMapping("/api/url/encode/{url}")
@@ -174,24 +198,19 @@ public class UrlController {
 
 
         // 3. check whether the user is passing a url matching the user's company top level domain 
-        
-        Map.Entry<UrlLevelEntity, String> urlLevelEntity = this.validateUrlCompanyConstraints(url, userCompany);
+        Map.Entry<String, String> urlLevelEntity = this.validateUrlCompanyConstraints(url, userCompany);
 
-        UrlLevelEntity urlLevels = urlLevelEntity.getKey();
+        String urlWithActiveDomain = urlLevelEntity.getKey();
         String urlDomainPossibleWarning = urlLevelEntity.getValue();
 
-        // at this point, the url is valid and matches the user's company top level domain 
-        // time to encode: extract the company url data from the repo
-        CompanyUrlData companyUrlData = this.urlDataRepo.findByCompany(userCompany).get();
+        // at this point, all constraints are met, time for the encoding transaction
+        String encodedUrl = this._encodeUrl(userCompany, currentUser, sub, urlWithActiveDomain);
+        
+        // update the user's url encoding count
+        currentUser.incrementUrlEncodingCount();
+        this.userRepository.save(currentUser);
 
-        List<Map<String, String>> encodedData = companyUrlData.getDataEncoded();
-        List<Map<String, String>> decodedData = companyUrlData.getDataDecoded();
-
-        String prefix = "localhost:" + applicationPort + "/";
-
-        String encodedUrl = this.urlProcessor.encode(url, prefix, companyUrlData.getCompanySiteHash(),
-                encodedData, decodedData, sub.getMinParameterLength(), sub.getMinVariableLength());
-
+        // return the encoded url
         String res = null;
         if (urlDomainPossibleWarning != null) {
             HashMap<String, Object> map = new HashMap<>();
@@ -203,7 +222,6 @@ public class UrlController {
         else {
             res = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(encodedUrl);
         }
-
 
         return ResponseEntity.ok(res);
     }

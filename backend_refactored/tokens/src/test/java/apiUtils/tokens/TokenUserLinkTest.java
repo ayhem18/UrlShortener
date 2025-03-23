@@ -1,4 +1,4 @@
-package org.tokens;
+package apiUtils.tokens;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,12 +9,12 @@ import com.jayway.jsonpath.JsonPath;
 import org.access.Role;
 import org.access.RoleManager;
 import org.assertj.core.api.Assertions;
-import org.company.entities.Company;
+import apiUtils.company.entities.Company;
 import org.access.SubscriptionManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.tokens.entities.AppToken;
-import org.tokens.entities.TokenUserLink;
+import apiUtils.tokens.entities.AppToken;
+import apiUtils.tokens.entities.TokenUserLink;
 import org.user.entities.AppUser;
 
 import java.lang.reflect.Field;

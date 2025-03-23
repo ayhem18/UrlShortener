@@ -1,11 +1,11 @@
-package org.company;
+package apiUtils.company;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.access.SubscriptionManager;
-import org.company.entities.Company;
-import org.company.entities.TopLevelDomain;
+import apiUtils.company.entities.Company;
+import apiUtils.company.entities.TopLevelDomain;
 import org.junit.jupiter.api.Test;
 import com.fasterxml.jackson.core.JsonProcessingException;
 

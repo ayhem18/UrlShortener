@@ -1,7 +1,7 @@
 package org.authManagement.internal;
 
-import org.authManagement.entities.CollectionCounter;
-import org.authManagement.repositories.CounterRepository;
+import apiUtils.entities.CollectionCounter;
+import org.apiUtils.repositories.CounterRepository;
 import org.company.entities.Company;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;

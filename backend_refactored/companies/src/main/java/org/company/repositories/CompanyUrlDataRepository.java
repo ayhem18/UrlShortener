@@ -1,8 +1,8 @@
-package org.authManagement.repositories;
+package org.company.repositories;
 
-import org.authManagement.entities.CompanyUrlData;
 import org.bson.types.ObjectId;
 import org.company.entities.Company;
+import org.company.entities.CompanyUrlData;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

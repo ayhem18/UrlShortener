@@ -1,4 +1,4 @@
-package org.apiConfigurations;
+package org.apiUtils.configurations;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -6,20 +6,20 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.validation.Valid;
 import org.apache.commons.validator.routines.UrlValidator;
-import org.apiConfigurations.EmailService;
-import org.authManagement.entities.CompanyUrlData;
+import apiUtils.configurations.EmailService;
+import org.apiUtils.repositories.CounterRepository;
 import org.authManagement.exceptions.CompanyAndUserExceptions;
 import org.authManagement.exceptions.CompanyExceptions;
 import org.authManagement.exceptions.TokenAndUserExceptions;
 import org.authManagement.exceptions.UserExceptions;
-import org.authManagement.repositories.CompanyUrlDataRepository;
-import org.authManagement.repositories.CounterRepository;
 import org.authManagement.requests.CompanyRegisterRequest;
 import org.authManagement.requests.CompanyVerifyRequest;
 import org.authManagement.requests.UserRegisterRequest;
 import org.company.entities.Company;
+import org.company.entities.CompanyUrlData;
 import org.company.entities.TopLevelDomain;
 import org.company.repositories.CompanyRepository;
+import org.company.repositories.CompanyUrlDataRepository;
 import org.company.repositories.TopLevelDomainRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -57,6 +57,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@SuppressWarnings("unused")
 @RestController
 @Validated
 @Tag(name = "Authentication Management", description = "APIs for company registration, user registration, and company verification")
@@ -329,7 +330,8 @@ public class AuthController {
     }
     
 
-    @Operation(summary = "Verify a company", 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    @Operation(summary = "Verify a company",
                description = "Verifies a company using the token sent to the owner's email")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Company successfully verified",

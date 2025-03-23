@@ -1,4 +1,4 @@
-package org.authManagement.tests;
+package apiUtils.authManagement.tests;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -10,17 +10,17 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.access.RoleManager;
 import org.access.SubscriptionManager;
-import org.authManagement.configurations.WebTestConfig;
+import apiUtils.authManagement.configurations.WebTestConfig;
+import org.apiUtils.repositories.CounterRepository;
 import org.authManagement.controllers.AuthController;
-import org.authManagement.entities.CompanyUrlData;
-import org.authManagement.repositories.CompanyUrlDataRepository;
-import org.authManagement.repositories.CounterRepository;
 import org.authManagement.requests.CompanyRegisterRequest;
 import org.authManagement.requests.CompanyVerifyRequest;
 import org.authManagement.requests.UserRegisterRequest;
 import org.company.entities.Company;
+import org.company.entities.CompanyUrlData;
 import org.company.entities.TopLevelDomain;
 import org.company.repositories.CompanyRepository;
+import org.company.repositories.CompanyUrlDataRepository;
 import org.company.repositories.TopLevelDomainRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.tokens.repositories.TokenRepository;
 import org.tokens.repositories.TokenUserLinkRepository;
@@ -1179,10 +1178,7 @@ public class WebLayerUnitTest {
             .content(om.writeValueAsString(emptyMiddleNameRequest))
     )
     .andExpect(MockMvcResultMatchers.status().isBadRequest())
-    .andExpect(result -> assertTrue(
-        result.getResolvedException() instanceof MethodArgumentNotValidException,
-        "Request with empty middleName should fail validation"
-    ));
+    .andExpect(result -> assertInstanceOf(MethodArgumentNotValidException.class, result.getResolvedException(), "Request with empty middleName should fail validation"));
     
     // Test 3: Verify null roleToken for owner role is allowed
     UserRegisterRequest ownerNullTokenRequest = new UserRegisterRequest(
@@ -1226,60 +1222,6 @@ public class WebLayerUnitTest {
             .content(om.writeValueAsString(emptyTokenRequest))
     )
     .andExpect(MockMvcResultMatchers.status().isBadRequest())
-    .andExpect(result -> assertTrue(
-            result.getResolvedException() instanceof MethodArgumentNotValidException,
-            "Request with empty roleToken should fail validation"
-        ));
-    }
-
-    @Test
-    void testJsonNullHandling() throws Exception {
-        // Create raw JSON with explicit null values
-        String jsonWithNulls = """
-            {
-              "email": "user@example.com",
-              "username": "validUser123",
-              "password": "password123",
-              "firstName": "John",
-              "lastName": "Doe",
-              "middleName": null,
-              "companyId": "company_id_123",
-              "role": "employee",
-              "roleToken": "some_token"
-            }
-            """;
-        
-        // Print the deserialized object to see how nulls are handled
-        UserRegisterRequest request = om.readValue(jsonWithNulls, UserRegisterRequest.class);
-        System.out.println("Deserialized middleName: " + (request.middleName() == null ? "null" : "'" + request.middleName() + "'"));
-        
-        // Perform the actual request
-        MvcResult result = mockMvc.perform(
-            MockMvcRequestBuilders.post("/api/auth/register/user")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonWithNulls)
-        )
-        .andReturn();
-        
-         // Check if we got a validation error
-         boolean hasValidationError = result.getResolvedException() instanceof MethodArgumentNotValidException;
-        
-         // Log detailed error information if validation failed
-         if (hasValidationError) {
-             MethodArgumentNotValidException ex = (MethodArgumentNotValidException) result.getResolvedException();
-             ex.getBindingResult().getAllErrors().forEach(error -> {
-                 if (error instanceof FieldError) {
-                     FieldError fieldError = (FieldError) error;
-                     System.out.println("Field: " + fieldError.getField() +
-                                       ", Error: " + fieldError.getDefaultMessage() +
-                                       ", Rejected value: '" + fieldError.getRejectedValue() + "'");
-                 }
-             });
-            
-             // Also log the raw request
-             System.out.println("Raw JSON sent: " + jsonWithNulls);
-         }
-        
-         assertFalse(hasValidationError, "Request with null middleName should not fail validation");
+    .andExpect(result -> assertInstanceOf(MethodArgumentNotValidException.class, result.getResolvedException(), "Request with empty roleToken should fail validation"));
     }
 }

@@ -1,4 +1,4 @@
-package org.apiConfigurations;
+package org.apiUtils.configurations;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

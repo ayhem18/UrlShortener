@@ -1,4 +1,4 @@
-package org.authManagement.configurations;
+package apiUtils.authManagement.configurations;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
