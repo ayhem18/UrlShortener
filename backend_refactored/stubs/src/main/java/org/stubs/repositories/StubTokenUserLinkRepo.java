@@ -1,4 +1,4 @@
-package org.authManagement.internal;
+package org.stubs.repositories;
 
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;

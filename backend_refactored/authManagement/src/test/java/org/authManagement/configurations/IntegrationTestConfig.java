@@ -1,4 +1,4 @@
-package apiUtils.authManagement.configurations;
+package org.authManagement.configurations;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -15,19 +15,19 @@ import java.util.Properties;
 
 @SpringBootApplication
 @ComponentScan(basePackages = {
-    "org.apiConfigurations",
+    "org.apiUtils",
     "org.authManagement.controllers",  
 })
 @EnableMongoRepositories(basePackages = {"org.company.repositories", 
                                         "org.user.repositories", 
                                         "org.tokens.repositories",
-                                        "org.authManagement.repositories"
+                                        "org.apiUtils.repositories"
                                     }
 )
 @EntityScan(basePackages = {"org.company.entities",
         "org.user.entities",
         "org.tokens.entities",
-        "org.authManagement.entities",
+        "org.apiUtils.entities"
 })
 @PropertySource("classpath:mail.properties")
 public class IntegrationTestConfig {

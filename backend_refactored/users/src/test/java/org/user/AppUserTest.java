@@ -10,7 +10,7 @@ import com.jayway.jsonpath.JsonPath;
 import org.access.Role;
 import org.access.RoleManager;
 import org.assertj.core.api.Assertions;
-import apiUtils.company.entities.Company;
+import org.company.entities.Company;
 import org.access.SubscriptionManager;
 import org.junit.jupiter.api.Test;
 import org.user.entities.AppUser;

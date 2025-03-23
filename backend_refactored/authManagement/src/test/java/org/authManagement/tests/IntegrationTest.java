@@ -1,10 +1,10 @@
-package apiUtils.authManagement.tests;
+package org.authManagement.tests;
 
 import org.access.RoleManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import apiUtils.authManagement.configurations.IntegrationTestConfig;
+import org.authManagement.configurations.IntegrationTestConfig;
 import org.company.entities.CompanyUrlData;
 import org.company.repositories.CompanyUrlDataRepository;
 import org.apiUtils.repositories.CounterRepository;

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.validation.Valid;
 import org.apache.commons.validator.routines.UrlValidator;
-import apiUtils.configurations.EmailService;
+import org.apiUtils.configurations.EmailService;
 import org.apiUtils.repositories.CounterRepository;
 import org.authManagement.exceptions.CompanyAndUserExceptions;
 import org.authManagement.exceptions.CompanyExceptions;

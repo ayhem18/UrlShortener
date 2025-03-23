@@ -1,6 +1,6 @@
 package org.apiUtils.repositories;
 
-import apiUtils.entities.CollectionCounter;
+import org.apiUtils.entities.CollectionCounter;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -8,12 +8,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 
+
 @Repository
 public interface CounterRepository extends MongoRepository<CollectionCounter, String> {
-    @SuppressWarnings("null")
     Optional<CollectionCounter> findById(String id);
 
-    @SuppressWarnings("null")
     boolean existsById(String id);
 
     Optional<CollectionCounter> findByCollectionName(String collectionName);
@@ -22,6 +21,7 @@ public interface CounterRepository extends MongoRepository<CollectionCounter, St
 
     // since the counter is usually used to determine ids of new objects,
     // it should be treated as a transactional operation
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Transactional
     default long nextId(String collectionName) {
         if (! this.existsByCollectionName(collectionName)) {

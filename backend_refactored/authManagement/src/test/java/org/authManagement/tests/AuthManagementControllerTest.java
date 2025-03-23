@@ -5,13 +5,6 @@ import org.authManagement.exceptions.CompanyAndUserExceptions;
 import org.authManagement.exceptions.CompanyExceptions;
 import org.authManagement.exceptions.TokenAndUserExceptions;
 import org.authManagement.exceptions.UserExceptions;
-import org.authManagement.internal.StubCompanyRepo;
-import org.authManagement.internal.StubCompanyUrlDataRepo;
-import org.authManagement.internal.StubCounterRepo;
-import org.authManagement.internal.StubTokenRepo;
-import org.authManagement.internal.StubTokenUserLinkRepo;
-import org.authManagement.internal.StubTopLevelDomainRepo;
-import org.authManagement.internal.StubUserRepo;
 import org.authManagement.requests.CompanyRegisterRequest;
 import org.authManagement.requests.CompanyVerifyRequest;
 import org.authManagement.requests.UserRegisterRequest;
@@ -21,6 +14,7 @@ import org.company.entities.TopLevelDomain;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.stubs.repositories.*;
 import org.tokens.entities.AppToken;
 import org.tokens.entities.TokenUserLink;
 import org.user.entities.AppUser;
@@ -868,7 +862,7 @@ public class AuthManagementControllerTest {
             companyRepo.save(company);
         }
 
-        // Find youtube and github companies
+        // Find YouTube and GitHub companies
         Company youtube = companyRepo.findById("aaa").get();
         Company github = companyRepo.findById("bbb").get();
 
@@ -1251,7 +1245,7 @@ public class AuthManagementControllerTest {
     void testOwnerRegistration() {                
         // 3. Test with mismatched owner email
         for (Company company : companyRepo.findAll()) {
-            // Create email different than the company owner email
+            // Create email different from the company owner email
             String differentEmail = "different_" + gen.randomAlphaString(5) + "@" + company.getEmailDomain();
             
             UserRegisterRequest mismatchedOwnerRequest = new UserRegisterRequest(

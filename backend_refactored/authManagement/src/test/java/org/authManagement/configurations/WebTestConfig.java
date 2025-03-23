@@ -1,4 +1,4 @@
-package apiUtils.authManagement.configurations;
+package org.authManagement.configurations;
 
 import org.mockito.Mockito;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -13,13 +13,13 @@ import org.utils.CustomGenerator;
 @EntityScan(basePackages = {"org.company.entities",
         "org.user.entities",
         "org.tokens.entities",
-        "org.authManagement.entities",
+        "org.apiUtils.entities"
 }
 )
 @ComponentScan(basePackages = {
-        "org.apiConfigurations",
+        "org.apiUtils",
         "org.authManagement.controllers",
-        "org.authManagement.internal"
+        "org.stubs.repositories"
 })
 @PropertySource("classpath:mail.properties")
 public class WebTestConfig {

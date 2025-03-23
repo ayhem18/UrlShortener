@@ -21,13 +21,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
-import org.urlService.entities.UrlEncoding;
+import org.user.entities.UrlEncoding;
 import org.urlService.exceptions.UrlExceptions;
-import org.urlService.repositories.UrlEncodingRepository;
 import org.url.UrlLevelEntity;
 import org.url.UrlProcessor;
 import org.company.repositories.TopLevelDomainRepository;
 import org.user.entities.AppUser;
+import org.user.repositories.UrlEncodingRepository;
 import org.user.repositories.UserRepository;
 
 import java.time.LocalDate;
@@ -41,6 +41,7 @@ import java.util.Map;
 @RestController
 @Validated
 @PropertySource("classpath:app.properties")
+@SuppressWarnings("unused")
 public class UrlController {
 
     private final CompanyUrlDataRepository urlDataRepo;
@@ -55,7 +56,7 @@ public class UrlController {
 
     @Autowired
     public UrlController(CompanyUrlDataRepository urlDataRepo,
-                        UrlEncodingRepository urlEncodingRepo, 
+                        UrlEncodingRepository urlEncodingRepo,
                         TopLevelDomainRepository topLevelDomainRepo, 
                         UserRepository userRepository,
                         UrlProcessor urlProcessor) {
@@ -72,7 +73,7 @@ public class UrlController {
 
     // added for unit testing without loading external resources
     public UrlController(CompanyUrlDataRepository urlDataRepo,
-                        UrlEncodingRepository urlEncodingRepo, 
+                        UrlEncodingRepository urlEncodingRepo,
                         TopLevelDomainRepository topLevelDomainRepo, 
                         UserRepository userRepository,
                         UrlProcessor urlProcessor,
@@ -97,7 +98,7 @@ public class UrlController {
         if (userDailyLimit != null) {
             LocalDateTime atStartOfDay = LocalDateTime.from(LocalDate.now().atStartOfDay());
             
-            int todayCount = this.urlEncodingRepo.findByUserAndUrlEncodingTimeAfter(user, atStartOfDay).size(); 
+            int todayCount = this.urlEncodingRepo.findByUserAndUrlEncodingTimeAfter(user, atStartOfDay).size();
 
             if (todayCount >= userDailyLimit) {
                 throw new UrlExceptions.DailyLimitExceededException("The user's current subscription encoding daily limit is hit: " + userDailyLimit);
@@ -163,7 +164,8 @@ public class UrlController {
         return new AbstractMap.SimpleEntry<>(urlString, urlDomainPossibleWarning);
     }
 
-    @Transactional 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    @Transactional
     private String _encodeUrl(Company userCompany, AppUser currentUser, Subscription sub, String urlWithActiveDomain) {
         CompanyUrlData companyUrlData = this.urlDataRepo.findByCompany(userCompany).get();
 
@@ -197,7 +199,7 @@ public class UrlController {
         Subscription sub = userCompany.getSubscription();
 
 
-        // 3. check whether the user is passing a url matching the user's company top level domain 
+        // 3. check whether the user is passing an url matching the user's company top level domain
         Map.Entry<String, String> urlLevelEntity = this.validateUrlCompanyConstraints(url, userCompany);
 
         String urlWithActiveDomain = urlLevelEntity.getKey();
@@ -211,7 +213,7 @@ public class UrlController {
         this.userRepository.save(currentUser);
 
         // return the encoded url
-        String res = null;
+        String res;
         if (urlDomainPossibleWarning != null) {
             HashMap<String, Object> map = new HashMap<>();
             map.put("encoded_url", encodedUrl);

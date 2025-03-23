@@ -1,4 +1,4 @@
-package org.authManagement.internal;
+package org.stubs.repositories;
 
 import org.company.entities.CompanyUrlData;
 import org.company.repositories.CompanyUrlDataRepository;

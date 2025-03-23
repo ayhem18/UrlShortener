@@ -1,9 +1,8 @@
-package org.urlService.entities;
+package org.user.entities;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
-import org.user.entities.AppUser;
 
 import java.time.LocalDateTime;
 

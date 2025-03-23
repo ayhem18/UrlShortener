@@ -1,4 +1,4 @@
-package apiUtils.entities;
+package org.apiUtils.entities;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 

@@ -1,4 +1,4 @@
-package apiUtils.tokens;
+package org.tokens;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,11 +9,11 @@ import com.jayway.jsonpath.JsonPath;
 import org.access.Role;
 import org.access.RoleManager;
 import org.assertj.core.api.Assertions;
-import apiUtils.company.entities.Company;
+import org.company.entities.Company;
 import org.access.SubscriptionManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import apiUtils.tokens.entities.AppToken;
+import org.tokens.entities.AppToken;
 
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
@@ -203,7 +203,7 @@ public class TokenTest {
         Object doc = Configuration.defaultConfiguration().jsonProvider().parse(tokenJson);
         
         // Verify expirationTime is included
-        assertTrue(JsonPath.read(doc, "$.expirationTime") != null);
+        assertNotNull(JsonPath.read(doc, "$.expirationTime"));
         
         // Create a token without expiration
         AppToken token2 = new AppToken("token-789", "hashed-token-012", company, role);

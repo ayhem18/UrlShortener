@@ -56,15 +56,15 @@ public class subProjectsConfig {
     @Bean
     public JavaMailSender javaMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
-        mailSender.setHost("${smtp.host}");
-        mailSender.setPort(587);
-        mailSender.setUsername("${smtp.username}");
-        mailSender.setPassword("${smtp.password}");
+        mailSender.setHost(smtpHost);
+        mailSender.setPort(smtpPort);
+        mailSender.setUsername(smtpUsername);
+        mailSender.setPassword(smtpPassword);
         
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
-        props.put("mail.smtp.auth", "${smtp.auth}");
-        props.put("mail.smtp.starttls.enable", "${smtp.starttls.enable}");
+        props.put("mail.smtp.auth", smtpAuth);
+        props.put("mail.smtp.starttls.enable", smtpStartTlsEnable);
         
         return mailSender;
     }

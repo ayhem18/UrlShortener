@@ -1,4 +1,4 @@
-package apiUtils.company;
+package org.company;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,7 +8,7 @@ import com.jayway.jsonpath.JsonPath;
 import org.access.Subscription;
 import org.access.SubscriptionManager;
 import org.assertj.core.api.Assertions;
-import apiUtils.company.entities.Company;
+import org.company.entities.Company;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;

@@ -1,4 +1,4 @@
-package apiUtils.authManagement.tests;
+package org.authManagement.tests;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.access.RoleManager;
 import org.access.SubscriptionManager;
-import apiUtils.authManagement.configurations.WebTestConfig;
+import org.authManagement.configurations.WebTestConfig;
 import org.apiUtils.repositories.CounterRepository;
 import org.authManagement.controllers.AuthController;
 import org.authManagement.requests.CompanyRegisterRequest;

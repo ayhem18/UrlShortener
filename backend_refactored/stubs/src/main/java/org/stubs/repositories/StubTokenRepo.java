@@ -1,4 +1,4 @@
-package org.authManagement.internal;
+package org.stubs.repositories;
 
 import org.access.Role;
 import org.access.RoleManager;

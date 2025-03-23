@@ -1,6 +1,6 @@
 package org.authManagement.controllers;
 
-import apiUtils.configurations.CustomExceptionHandler;
+import org.apiUtils.configurations.CustomExceptionHandler;
 import org.authManagement.exceptions.CompanyAndUserExceptions;
 import org.authManagement.exceptions.UserExceptions;
 import org.access.RoleManager;

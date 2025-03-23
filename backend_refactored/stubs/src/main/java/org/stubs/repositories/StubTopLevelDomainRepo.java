@@ -1,4 +1,4 @@
-package org.authManagement.internal;
+package org.stubs.repositories;
 
 import org.company.entities.Company;
 import org.company.entities.TopLevelDomain;

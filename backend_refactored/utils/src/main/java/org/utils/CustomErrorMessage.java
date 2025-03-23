@@ -30,7 +30,13 @@ public class CustomErrorMessage {
         this.description = description;
     }
 
-    public CustomErrorMessage() {};
+    // private no-argument constructor for the jackson package
+    @SuppressWarnings("unused")
+    private CustomErrorMessage() {}
+
+    public String getMessage() {
+        return message;
+    }
 
     public int getStatusCode() {
         return statusCode;
@@ -38,10 +44,6 @@ public class CustomErrorMessage {
 
     public LocalDateTime getTimestamp() {
         return timestamp;
-    }
-
-    public String getMessage() {
-        return message;
     }
 
     public String getDescription() {

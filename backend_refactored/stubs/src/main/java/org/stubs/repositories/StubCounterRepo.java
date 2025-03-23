@@ -1,8 +1,7 @@
-package org.authManagement.internal;
+package org.stubs.repositories;
 
-import apiUtils.entities.CollectionCounter;
+import org.apiUtils.entities.CollectionCounter;
 import org.apiUtils.repositories.CounterRepository;
-import org.company.entities.Company;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,10 +21,6 @@ public class StubCounterRepo implements CounterRepository {
 
     public StubCounterRepo() {
         this.db = new ArrayList<>();
-    }
-
-    public void addCompanyCollection() {
-        this.db.add(new CollectionCounter(Company.COMPANY_COLLECTION_NAME));
     }
 
     @Override

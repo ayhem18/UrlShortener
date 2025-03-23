@@ -53,6 +53,7 @@ dependencies {
     implementation project(':users')
     implementation project(':tokens')
     implementation project(':apiUtils')
+    implementation project(':stubs')
 
 
     // for junit: https://docs.gradle.org/current/userguide/java_testing.html

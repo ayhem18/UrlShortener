@@ -36,8 +36,10 @@ dependencies {
 	implementation project(':users')
 	implementation project(':tokens')
 	implementation project(':apiUtils')
+	implementation project(":stubs")
 	implementation project(':authManagement')
 	implementation project(':urlService')
+
 }
 
 
