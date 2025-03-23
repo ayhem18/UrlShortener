@@ -19,7 +19,6 @@ public class UrlExceptions {
         }
     }
 
-
     public static class UrlCompanyDomainExpired extends RuntimeException {
         public UrlCompanyDomainExpired(String message) {
             super(message);

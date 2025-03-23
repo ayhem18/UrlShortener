@@ -34,6 +34,8 @@ dependencies {
     // Apache Commons Validator for URL validation
     implementation group: 'commons-validator', name: 'commons-validator', version: '1.9.0'
 
+    // for the swagger ui
+    implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.8.5'
 
     // for security
     implementation group: 'org.springframework.security', name: 'spring-security-web', version: '6.4.1'
@@ -51,7 +53,7 @@ dependencies {
     implementation project(':users')
     implementation project(':tokens')
     implementation project(':apiUtils')
-    implementation project(':authManagement')
+    implementation project(":stubs")
 
     // for junit: https://docs.gradle.org/current/userguide/java_testing.html
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
