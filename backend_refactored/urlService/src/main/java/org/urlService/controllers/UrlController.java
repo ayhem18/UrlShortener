@@ -65,6 +65,7 @@ public class UrlController extends TokenController {
                          TokenUserLinkRepository tokenUserLinkRepository,
                          UrlProcessor urlProcessor) {
         super(userRepository, tokenUserLinkRepository);
+        
         this.urlDataRepo = urlDataRepo;
         this.urlEncodingRepo = urlEncodingRepo;
         this.topLevelDomainRepo = topLevelDomainRepo;
@@ -235,9 +236,9 @@ public class UrlController extends TokenController {
 
 
 
-    @PostMapping("/api/url/decode/{url}")
-    public ResponseEntity<String> decodeUrl(@PathVariable String url, @AuthenticationPrincipal AppUser user) {
-        //
+    @PostMapping("/api/url/decode/")
+    public ResponseEntity<String> decodeUrl(@RequestParam String encodedUrl, @AuthenticationPrincipal AppUser user) {
+        
         return null;
     }
 

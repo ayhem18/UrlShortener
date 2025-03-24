@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.tokens.entities.AppToken;
 import org.tokens.entities.TokenUserLink;
@@ -195,7 +196,6 @@ public class WebLayerAuthTest {
     public void testUnauthorizedAccess() throws Exception {
         // Use non-existent credentials
         mockMvc.perform(MockMvcRequestBuilders.get("/api/url/encode").param("url", "https://www.example.com"))
-//                .with(SecurityMockMvcRequestPostProcessors.user("nonexistent").password("wrongpassword")))
                 .andExpect(status().isUnauthorized());
     }
     
@@ -214,28 +214,37 @@ public class WebLayerAuthTest {
 
             String domain = domains.getFirst().getDomain();
 
-            // Create user with authorized=true
-            AppUser user = setUpUser(
-                company, 
-                RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), 
-                true
-            );
-            
-            // Make request with authentication
-            String result = mockMvc.perform(MockMvcRequestBuilders
-                    .get("/api/url/encode").param("url", "https://" + domain + "/product/123")
-                    .with(SecurityMockMvcRequestPostProcessors.user(user.getUsername()).password(user.getPassword())))
-                    .andExpect(status().is(not(401)))  // Not unauthorized
-                    .andExpect(status().is(not(403)))  // Not forbidden
-                    .andReturn().getResponse().getContentAsString();
+            for (String role : RoleManager.ROLES_STRING) {
+                Role r = RoleManager.getRole(role);
 
-            // read the json response as a map
-            Map<String, String> responseMap = om.readValue(result, Map.class);
+                // Create user with authorized=true
+                AppUser user = setUpUser(
+                    company, 
+                    r, 
+                    true
+                );
 
-            // Additional verification - should have successful response
-            assertTrue(responseMap.containsKey("encoded_url"), 
-                    "Response should contain encoded URL for user " + user.getEmail());
-            }
+
+                MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/encode").param("url", "https://" + domain + "/product/123")
+                    .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
+
+
+                // Make request with authentication
+                String result = mockMvc.perform(
+                        req
+                        )
+                        .andExpect(status().is(not(401)))  // Not unauthorized
+                        .andExpect(status().is(not(403)))  // Not forbidden
+                        .andReturn().getResponse().getContentAsString();
+
+                // read the json response as a map
+                Map<String, String> responseMap = om.readValue(result, Map.class);
+
+                // Additional verification - should have successful response
+                assertTrue(responseMap.containsKey("encoded_url"), 
+                        "Response should contain encoded URL for user " + user.getEmail());
+                }
+        }
     }
     
     /**
@@ -255,10 +264,11 @@ public class WebLayerAuthTest {
             false
         );
         
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/encode").param("url", "https://" + domain + "/product/123")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
+
         // Make request with authentication but without authorization
-        mockMvc.perform(MockMvcRequestBuilders
-                .get("/api/url/encode").param("url", "https://" + domain + "/product/123")
-                .with(SecurityMockMvcRequestPostProcessors.user(user.getEmail()).password(user.getPassword())))
+        mockMvc.perform(req)
                 .andExpect(status().isForbidden());
     }
 }

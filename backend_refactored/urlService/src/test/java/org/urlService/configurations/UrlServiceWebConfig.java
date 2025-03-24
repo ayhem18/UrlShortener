@@ -7,6 +7,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.url.UrlProcessor;
 import org.utils.CustomGenerator;
 
@@ -23,6 +25,7 @@ import org.utils.CustomGenerator;
         "org.urlService.controllers",
 })
 @PropertySource("classpath:mail.properties")
+@SuppressWarnings("unused")
 public class UrlServiceWebConfig {
 
     // create some beans needed for the app
@@ -40,5 +43,11 @@ public class UrlServiceWebConfig {
     public UrlProcessor urlProcessor(CustomGenerator customGenerator) {
         return new UrlProcessor(customGenerator);
     }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return NoOpPasswordEncoder.getInstance(); // this is used solely for testing purposes
+    }
+
 }
 
