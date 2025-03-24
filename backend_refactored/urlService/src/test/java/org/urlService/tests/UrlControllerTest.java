@@ -30,23 +30,21 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class UrlControllerTest {
 
-    private final StubCompanyRepo companyRepo;
-    private final StubCompanyUrlDataRepo companyUrlDataRepo;
-    private final StubTopLevelDomainRepo topLevelDomainRepo;
-    private final StubUserRepo userRepo;
-    private final StubUrlEncodingRepo urlEncodingRepo;
-    private final StubTokenRepo tokenRepo;
-    private final StubTokenUserLinkRepo tokenUserLinkRepo;
-    private final CustomGenerator gen;
-    private final UrlProcessor urlProcessor;
-    private final PasswordEncoder encoder;
-    private static final int TEST_PORT = 8080;
+class BaseTest {
 
-    private UrlController urlController;
+    protected final StubCompanyRepo companyRepo;
+    protected final StubCompanyUrlDataRepo companyUrlDataRepo;
+    protected final StubTopLevelDomainRepo topLevelDomainRepo;
+    protected final StubUserRepo userRepo;
+    protected final StubUrlEncodingRepo urlEncodingRepo;
+    protected final StubTokenRepo tokenRepo;  
+    protected final StubTokenUserLinkRepo tokenUserLinkRepo;
+    protected final CustomGenerator gen;
+    protected final UrlProcessor urlProcessor;
+    protected final PasswordEncoder encoder;
 
-    public UrlControllerTest() {
+    public BaseTest() {
         companyRepo = new StubCompanyRepo();
         companyUrlDataRepo = new StubCompanyUrlDataRepo();
         topLevelDomainRepo = new StubTopLevelDomainRepo(companyRepo);
@@ -57,31 +55,20 @@ public class UrlControllerTest {
         gen = new CustomGenerator();
         urlProcessor = new UrlProcessor(gen);
         encoder = new BCryptPasswordEncoder();
-
-        urlController = new UrlController(
-            companyUrlDataRepo,
-            urlEncodingRepo,
-            topLevelDomainRepo,
-            userRepo,
-            tokenUserLinkRepo,
-            urlProcessor,
-            TEST_PORT
-        );
     }
 
-    @BeforeEach
-    void setUp() {
+    protected void clear() {
         // Reset the repositories before each test
         companyRepo.deleteAll();
         companyUrlDataRepo.deleteAll();
         topLevelDomainRepo.deleteAll();
         userRepo.deleteAll();
         urlEncodingRepo.deleteAll();        
-    }   
+    }
 
 
     // Helper method to set up a test company with domains
-    private Company setUpCompany() {
+    protected Company setUpCompany() {
         String companyId = gen.randomAlphaString(12);
         String companyName = gen.randomAlphaString(10);
         String companyEmailDomain = gen.randomAlphaString(5) + ".com";
@@ -139,7 +126,7 @@ public class UrlControllerTest {
     }
 
     // Helper method to set up a test user
-    private AppUser setUpUser(Company company, Role role, boolean authorized) {
+    protected AppUser setUpUser(Company company, Role role, boolean authorized) {
         String username = "testuser_" + gen.randomAlphaString(5);
         String email = username + "@" + company.getEmailDomain();
         
@@ -168,6 +155,31 @@ public class UrlControllerTest {
         return userRepo.save(user);
 
     }
+
+}
+
+
+class UrlEncodeTest extends BaseTest {
+
+    private UrlController urlController;
+
+    public UrlEncodeTest() {
+
+        urlController = new UrlController(
+            companyUrlDataRepo,
+            urlEncodingRepo,
+            topLevelDomainRepo,
+            userRepo,
+            tokenUserLinkRepo,
+            urlProcessor,
+            10
+        );
+    }
+
+    @BeforeEach
+    void setUp() {
+        clear();
+    }   
 
 
     @Test
@@ -250,7 +262,6 @@ public class UrlControllerTest {
     }
 
 
-
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     void testVerifyDailyLimit() {
@@ -279,7 +290,7 @@ public class UrlControllerTest {
             tokenUserLinkRepo,
 
             urlProcessor,
-            TEST_PORT
+            10
         );
         
         // Test with all subscription tiers that have daily limits
@@ -336,6 +347,7 @@ public class UrlControllerTest {
         }
     }
 
+
     @Test
     void testVerifyDailyLimitNull() {
 
@@ -362,7 +374,7 @@ public class UrlControllerTest {
             userRepo,
             tokenUserLinkRepo,
             urlProcessor,
-            TEST_PORT
+            10
         );
         
         // Create a custom subscription with null daily limit
@@ -388,6 +400,7 @@ public class UrlControllerTest {
             }
         }
     }
+
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
@@ -437,6 +450,7 @@ public class UrlControllerTest {
             assertEquals(dataBefore.getDataEncoded(), dataAfter.getDataEncoded(), "Data encoded should not change");
         }
     }
+
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
@@ -596,6 +610,7 @@ public class UrlControllerTest {
         }
     }
 
+    
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     void testSuccessfulInactiveUrlEncoding() throws Exception {
@@ -716,5 +731,177 @@ public class UrlControllerTest {
             }
         }
     }
-
 } 
+
+
+class UrlDecodeTest extends BaseTest {
+
+    private final UrlController urlController;
+
+    public UrlDecodeTest() {
+        super();
+        urlController = new UrlController(companyUrlDataRepo, urlEncodingRepo, topLevelDomainRepo, userRepo, tokenUserLinkRepo, urlProcessor, 18);
+    }
+
+    @BeforeEach
+    void setUp() {
+        clear();
+    }
+    
+    /**
+     * Test 1: Verify that user without token cannot decode URLs
+     */
+    @Test
+    void testUserWithoutToken() {
+        
+        for (int i = 0; i < 100; i++) {
+
+            // Set up company
+            Company company = setUpCompany();
+                
+            // Create user WITHOUT token link (authorized=false)
+            AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), false);
+            
+            // Create mock user details
+            UserDetailsImp userDetails = new UserDetailsImp(user);
+            
+            // Find active domain
+            TopLevelDomain activeDomain = topLevelDomainRepo.findByCompanyAndDomainState(
+                    company, TopLevelDomain.DomainState.ACTIVE).getFirst();
+            
+            // Sample encoded URL to decode
+            String encodedUrl = "https://localhost:8018/" + activeDomain.getDomain() + "/aasdfghytrewq";
+            
+            // Attempt to decode the URL - should throw exception
+            TokenController.TokenNotFoundException exception = 
+                assertThrows(TokenController.TokenNotFoundException.class, 
+                () -> urlController.decodeUrl(encodedUrl, userDetails),
+                "User without token should not be authorized to decode URLs");
+        
+            assertTrue(exception.getMessage().contains("His access might have been revoked"),
+                    "Exception message should indicate authorization failure");
+        
+        }
+    }
+    
+    /**
+     * Test 2: Verify that encoded URL with invalid domain hash raises exception
+     */
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    @Test
+    void testInvalidDomainHash() {
+        for (int i = 0; i < 100; i++) {
+            // Set up company and authorized user
+            Company company = setUpCompany();
+            AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
+
+            // Create mock user details
+            UserDetailsImp userDetails = new UserDetailsImp(user);
+
+            // Capture initial state
+            long companyCount = companyRepo.count();
+            long urlEncodingCount = urlEncodingRepo.count();
+            long userCount = userRepo.count();
+            CompanyUrlData dataBefore = companyUrlDataRepo.findByCompany(company).get();
+
+            // Create an encoded URL with an invalid domain
+            String invalidEncodedUrl = "https://localhost:8018/" + this.gen.randomAlphaString(20) + "/aasdfghytrewq";
+
+            List<String> keysBeforeEncoded = new ArrayList<>(dataBefore.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+            List<String> keysBeforeDecoded = new ArrayList<>(dataBefore.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+
+            // Attempt to decode - should throw exception
+            assertThrows(UrlExceptions.InvalidTopLevelDomainException.class, 
+                () -> urlController.decodeUrl(invalidEncodedUrl, userDetails),
+                "Should reject URL with invalid domain");
+
+            // Verify database state is unchanged
+            assertEquals(companyCount, companyRepo.count(), "The company should not change");
+            assertEquals(urlEncodingCount, urlEncodingRepo.count(), "The url encoding count should not change");
+            assertEquals(userCount, userRepo.count(), "The user count should not change");
+
+
+            // Verify user encoding count not incremented
+            AppUser verifyUser = userRepo.findById(user.getEmail()).get();
+            assertEquals(verifyUser.getUrlEncodingCount(), user.getUrlEncodingCount(), "User encoding count should not change when daily limit exceeded");
+
+            // Verify company URL data hasn't changed
+            CompanyUrlData dataAfter = companyUrlDataRepo.findByCompany(company).get();
+
+            List<String> keysAfterEncoded = new ArrayList<>(dataAfter.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+            assertEquals(keysBeforeEncoded, keysAfterEncoded, "The data should not change");
+
+            List<String> keysAfterDecoded = new ArrayList<>(dataAfter.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+            assertEquals(keysBeforeDecoded, keysAfterDecoded, "The data should not chance");
+        }
+    
+    }
+    
+    /**
+     * Test 3: Verify full encode-decode workflow functions correctly
+     */
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    @Test
+    void testSuccessfulEncodeDecode() throws Exception {
+        for (int i = 0; i < 100; i++) {
+
+            // Set up company and authorized user
+            Company company = setUpCompany();
+            AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
+            
+            // Create mock user details
+            UserDetailsImp userDetails = new UserDetailsImp(user);
+            
+            // Find active domain
+            TopLevelDomain activeDomain = topLevelDomainRepo.findByCompanyAndDomainState(
+                    company, TopLevelDomain.DomainState.ACTIVE).getFirst();
+            
+            // Create original URL with active domain
+            String originalUrl = "https://" + activeDomain.getDomain() + "/product/123?param=value";
+            
+            // Step 1: Encode the URL
+            var encodeResponse = urlController.encodeUrl(originalUrl, userDetails);
+            assertEquals(200, encodeResponse.getStatusCode().value(), "Encode should succeed with status 200");
+            
+            // Parse response to get encoded URL
+            com.fasterxml.jackson.databind.JsonNode jsonNode = 
+                new com.fasterxml.jackson.databind.ObjectMapper().readTree(encodeResponse.getBody());
+            String encodedUrl = jsonNode.get("encoded_url").asText();
+            
+            // Capture state after encoding
+            long companyCount = companyRepo.count();
+            long urlEncodingCount = urlEncodingRepo.count();
+            long userCount = userRepo.count();
+            CompanyUrlData dataBefore = companyUrlDataRepo.findByCompany(company).get();
+            
+            // Step 2: Decode the URL
+            var decodeResponse = urlController.decodeUrl(encodedUrl, userDetails);
+            assertEquals(200, decodeResponse.getStatusCode().value(), "Decode should succeed with status 200");
+            
+            // Parse response to get decoded URL
+            com.fasterxml.jackson.databind.JsonNode decodeJson = 
+                new com.fasterxml.jackson.databind.ObjectMapper().readTree(decodeResponse.getBody());
+            String decodedUrl = decodeJson.get("decoded_url").asText();
+            
+            // Verify database state is unchanged after decoding
+            assertEquals(companyCount, companyRepo.count(), "Company count should not change");
+            assertEquals(urlEncodingCount, urlEncodingRepo.count(), "URL encoding count should not change after decode");
+            assertEquals(userCount, userRepo.count(), "User count should not change");
+            
+            // Verify company URL data hasn't changed
+            CompanyUrlData dataAfter = companyUrlDataRepo.findByCompany(company).get();
+            assertEquals(dataBefore.getDataDecoded().size(), dataAfter.getDataDecoded().size(), 
+                    "Data decoded size should not change after decode operation");
+            assertEquals(dataBefore.getDataEncoded().size(), dataAfter.getDataEncoded().size(), 
+                    "Data encoded size should not change after decode operation");
+            
+            // Verify decoded URL matches original
+            assertEquals(originalUrl, decodedUrl, "Decoded URL should match the original URL");
+
+        }
+    
+    }
+}

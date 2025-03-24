@@ -28,6 +28,7 @@ import org.utils.CustomGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -86,7 +87,7 @@ public class WebLayerAuthTest {
         this.om.setDateFormat(df);
         this.om.registerModule(new JavaTimeModule());
         this.om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
+        this.om.enable(SerializationFeature.INDENT_OUTPUT);
     }
 
     @BeforeEach
@@ -225,7 +226,7 @@ public class WebLayerAuthTest {
                 );
 
 
-                MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/encode").param("url", "https://" + domain + "/product/123")
+                MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/encode").param("encodedUrl", "https://" + domain + "/product/123")
                     .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
 
 
@@ -264,11 +265,102 @@ public class WebLayerAuthTest {
             false
         );
         
-        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/encode").param("url", "https://" + domain + "/product/123")
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/encode").param("encodedUrl", "https://" + domain + "/product/123")
             .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
 
         // Make request with authentication but without authorization
         mockMvc.perform(req)
                 .andExpect(status().isForbidden());
     }
+
+    /**
+     * Test that requests with non-existing users return 401 Unauthorized for decode endpoint
+     */
+    @Test
+    public void testUnauthorizedAccessDecode() throws Exception {
+        // Use non-existent credentials
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/url/decode/")
+                .param("encodedUrl", "https://localhost:8018/examplehash/abc123"))
+                .andExpect(status().isUnauthorized());
+    }
+    
+    /**
+     * Test that authenticated users with proper authorization can access the decode endpoint
+     */
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    @Test
+    public void testAuthorizedAccessDecode() throws Exception {
+        for (int i = 0; i < 20; i++) {
+            Company company = setUpCompany();
+
+            List<TopLevelDomain> domains = this.topLevelDomainRepo.findByCompany(company);
+            assertFalse(domains.isEmpty(), "Company should have at least one active domain");
+            
+            // Get the company URL data to use the domain hash
+            CompanyUrlData urlData = companyUrlDataRepo.findByCompany(company).get();
+            String domainHash = urlData.getCompanyDomainHashed();
+
+            // the decode method requires having some decoded data saved
+            urlData.getDataDecoded().add(Map.of("parameter1", "1", "parameter2", "2"));
+            urlData.getDataDecoded().add(Map.of("parameter3", "1", "parameter4", "2"));
+
+            for (String role : RoleManager.ROLES_STRING) {
+                Role r = RoleManager.getRole(role);
+
+                // Create user with authorized=true
+                AppUser user = setUpUser(
+                    company, 
+                    r, 
+                    true
+                );
+
+                // Create a sample encoded URL
+                String encodedUrl = "https://localhost:8018/" + domainHash + "/abc123";
+
+                MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/decode/")
+                    .param("encodedUrl", encodedUrl)
+                    .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
+
+                // Make request with authentication
+                mockMvc.perform(req)
+                    .andExpect(status().is(not(401)))  // Not unauthorized
+                    .andExpect(status().is(not(403))); // Not forbidden
+            }
+        }
+    }
+    
+    /**
+     * Test that authenticated users without proper authorization receive 403 Forbidden for decode endpoint
+     */
+    @Test
+    public void testAuthenticatedButUnauthorizedDecode() throws Exception {
+        // Set up company and domain
+        Company company = setUpCompany();
+        
+        // Get the company URL data to use the domain hash
+        CompanyUrlData urlData = companyUrlDataRepo.findByCompany(company).get();
+        String domainHash = urlData.getCompanyDomainHashed();
+        
+        // Set up user with authorized=false
+        AppUser user = setUpUser(
+            company, 
+            RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), 
+            false
+        );
+        
+        // Create a sample encoded URL
+        String encodedUrl = "https://localhost:8018/" + domainHash + "/abc123";
+        
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/decode/")
+            .param("encodedUrl", encodedUrl)
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
+
+        // Make request with authentication but without authorization
+        mockMvc.perform(req)
+            .andExpect(status().isForbidden());
+    }
+
+
+    
+
 }

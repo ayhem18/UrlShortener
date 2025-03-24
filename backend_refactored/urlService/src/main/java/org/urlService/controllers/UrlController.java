@@ -2,6 +2,8 @@ package org.urlService.controllers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import org.access.Subscription;
 import org.apache.commons.validator.routines.UrlValidator;
@@ -18,7 +20,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,6 +34,7 @@ import org.user.entities.AppUser;
 import org.user.repositories.UrlEncodingRepository;
 import org.user.repositories.UserRepository;
 
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.AbstractMap;
@@ -50,9 +52,11 @@ public class UrlController extends TokenController {
     private final UrlEncodingRepository urlEncodingRepo;
     private final TopLevelDomainRepository topLevelDomainRepo;
     private final UserRepository userRepository;
-    private final TokenUserLinkRepository tokenUserLinkRepository;
     private final UrlProcessor urlProcessor;
     private final UrlValidator urlValidator;
+
+    private final ObjectMapper objectMapper;
+    
 
     @Value("${server.port}")
     private int applicationPort;
@@ -70,12 +74,21 @@ public class UrlController extends TokenController {
         this.urlEncodingRepo = urlEncodingRepo;
         this.topLevelDomainRepo = topLevelDomainRepo;
         this.userRepository = userRepository;
-        this.tokenUserLinkRepository = tokenUserLinkRepository;
         this.urlProcessor = urlProcessor;
         
         // limit the protocols to http and https and allow local urls
         String[] schemes = {"http", "https"};
         this.urlValidator = new UrlValidator(schemes, UrlValidator.ALLOW_LOCAL_URLS);
+    
+                        
+        SimpleDateFormat df = new SimpleDateFormat("dd-MM-yyyy hh:mm");
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.setDateFormat(df);
+        this.objectMapper.registerModule(new JavaTimeModule());
+        this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        this.objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+
+
     }
 
     // added for unit testing without loading external resources
@@ -101,6 +114,7 @@ public class UrlController extends TokenController {
     public String getUrlEncodePrefix() {
         return "localhost:" + applicationPort + "/";
     }
+
 
     private Company verifyDailyLimit(AppUser user) {
         Company userCompany = user.getCompany();
@@ -186,7 +200,7 @@ public class UrlController extends TokenController {
         List<Map<String, String>> encodedData = companyUrlData.getDataEncoded();
         List<Map<String, String>> decodedData = companyUrlData.getDataDecoded();
 
-        String encodedUrl = this.urlProcessor.encode(urlWithActiveDomain, getUrlEncodePrefix(), companyUrlData.getCompanySiteHash(),
+        String encodedUrl = this.urlProcessor.encode(urlWithActiveDomain, getUrlEncodePrefix(), companyUrlData.getCompanyDomainHashed(),
                 encodedData, decodedData, sub.getMinParameterLength(), sub.getMinVariableLength());
 
         // make sure to update the urlEncodingRepo with the new encoded url
@@ -231,15 +245,39 @@ public class UrlController extends TokenController {
             map.put("warning", urlDomainPossibleWarning);
         }
 
-        return ResponseEntity.ok(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(map));
+        return ResponseEntity.ok(this.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(map));
     }
 
 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    @GetMapping("/api/url/decode/")
+    public ResponseEntity<String> decodeUrl(@RequestParam(name = "encodedUrl") String encodedUrl, 
+                                            @AuthenticationPrincipal UserDetails currentUserDetails) throws JsonProcessingException {
 
-    @PostMapping("/api/url/decode/")
-    public ResponseEntity<String> decodeUrl(@RequestParam String encodedUrl, @AuthenticationPrincipal AppUser user) {
-        
-        return null;
+        AppUser currentUser = this.validateUserToken(currentUserDetails);
+
+        CompanyUrlData companyUrlData = this.urlDataRepo.findByCompany(currentUser.getCompany()).get();
+
+        // break down the encoded url into url levels   
+        UrlLevelEntity urlLevel = this.urlProcessor.breakdown(encodedUrl).get(2);
+
+        String currentDomainHash = urlLevel.levelName() != null ? (urlLevel.levelName()) : urlLevel.pathVariable();
+
+        if (!currentDomainHash.equals(companyUrlData.getCompanyDomainHashed())) {
+            throw new UrlExceptions.InvalidTopLevelDomainException("The encoded url does not match the user's company top level domain");
+        }
+
+        List<Map<String, String>> decodedData = companyUrlData.getDataDecoded();
+
+        TopLevelDomain companyTLD = this.topLevelDomainRepo.findByCompanyAndDomainState(currentUser.getCompany(), TopLevelDomain.DomainState.ACTIVE).getFirst();
+
+        // get the decoded url
+        String decodedUrl = this.urlProcessor.decode(encodedUrl, companyTLD.getDomain(), getUrlEncodePrefix(), decodedData);
+
+        Map<String, Object> map = new HashMap<>();  
+        map.put("decoded_url", decodedUrl);
+
+        return ResponseEntity.ok(this.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(map));
     }
 
 

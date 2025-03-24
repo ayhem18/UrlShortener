@@ -503,7 +503,7 @@ public class AuthManagementControllerTest {
             assertEquals(newCompany.getId(), urlData.get().getCompany().getId());
             
             String expectedHash = this.gen.generateId(counterRepo.findByCollectionName(Company.COMPANY_COLLECTION_NAME).get().getCount() - 1 + AuthController.companySiteHashOffset);
-            assertEquals(expectedHash, urlData.get().getCompanySiteHash());
+            assertEquals(expectedHash, urlData.get().getCompanyDomainHashed());
             
             // verify the counts
             assertEquals(0, tokenUserLinkRepo.count(), "There should be no token user links");  

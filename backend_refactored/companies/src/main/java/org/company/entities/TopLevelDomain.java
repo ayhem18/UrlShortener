@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)  
 public class TopLevelDomain {
-    public final static String TOP_LEVEL_DOMAIN_CLASS_NAME = "TopLevelDomain";
     public enum DomainState {
         ACTIVE,
         INACTIVE, // it is possible to temporarily user inactive domains
@@ -21,9 +20,6 @@ public class TopLevelDomain {
     private String id;
 
     private String domain;
-
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private String hashedDomain;
 
     @DocumentReference
     private Company company;
@@ -41,7 +37,6 @@ public class TopLevelDomain {
 
         this.id = id;
         this.domain = domain;
-        this.hashedDomain = hashedDomain;
 
 
         this.company = company;
@@ -85,11 +80,7 @@ public class TopLevelDomain {
     public String getDomain() {
         return domain;
     }
-    
-    public String getHashedDomain() {
-        return hashedDomain;
-    }
-    
+
     public Company getCompany() {
         return company;
     }
@@ -116,12 +107,8 @@ public class TopLevelDomain {
     private void setDomain(String domain) {
         this.domain = domain;
     }
-    
-    @SuppressWarnings("unused")
-    private void setHashedDomain(String hashedDomain) {
-        this.hashedDomain = hashedDomain;
-    }
-    
+
+
     @SuppressWarnings("unused")
     private void setCompany(Company company) {
         this.company = company;

@@ -429,7 +429,7 @@ public class WebLayerUnitTest {
             String expectedHash = customGenerator.generateId(
                     counterRepo.findByCollectionName(Company.COMPANY_COLLECTION_NAME).get().getCount() - 1 
                     + AuthController.companySiteHashOffset);
-            assertEquals(expectedHash, urlData.get().getCompanySiteHash(), 
+            assertEquals(expectedHash, urlData.get().getCompanyDomainHashed(),
                         "Company site hash should be generated with the correct formula");
         }
     }
