@@ -25,7 +25,9 @@ public interface UrlEncodingRepository extends MongoRepository<UrlEncoding, Stri
     List<UrlEncoding> findByUser(AppUser user);
     
     // this feature is used to find the most recent n url encodings for a given user
-    Page<UrlEncoding> findByUserAndUrlEncodingCountGreaterThan(AppUser user, int urlEncodingCount, Pageable pageable);
+    Page<UrlEncoding> findByUserAndUrlEncodingCountGreaterThan(AppUser user, long urlEncodingCount, Pageable pageable);
+
+    List<UrlEncoding> findByUserAndUrlEncodingCountGreaterThan(AppUser user, long urlEncodingCount);
 
     List<UrlEncoding> findByUserAndUrlEncodingTimeAfter(AppUser user, LocalDateTime time);
 

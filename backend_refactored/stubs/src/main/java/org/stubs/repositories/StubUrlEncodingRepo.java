@@ -13,6 +13,7 @@ import org.user.repositories.UrlEncodingRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -67,7 +68,7 @@ public class StubUrlEncodingRepo implements UrlEncodingRepository {
     }
     
     @Override
-    public Page<UrlEncoding> findByUserAndUrlEncodingCountGreaterThan(AppUser user, int urlEncodingCount, Pageable pageable) {
+    public Page<UrlEncoding> findByUserAndUrlEncodingCountGreaterThan(AppUser user, long urlEncodingCount, Pageable pageable) {
         List<UrlEncoding> filteredContent = urlEncodings.stream()
                 .filter(encoding -> encoding.getUser().getEmail().equals(user.getEmail())
                         && encoding.getUrlEncodingCount() > urlEncodingCount)
@@ -75,14 +76,27 @@ public class StubUrlEncodingRepo implements UrlEncodingRepository {
                 .limit(pageable.getPageSize())
                 .collect(Collectors.toList());
         
-        long total = urlEncodings.stream()
-                .filter(encoding -> encoding.getUser().getEmail().equals(user.getEmail())
-                        && encoding.getUrlEncodingCount() > urlEncodingCount)
-                .count();
+        // sort the filtered content by urlEncodingTime in descending order
+        filteredContent.sort(Comparator.comparing(UrlEncoding::getUrlEncodingTime).reversed());
+
+        long total = filteredContent.size();
         
         return new PageImpl<>(filteredContent, pageable, total);
     }
-    
+
+    @Override
+    public List<UrlEncoding> findByUserAndUrlEncodingCountGreaterThan(AppUser user, long urlEncodingCount) {
+        List<UrlEncoding> filteredContent = urlEncodings.stream()
+                .filter(encoding -> encoding.getUser().getEmail().equals(user.getEmail())
+                        && encoding.getUrlEncodingCount() > urlEncodingCount)
+                .collect(Collectors.toList());
+
+        // sort the filtered content by urlEncodingTime in descending order
+        filteredContent.sort(Comparator.comparing(UrlEncoding::getUrlEncodingTime).reversed());
+
+        return filteredContent;
+    }
+
     @Override
     public List<UrlEncoding> findByUserAndUrlEncodingTimeAfter(AppUser user, LocalDateTime time) {
         return urlEncodings.stream()

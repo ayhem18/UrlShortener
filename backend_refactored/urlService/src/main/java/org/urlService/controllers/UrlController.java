@@ -15,12 +15,14 @@ import org.company.entities.TopLevelDomain;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.tokens.repositories.TokenUserLinkRepository;
@@ -280,11 +282,45 @@ public class UrlController extends TokenController {
         return ResponseEntity.ok(this.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(map));
     }
 
+    @GetMapping("/api/url/history/")
+    public ResponseEntity<String> getHistory(@RequestParam int page, @RequestParam int size, @AuthenticationPrincipal UserDetails currentUserDetails) throws JsonProcessingException {
+        AppUser currentUser = this.validateUserToken(currentUserDetails);
 
-    @GetMapping("/api/url/history")
-    public ResponseEntity<String> getHistory(@AuthenticationPrincipal AppUser user) {
-        //
-        return null;
+        Integer historySize = currentUser.getCompany().getSubscription().getMaxHistorySize();
+
+        long threshold = 0;
+
+        if (historySize != null) {
+            threshold = currentUser.getUrlEncodingCount() - historySize;
+        }
+
+        // the main idea here is to computer the encoding count threshold
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "urlEncodingTime"));
+
+        Page<UrlEncoding> history = this.urlEncodingRepo.findByUserAndUrlEncodingCountGreaterThan(currentUser, threshold, pageable);
+
+        List<Map<String, String>> result = history.get().map(entry -> Map.of("url", entry.getUrl(), "url_encoded", entry.getUrlEncoded())).toList();
+
+        return ResponseEntity.ok(this.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result));
+    }
+
+    @GetMapping("/api/url/history/")
+    public ResponseEntity<String> getHistory(@AuthenticationPrincipal UserDetails currentUserDetails) throws JsonProcessingException {
+        AppUser currentUser = this.validateUserToken(currentUserDetails);
+
+        Integer historySize = currentUser.getCompany().getSubscription().getMaxHistorySize();
+
+        long threshold = 0;
+
+        if (historySize != null) {
+            threshold = currentUser.getUrlEncodingCount() - historySize;
+        }
+
+        List<UrlEncoding> history = this.urlEncodingRepo.findByUserAndUrlEncodingCountGreaterThan(currentUser, threshold);
+
+        List<Map<String, String>> result = history.stream().map(entry -> Map.of("url", entry.getUrl(), "url_encoded", entry.getUrlEncoded())).toList();
+
+        return ResponseEntity.ok(this.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result));
     }
 
 }

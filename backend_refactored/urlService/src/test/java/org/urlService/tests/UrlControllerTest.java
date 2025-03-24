@@ -905,3 +905,156 @@ class UrlDecodeTest extends BaseTest {
     
     }
 }
+
+class UrlHistoryTest extends BaseTest {
+
+    private final UrlController urlController;
+
+    public UrlHistoryTest() {
+        super();
+        urlController = new UrlController(companyUrlDataRepo, urlEncodingRepo, topLevelDomainRepo, userRepo, tokenUserLinkRepo, urlProcessor, 10);
+    }
+
+    @BeforeEach
+    void setUp() {
+        clear();
+    }
+    
+    /**
+     * Test 1: Verify that user without token cannot access URL history
+     */
+    @Test
+    void testUserWithoutToken() {
+        // Set up company
+        Company company = setUpCompany();
+        
+        // Create user WITHOUT token link (authorized=false)
+        AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), false);
+        
+        // Create mock user details
+        UserDetailsImp userDetails = new UserDetailsImp(user);
+        
+        // Attempt to access history - should throw exception
+        TokenController.TokenNotFoundException exception = 
+            assertThrows(TokenController.TokenNotFoundException.class, 
+                () -> urlController.getHistory(0, 10, userDetails),
+                "User without token should not be authorized to access history");
+        
+        assertTrue(exception.getMessage().contains("His access might have been revoked"), 
+                "Exception message should indicate authorization failure");
+                
+        // Also test the parameterless overload
+        assertThrows(TokenController.TokenNotFoundException.class, 
+            () -> urlController.getHistory(userDetails),
+            "User without token should not be authorized to access history (parameterless method)");
+    }
+    
+    /**
+     * Test 2: Verify history size respects company subscription limits
+     */
+    @Test
+    void testHistorySizeLimit() throws Exception {
+        // Set up company and authorized user
+        Company company = setUpCompany();
+        AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
+        
+        // Get history size from subscription
+        Integer historySize = company.getSubscription().getMaxHistorySize();
+        assertNotNull(historySize, "History size should be defined in subscription");
+        
+        // Create mock user details
+        UserDetailsImp userDetails = new UserDetailsImp(user);
+        
+        // Find active domain for URL creation
+        TopLevelDomain activeDomain = topLevelDomainRepo.findByCompanyAndDomainState(
+                company, TopLevelDomain.DomainState.ACTIVE).getFirst();
+        
+        // Create and encode a series of URLs (more than the history size)
+        int totalUrls = historySize + 15;
+        for (int i = 0; i < totalUrls; i++) {
+            String originalUrl = "https://" + activeDomain.getDomain() + "/product/" + i;
+            urlController.encodeUrl(originalUrl, userDetails);
+            
+            // Test history size at each step
+            var historyResponse = urlController.getHistory(0, totalUrls, userDetails);
+            com.fasterxml.jackson.databind.JsonNode jsonNode = 
+                new com.fasterxml.jackson.databind.ObjectMapper().readTree(historyResponse.getBody());
+            
+            // For values less than history size, response size should match the loop index
+            // For values beyond history size, response size should be capped at history size
+            int expectedSize = Math.min(i + 1, historySize);
+            assertEquals(expectedSize, jsonNode.size(), 
+                    "History size should be " + expectedSize + " after " + (i + 1) + " URLs");
+        }
+        
+        // Test with the parameterless method too
+        var fullHistoryResponse = urlController.getHistory(userDetails);
+        com.fasterxml.jackson.databind.JsonNode jsonNode = 
+            new com.fasterxml.jackson.databind.ObjectMapper().readTree(fullHistoryResponse.getBody());
+        assertEquals(historySize, jsonNode.size(), 
+                "Full history should respect subscription size limit");
+    }
+    
+    /**
+     * Test 3: Verify history is returned in correct order (newest first)
+     */
+    @Test
+    void testHistoryOrder() throws Exception {
+        // Set up company and authorized user
+        Company company = setUpCompany();
+        AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
+        
+        // Create mock user details
+        UserDetailsImp userDetails = new UserDetailsImp(user);
+        
+        // Find active domain for URL creation
+        TopLevelDomain activeDomain = topLevelDomainRepo.findByCompanyAndDomainState(
+                company, TopLevelDomain.DomainState.ACTIVE).getFirst();
+
+        int hisSize = company.getSubscription().getMaxHistorySize();
+
+        // Create a list of URLs to encode
+        List<String> originalUrls = new ArrayList<>();
+        for (int i = 0; i < hisSize + 10; i++) {
+            originalUrls.add("https://" + activeDomain.getDomain() + "/page/" + i);
+        }
+        
+        // Encode each URL in sequence and verify history order
+        for (int i = 0; i < originalUrls.size(); i++) {
+            String currentUrl = originalUrls.get(i);
+            urlController.encodeUrl(currentUrl, userDetails);
+            
+            // Get history
+            var historyResponse = urlController.getHistory(0, i + 1, userDetails);
+            com.fasterxml.jackson.databind.JsonNode jsonNode = 
+                new com.fasterxml.jackson.databind.ObjectMapper().readTree(historyResponse.getBody());
+            
+            // Verify size matches expected
+            int expectedSize = Math.min(i + 1, hisSize);
+            assertEquals(expectedSize, jsonNode.size(), "History should have " + (i + 1) + " entries");
+            
+            // Verify order (newest first)
+
+            for (int j = 0; j < expectedSize; j++) {
+                String expectedUrl = originalUrls.get(i - j); // Reverse order
+                String actualUrl = jsonNode.get(j).get("url").asText();
+                assertEquals(expectedUrl, actualUrl, 
+                        "History entry at position " + j + " should match URL at " + (i - j));
+            }
+        }
+        
+        // Test with parameterless method too
+        var fullHistoryResponse = urlController.getHistory(userDetails);
+        com.fasterxml.jackson.databind.JsonNode fullJsonNode = 
+            new com.fasterxml.jackson.databind.ObjectMapper().readTree(fullHistoryResponse.getBody());
+        
+        // Verify full history has all entries in reverse order
+        assertEquals(hisSize, fullJsonNode.size(), "Full history should have all entries");
+        for (int j = 0; j < hisSize; j++) {
+            String expectedUrl = originalUrls.get(originalUrls.size() - 1 - j); // Reverse order
+            String actualUrl = fullJsonNode.get(j).get("url").asText();
+            assertEquals(expectedUrl, actualUrl, 
+                    "Full history entry at position " + j + " should match URL in reverse order");
+        }
+    }
+}

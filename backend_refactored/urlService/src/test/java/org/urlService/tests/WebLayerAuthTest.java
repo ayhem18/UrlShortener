@@ -28,7 +28,6 @@ import org.utils.CustomGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.text.SimpleDateFormat;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -70,7 +69,7 @@ public class WebLayerAuthTest {
             TokenUserLinkRepository tokenUserLinkRepo,
             TopLevelDomainRepository topLevelDomainRepo,
             CompanyUrlDataRepository companyUrlDataRepo) {
-
+                
         this.mockMvc = mockMvc;
         this.customGenerator = customGenerator;
         this.companyRepo = companyRepo;
@@ -332,6 +331,7 @@ public class WebLayerAuthTest {
     /**
      * Test that authenticated users without proper authorization receive 403 Forbidden for decode endpoint
      */
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     public void testAuthenticatedButUnauthorizedDecode() throws Exception {
         // Set up company and domain
@@ -359,8 +359,4 @@ public class WebLayerAuthTest {
         mockMvc.perform(req)
             .andExpect(status().isForbidden());
     }
-
-
-    
-
 }
