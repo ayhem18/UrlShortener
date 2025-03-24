@@ -3,6 +3,7 @@ package org.apiUtils.configurations;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apiUtils.commonClasses.CustomExceptionHandler;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;

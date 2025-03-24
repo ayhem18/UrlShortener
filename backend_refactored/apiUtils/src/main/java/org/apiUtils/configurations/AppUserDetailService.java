@@ -1,5 +1,6 @@
 package org.apiUtils.configurations;
 
+import org.apiUtils.commonClasses.UserDetailsImp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -20,9 +21,9 @@ public class AppUserDetailService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        AppUser user = userRepo.findByUsername(username).orElseThrow(
-                () -> new UsernameNotFoundException("There is no user with the username: " + username)
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        AppUser user = userRepo.findById(email).orElseThrow(
+                () -> new UsernameNotFoundException("There is no user with the email: " + email)
         );
         return new UserDetailsImp(user);
     }

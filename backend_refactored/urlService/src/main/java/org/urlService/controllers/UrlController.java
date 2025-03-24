@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.access.Subscription;
 import org.apache.commons.validator.routines.UrlValidator;
+import org.apiUtils.commonClasses.TokenController;
 import org.company.entities.CompanyUrlData;
 import org.company.repositories.CompanyUrlDataRepository;
 import org.company.entities.Company;
@@ -19,7 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.tokens.repositories.TokenUserLinkRepository;
 import org.springframework.validation.annotation.Validated;
 import org.user.entities.UrlEncoding;
 import org.urlService.exceptions.UrlExceptions;
@@ -41,12 +44,13 @@ import java.util.Map;
 @RestController
 @Validated
 @PropertySource("classpath:app.properties")
-public class UrlController {
+public class UrlController extends TokenController {
 
     private final CompanyUrlDataRepository urlDataRepo;
     private final UrlEncodingRepository urlEncodingRepo;
     private final TopLevelDomainRepository topLevelDomainRepo;
     private final UserRepository userRepository;
+    private final TokenUserLinkRepository tokenUserLinkRepository;
     private final UrlProcessor urlProcessor;
     private final UrlValidator urlValidator;
 
@@ -55,14 +59,17 @@ public class UrlController {
 
     @Autowired
     public UrlController(CompanyUrlDataRepository urlDataRepo,
-                        UrlEncodingRepository urlEncodingRepo,
-                        TopLevelDomainRepository topLevelDomainRepo, 
-                        UserRepository userRepository,
-                        UrlProcessor urlProcessor) {
+                         UrlEncodingRepository urlEncodingRepo,
+                         TopLevelDomainRepository topLevelDomainRepo,
+                         UserRepository userRepository, 
+                         TokenUserLinkRepository tokenUserLinkRepository,
+                         UrlProcessor urlProcessor) {
+        super(userRepository, tokenUserLinkRepository);
         this.urlDataRepo = urlDataRepo;
         this.urlEncodingRepo = urlEncodingRepo;
         this.topLevelDomainRepo = topLevelDomainRepo;
         this.userRepository = userRepository;
+        this.tokenUserLinkRepository = tokenUserLinkRepository;
         this.urlProcessor = urlProcessor;
         
         // limit the protocols to http and https and allow local urls
@@ -72,12 +79,19 @@ public class UrlController {
 
     // added for unit testing without loading external resources
     public UrlController(CompanyUrlDataRepository urlDataRepo,
-                        UrlEncodingRepository urlEncodingRepo,
-                        TopLevelDomainRepository topLevelDomainRepo, 
-                        UserRepository userRepository,
-                        UrlProcessor urlProcessor,
-                        int port) {
-        this(urlDataRepo, urlEncodingRepo, topLevelDomainRepo, userRepository, urlProcessor);
+                         UrlEncodingRepository urlEncodingRepo,
+                         TopLevelDomainRepository topLevelDomainRepo,
+                         UserRepository userRepository,
+                         TokenUserLinkRepository tokenUserLinkRepository,
+                         UrlProcessor urlProcessor,
+                         int port) {
+        
+        this(urlDataRepo, 
+        urlEncodingRepo, 
+        topLevelDomainRepo, 
+        userRepository, 
+        tokenUserLinkRepository, 
+        urlProcessor);
         this.applicationPort = port;
     }
 
@@ -182,16 +196,15 @@ public class UrlController {
     }
 
 
-    @GetMapping("/api/url/encode/{url}")
-    @SuppressWarnings({"OptionalGetWithoutIsPresent"})
-    public ResponseEntity<String> encodeUrl(@PathVariable String url, @AuthenticationPrincipal UserDetails currentUserDetails) throws JsonProcessingException {
+    @GetMapping("/api/url/encode")
+    public ResponseEntity<String> encodeUrl(@RequestParam String url, @AuthenticationPrincipal UserDetails currentUserDetails) throws JsonProcessingException {
+        // make sure the user is authenticated.
+        AppUser currentUser = this.validateUserToken(currentUserDetails);
+
         // 1. Validate the URL using Apache Commons Validator
         if (!urlValidator.isValid(url)) {
             throw new UrlExceptions.InvalidUrlException("Invalid URL");
         }
-
-        // the fact that user is authenticated guarantees that the user exists (get does not return null)
-        AppUser currentUser = userRepository.findByEmail(currentUserDetails.getUsername()).get();
 
         Company userCompany = this.verifyDailyLimit(currentUser); 
 

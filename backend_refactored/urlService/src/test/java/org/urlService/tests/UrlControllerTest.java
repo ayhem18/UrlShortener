@@ -1,11 +1,11 @@
-package org.urlService.controllers;
+package org.urlService.tests;
 
 import org.access.Role;
 import org.access.RoleManager;
 import org.access.Subscription;
 import org.access.SubscriptionManager;
-import org.apache.tomcat.util.security.KeyStoreUtil;
-import org.apiUtils.configurations.UserDetailsImp;
+import org.apiUtils.commonClasses.TokenController;
+import org.apiUtils.commonClasses.UserDetailsImp;
 import org.company.entities.Company;
 import org.company.entities.CompanyUrlData;
 import org.company.entities.TopLevelDomain;
@@ -15,11 +15,15 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.stubs.repositories.*;
+import org.tokens.entities.AppToken;
+import org.tokens.entities.TokenUserLink;
 import org.url.UrlProcessor;
+import org.urlService.controllers.UrlController;
 import org.urlService.exceptions.UrlExceptions;
 import org.user.entities.AppUser;
 import org.user.entities.UrlEncoding;
 import org.utils.CustomGenerator;
+
 import org.mockito.Mockito;
 
 import java.util.*;
@@ -33,6 +37,8 @@ public class UrlControllerTest {
     private final StubTopLevelDomainRepo topLevelDomainRepo;
     private final StubUserRepo userRepo;
     private final StubUrlEncodingRepo urlEncodingRepo;
+    private final StubTokenRepo tokenRepo;
+    private final StubTokenUserLinkRepo tokenUserLinkRepo;
     private final CustomGenerator gen;
     private final UrlProcessor urlProcessor;
     private final PasswordEncoder encoder;
@@ -46,6 +52,8 @@ public class UrlControllerTest {
         topLevelDomainRepo = new StubTopLevelDomainRepo(companyRepo);
         userRepo = new StubUserRepo(companyRepo);
         urlEncodingRepo = new StubUrlEncodingRepo();
+        tokenRepo = new StubTokenRepo(companyRepo);
+        tokenUserLinkRepo = new StubTokenUserLinkRepo(this.tokenRepo, this.userRepo);
         gen = new CustomGenerator();
         urlProcessor = new UrlProcessor(gen);
         encoder = new BCryptPasswordEncoder();
@@ -55,6 +63,7 @@ public class UrlControllerTest {
             urlEncodingRepo,
             topLevelDomainRepo,
             userRepo,
+            tokenUserLinkRepo,
             urlProcessor,
             TEST_PORT
         );
@@ -130,7 +139,7 @@ public class UrlControllerTest {
     }
 
     // Helper method to set up a test user
-    private AppUser setUpUser(Company company, Role role) {
+    private AppUser setUpUser(Company company, Role role, boolean authorized) {
         String username = "testuser_" + gen.randomAlphaString(5);
         String email = username + "@" + company.getEmailDomain();
         
@@ -144,7 +153,41 @@ public class UrlControllerTest {
             company,
             role
         );
+
+        // create a token for the user
+        AppToken token = new AppToken(gen.randomString(12), encoder.encode("tokenId"), company, role );
+        token.activate();
+        tokenRepo.save(token);
+
+        if (authorized) {
+            // create a token user link for the user
+            TokenUserLink tokenUserLink = new TokenUserLink("link_id", token, user);
+            tokenUserLinkRepo.save(tokenUserLink);
+        }
+
         return userRepo.save(user);
+
+    }
+
+
+    @Test
+    void testUnauthorizedUser() {
+        for (int i = 0; i < 100; i++) {
+            Company company = setUpCompany();
+            AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), false);
+            UserDetails userDetails = new UserDetailsImp(user);
+
+            String randomUrl = "www." + gen.randomAlphaString(10) + ".com";
+
+            Exception exception = assertThrows(
+                    TokenController.TokenNotFoundException.class,
+                    () -> urlController.encodeUrl(randomUrl, userDetails),
+                    "Should throw TokenNotFoundException for unauthorized user"
+            );
+
+            assertTrue(exception.getMessage().contains("His access might have been revoked"),
+                    "His access might have been revoked");
+        }
     }
 
 
@@ -153,7 +196,7 @@ public class UrlControllerTest {
     void testInvalidUrl() {
         // Setup company and user
         Company company = setUpCompany();
-        AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE));
+        AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
         UserDetails userDetails = new UserDetailsImp(user);
         
         // Test with various invalid URLs
@@ -206,6 +249,8 @@ public class UrlControllerTest {
         }
     }
 
+
+
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     void testVerifyDailyLimit() {
@@ -231,6 +276,8 @@ public class UrlControllerTest {
             spyRepo,
             topLevelDomainRepo,
             userRepo,
+            tokenUserLinkRepo,
+
             urlProcessor,
             TEST_PORT
         );
@@ -249,7 +296,7 @@ public class UrlControllerTest {
                 companyRepo.save(company);
 
                 // Set up user
-                AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE));
+                AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
                 UserDetails userDetails = new UserDetailsImp(user);
 
                 // Valid URL that should work if not for the limit
@@ -313,6 +360,7 @@ public class UrlControllerTest {
             urlEncodingRepo,
             topLevelDomainRepo,
             userRepo,
+            tokenUserLinkRepo,
             urlProcessor,
             TEST_PORT
         );
@@ -327,7 +375,7 @@ public class UrlControllerTest {
             companyRepo.save(company);
 
             // Set up user
-            AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE));
+            AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
             UserDetails userDetails = new UserDetailsImp(user);
 
             String validUrl = "https://www.testcompany.com/enterprise/data";
@@ -350,7 +398,7 @@ public class UrlControllerTest {
             Company company = setUpCompany();
             
             // Set up user
-            AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE));
+            AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
             UserDetails userDetails = new UserDetailsImp(user);
             
             // Create a URL that doesn't match any of the company's domains
@@ -409,7 +457,7 @@ public class UrlControllerTest {
             String deprecatedDomain = deprecatedDomains.getFirst().getDomain();
             
             // Set up user
-            AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE));
+            AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
             UserDetails userDetails = new UserDetailsImp(user);
             
             // Create a URL using the deprecated domain
@@ -467,7 +515,7 @@ public class UrlControllerTest {
             String activeDomain = activeDomains.getFirst().getDomain();
             
             // 3. Set up user
-            AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE));
+            AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
             UserDetails userDetails = new UserDetailsImp(user);
             
             for (int j = 0; j <= 5; j++) {
@@ -570,7 +618,7 @@ public class UrlControllerTest {
             String activeDomain = activeDomains.getFirst().getDomain();
             
             // 3. Set up user
-            AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE));
+            AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
             UserDetails userDetails = new UserDetailsImp(user);
             
             for (int j = 0; j <= 5; j++) {

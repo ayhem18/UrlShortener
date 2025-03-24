@@ -1,6 +1,6 @@
 package org.authManagement.controllers;
 
-import org.apiUtils.configurations.CustomExceptionHandler;
+import org.apiUtils.commonClasses.CustomExceptionHandler;
 import org.authManagement.exceptions.CompanyAndUserExceptions;
 import org.authManagement.exceptions.CompanyExceptions;
 import org.springframework.http.HttpStatus;

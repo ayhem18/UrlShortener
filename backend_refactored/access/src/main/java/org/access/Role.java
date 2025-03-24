@@ -86,7 +86,8 @@ class Employee implements Role {
         return List.of(
                 new CanUseShortUrl(),
                 new CanEncodeUrl(),
-                new CanViewSubscription());
+                new CanViewSubscription(),
+                new CanViewHistory());
     }
 
     @Override

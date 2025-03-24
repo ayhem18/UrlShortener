@@ -1,9 +1,9 @@
 package org.authManagement.controllers;
 
-import org.apiUtils.configurations.CustomExceptionHandler;
 import org.authManagement.exceptions.CompanyAndUserExceptions;
 import org.authManagement.exceptions.UserExceptions;
 import org.access.RoleManager;
+import org.apiUtils.commonClasses.CustomExceptionHandler;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
