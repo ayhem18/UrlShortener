@@ -30,14 +30,9 @@ public class TopLevelDomain {
     
     private DomainState domainState;
 
-    public TopLevelDomain(String id, String domain, String hashedDomain, Company company) {
-        if (hashedDomain.contains("/")) {
-            throw new IllegalArgumentException("The hash of the url cannot contain a backslash \\/ character as it breaks the encoding encoding process");
-        }
-
+    public TopLevelDomain(String id, String domain, Company company) {
         this.id = id;
         this.domain = domain;
-
 
         this.company = company;
         this.activationTime = LocalDateTime.now();

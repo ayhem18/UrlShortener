@@ -121,7 +121,6 @@ public class WebLayerAuthTest {
         TopLevelDomain activeDomain = new TopLevelDomain(
             customGenerator.randomAlphaString(10),
             activeDomainName,
-            encoder.encode(activeDomainName).replaceAll("/", "_"),
             testCompany
         );
         topLevelDomainRepo.save(activeDomain);
@@ -131,7 +130,6 @@ public class WebLayerAuthTest {
         TopLevelDomain inactiveDomain = new TopLevelDomain(
             customGenerator.randomAlphaString(10),
             inactiveDomainName,
-            encoder.encode(inactiveDomainName).replaceAll("/", "_"),
             testCompany
         );
         inactiveDomain.deactivate();
@@ -142,7 +140,6 @@ public class WebLayerAuthTest {
         TopLevelDomain deprecatedDomain = new TopLevelDomain(
             customGenerator.randomAlphaString(10),
             deprecatedDomainName,
-            encoder.encode(deprecatedDomainName).replaceAll("/", "_"),
             testCompany
         );
         deprecatedDomain.deprecate();
@@ -357,6 +354,95 @@ public class WebLayerAuthTest {
 
         // Make request with authentication but without authorization
         mockMvc.perform(req)
+            .andExpect(status().isForbidden());
+    }
+
+    /**
+     * Test that requests with non-existing users return 401 Unauthorized for history endpoint
+     */
+    @Test
+    public void testUnauthorizedAccessHistory() throws Exception {
+        // Use non-existent credentials
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/url/history/")
+                .param("page", "0")
+                .param("size", "10"))
+                .andExpect(status().isUnauthorized());
+    }
+    
+    /**
+     * Test that authenticated users with proper authorization can access the history endpoint
+     */
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    @Test
+    public void testAuthorizedAccessHistory() throws Exception {
+        for (int i = 0; i < 20; i++) {
+            Company company = setUpCompany();
+            
+            // Get the company URL data
+            CompanyUrlData urlData = companyUrlDataRepo.findByCompany(company).get();
+
+            for (String role : RoleManager.ROLES_STRING) {
+                Role r = RoleManager.getRole(role);
+
+                // Create user with authorized=true
+                AppUser user = setUpUser(
+                    company, 
+                    r, 
+                    true
+                );
+
+                MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/history/")
+                    .param("page", "0")
+                    .param("size", "10")
+                    .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
+
+                // Make request with authentication
+                mockMvc.perform(req)
+                    .andExpect(status().is(not(401)))  // Not unauthorized
+                    .andExpect(status().is(not(403))); // Not forbidden
+                    
+                // Also test the parameterless endpoint
+                MockHttpServletRequestBuilder reqNoParams = MockMvcRequestBuilders.get("/api/url/history/")
+                    .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
+                    
+                mockMvc.perform(reqNoParams)
+                    .andExpect(status().is(not(401)))  // Not unauthorized
+                    .andExpect(status().is(not(403))); // Not forbidden
+            }
+        }
+    }
+    
+    /**
+     * Test that authenticated users without proper authorization receive 403 Forbidden for history endpoint
+     */
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    @Test
+    public void testAuthenticatedButUnauthorizedHistory() throws Exception {
+        // Set up company and domain
+        Company company = setUpCompany();
+        
+        // Set up user with authorized=false
+        AppUser user = setUpUser(
+            company, 
+            RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), 
+            false
+        );
+        
+        // Test with parameters
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/history/")
+            .param("page", "0")
+            .param("size", "10")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
+
+        // Make request with authentication but without authorization
+        mockMvc.perform(req)
+            .andExpect(status().isForbidden());
+            
+        // Test without parameters
+        MockHttpServletRequestBuilder reqNoParams = MockMvcRequestBuilders.get("/api/url/history/")
+            .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
+            
+        mockMvc.perform(reqNoParams)
             .andExpect(status().isForbidden());
     }
 }

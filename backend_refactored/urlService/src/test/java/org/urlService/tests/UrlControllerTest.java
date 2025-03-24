@@ -89,7 +89,6 @@ class BaseTest {
         TopLevelDomain activeDomain = new TopLevelDomain(
             gen.randomAlphaString(10),
             activeDomainName,
-            encoder.encode(activeDomainName).replaceAll("/", "_"),
             testCompany
         );
         topLevelDomainRepo.save(activeDomain);
@@ -99,7 +98,6 @@ class BaseTest {
         TopLevelDomain inactiveDomain = new TopLevelDomain(
             gen.randomAlphaString(10),
             inactiveDomainName,
-            encoder.encode(inactiveDomainName).replaceAll("/", "_"),
             testCompany
         );
         inactiveDomain.deactivate();
@@ -110,7 +108,6 @@ class BaseTest {
         TopLevelDomain deprecatedDomain = new TopLevelDomain(
             gen.randomAlphaString(10),
             deprecatedDomainName,
-            encoder.encode(deprecatedDomainName).replaceAll("/", "_"),
             testCompany
         );
         deprecatedDomain.deprecate();
@@ -945,7 +942,7 @@ class UrlHistoryTest extends BaseTest {
                 
         // Also test the parameterless overload
         assertThrows(TokenController.TokenNotFoundException.class, 
-            () -> urlController.getHistory(userDetails),
+            () -> urlController.getHistory(null, null, userDetails),
             "User without token should not be authorized to access history (parameterless method)");
     }
     
@@ -988,7 +985,7 @@ class UrlHistoryTest extends BaseTest {
         }
         
         // Test with the parameterless method too
-        var fullHistoryResponse = urlController.getHistory(userDetails);
+        var fullHistoryResponse = urlController.getHistory(null, null, userDetails);
         com.fasterxml.jackson.databind.JsonNode jsonNode = 
             new com.fasterxml.jackson.databind.ObjectMapper().readTree(fullHistoryResponse.getBody());
         assertEquals(historySize, jsonNode.size(), 
@@ -1044,7 +1041,7 @@ class UrlHistoryTest extends BaseTest {
         }
         
         // Test with parameterless method too
-        var fullHistoryResponse = urlController.getHistory(userDetails);
+        var fullHistoryResponse = urlController.getHistory(null, null, userDetails);
         com.fasterxml.jackson.databind.JsonNode fullJsonNode = 
             new com.fasterxml.jackson.databind.ObjectMapper().readTree(fullHistoryResponse.getBody());
         
