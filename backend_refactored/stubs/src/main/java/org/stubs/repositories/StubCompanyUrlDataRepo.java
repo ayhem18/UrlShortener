@@ -26,7 +26,7 @@ public class StubCompanyUrlDataRepo implements CompanyUrlDataRepository {
     }
 
     @Override
-    public Optional<CompanyUrlData> findByCompany(Company company) {
+    public Optional<CompanyUrlData> findFirstByCompany(Company company) {
         for (CompanyUrlData data : this.db) {
             if (data.getCompany().equals(company)) {
                 return Optional.of(data);
@@ -34,6 +34,18 @@ public class StubCompanyUrlDataRepo implements CompanyUrlDataRepository {
         }
         return Optional.empty();
     }
+
+    @Override
+    public List<CompanyUrlData> findByCompany(Company company) {
+        List<CompanyUrlData> res = new ArrayList<>();
+        for (CompanyUrlData data : this.db) {
+            if (data.getCompany().equals(company)) {
+                res.add(data);
+            }
+        }
+        return res;
+    }
+
 
     @Override
     public <S extends CompanyUrlData> S save(S entity) {
@@ -76,10 +88,6 @@ public class StubCompanyUrlDataRepo implements CompanyUrlDataRepository {
         return false;
     }
 
-    @Override
-    public List<CompanyUrlData> findAll() {
-        return new ArrayList<>(this.db);
-    }
 
     @Override
     public void deleteAll() {
@@ -126,6 +134,11 @@ public class StubCompanyUrlDataRepo implements CompanyUrlDataRepository {
     @Override
     public <S extends CompanyUrlData> List<S> findAll(Example<S> example) {
         return List.of();
+    }
+
+    @Override
+    public List<CompanyUrlData> findAll() {
+        return new ArrayList<>(this.db);
     }
 
     @Override

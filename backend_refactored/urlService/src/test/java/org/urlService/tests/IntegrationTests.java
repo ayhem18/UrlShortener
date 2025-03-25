@@ -2,7 +2,9 @@ package org.urlService.tests;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.access.Role;
 import org.access.RoleManager;
+import org.access.Subscription;
 import org.access.SubscriptionManager;
 import org.company.entities.Company;
 import org.company.entities.CompanyUrlData;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,8 +26,10 @@ import org.tokens.entities.AppToken;
 import org.tokens.entities.TokenUserLink;
 import org.tokens.repositories.TokenRepository;
 import org.tokens.repositories.TokenUserLinkRepository;
+import org.url.UrlProcessor;
 import org.urlService.configurations.IntegrationTestConfig;
 import org.user.entities.AppUser;
+import org.user.entities.UrlEncoding;
 import org.user.repositories.UrlEncodingRepository;
 import org.user.repositories.UserRepository;
 import org.utils.CustomGenerator;
@@ -32,6 +37,58 @@ import org.utils.CustomGenerator;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+
+class subForTest implements Subscription {
+
+        @Override
+        public Integer getMaxHistorySize() {
+                return 1;
+        }
+
+        @Override
+        public String getTier() {
+                return "TEST_SUB";
+        }
+
+        @Override
+        public Integer getMaxNumLevels() {
+                return 5;
+        }
+
+        @Override
+        public Integer getMaxAdmins() {
+                return 1;
+        }
+
+        @Override
+        public Integer getMaxEmployees() {
+                return 1;
+        }
+
+        @Override
+        public Integer getEncodingDailyLimit() {
+                return 1;
+        }
+
+        @Override
+        public Integer getMinUrlLength() {
+                return 5;
+        }
+
+        @Override
+        public Integer getMinParameterLength() {
+                return 5;
+        }
+
+        @Override
+        public Integer getMinVariableLength() {
+                return 15;
+        }
+    
+}
+
+
 
 class IntegrationBaseTest {
     @Autowired
@@ -61,6 +118,9 @@ class IntegrationBaseTest {
     @Autowired
     protected CustomGenerator gen;
     
+    @Autowired
+    protected UrlProcessor urlProcessor;
+    
     protected final ObjectMapper objectMapper = new ObjectMapper();
     protected final PasswordEncoder encoder = new BCryptPasswordEncoder();
     
@@ -85,12 +145,21 @@ class IntegrationBaseTest {
         companyRepo.deleteAll();
     }
     
-    protected Company setUpCompany() {
-        String companyId = gen.randomAlphaString(10);
-        String companyName = "Test Company " + gen.randomAlphaString(5);
+
+    protected Company setUpCompany(String subscriptionName) {
+        String companyId = gen.randomAlphaString(50);
+        
+		// keep generating random company id until finding a unique one
+		while (companyRepo.findById(companyId).isPresent()) {
+			companyId = gen.randomAlphaString(50);
+		}
+		
+		String companyName = "Test Company " + gen.randomAlphaString(5);
         String companyAddress = "Address " + gen.randomAlphaString(5);
         String emailDomain = gen.randomAlphaString(5) + ".com";
         String ownerEmail = gen.randomAlphaString(5) + "@" + emailDomain;
+
+        Subscription sub = !subscriptionName.equals("test") ? SubscriptionManager.getSubscription(subscriptionName) : new subForTest();
 
         Company company = new Company(
                 companyId, 
@@ -98,8 +167,9 @@ class IntegrationBaseTest {
                 companyAddress, 
                 ownerEmail,
                 emailDomain,
-                SubscriptionManager.getSubscription("TIER_1")
+                sub
         );
+
         company.verify();
         companyRepo.save(company);
 
@@ -122,10 +192,10 @@ class IntegrationBaseTest {
         return company;
     }
     
-    protected AppUser setUpUser(Company company, String role, boolean authorized) {
-        return setUpUser(company, RoleManager.getRole(role), authorized);
+    protected Company setUpCompany() {
+        return setUpCompany("TIER_1");
     }
-    
+
     protected AppUser setUpUser(Company company, org.access.Role role, boolean authorized) {
         String email = gen.randomAlphaString(5) + "@" + company.getEmailDomain();
         String username = gen.randomAlphaString(8);
@@ -187,14 +257,20 @@ class IntegrationBaseTest {
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 @SpringBootTest(classes = IntegrationTestConfig.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class IntegrationUrlEncodeTest extends IntegrationBaseTest {
-    
+    @LocalServerPort
+    private int port;
+
+	private String getUrlEncodePrefix() {
+		return "http://localhost:" + port + "/";
+	}
+
     @Test
     void testUserWithoutToken() {
         // Set up company
         Company company = setUpCompany();
         
         // Create user WITHOUT token link (authorized=false)
-        AppUser user = setUpUser(company, RoleManager.EMPLOYEE_ROLE, false);
+        AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), false);
         
         // Find active domain
         TopLevelDomain activeDomain = topLevelDomainRepo.findByCompanyAndDomainState(
@@ -216,71 +292,164 @@ class IntegrationUrlEncodeTest extends IntegrationBaseTest {
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
     
-    @Test
+    @SuppressWarnings("null")
+	@Test
     void testInvalidUrlException() {
-        // Set up company and authorized user
+
         Company company = setUpCompany();
-        AppUser user = setUpUser(company, RoleManager.EMPLOYEE_ROLE, true);
+
+        Role role = RoleManager.ROLES.get(new Random().nextInt(RoleManager.ROLES.size()));
+
+        AppUser user = setUpUser(company, role, true);
+
+    
+        // Test with various invalid URLs
+        String[] invalidUrls = {
+            "not-a-valid-url",
+            "http://",
+            "https://",
+            "ftp://example.com",  // unsupported protocol
+            "www.example.com",    // missing protocol
+            "http:example.com",   // missing slashes
+            "http:/example.com",  // missing slash
+            "http//example.com",  // missing colon
+            ".com",
+            "example",
+            "http://.com",        // missing domain
+            "http://example..com", // double dot
+            "http://exam ple.com", // space in domain
+            "http://exam\tple.com", // tab in domain
+            "http://exam\nple.com", // newline in domain
+            "http://example.com:abc", // invalid port
+            "::::",
+            "http://@example.com" // invalid chars
+        };
         
-        // Invalid URL (no protocol)
-        String invalidUrl = "invalid-url";
+
         HttpHeaders headers = createAuthHeaders(user);
         HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
-        
-        ResponseEntity<String> response = restTemplate.exchange(
-                "/api/url/encode?url=" + invalidUrl,
-                HttpMethod.GET,
-                requestEntity,
-                String.class
-        );
-        
-        // Verify bad request
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+                
+        for (String invalidUrl : invalidUrls) {
+            // Count repositories before attempting operation
+            long companyCount = companyRepo.count();
+            long urlEncodingCount = urlEncodingRepo.count();
+            long userCount = userRepo.count();
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    "/api/url/encode?url=" + invalidUrl,
+                    HttpMethod.GET,
+                    requestEntity,
+                    String.class
+            );
+
+            // Verify bad request
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+                
+            assertTrue(response.getBody().contains("Invalid URL"),
+                "Exception message should mention 'Invalid URL' for: " + invalidUrl);
+            
+            // Verify no change in repository state
+            assertEquals(companyCount, companyRepo.count(), "Company count should not change");
+            assertEquals(urlEncodingCount, urlEncodingRepo.count(), "URL encoding count should not change");
+            assertEquals(userCount, userRepo.count(), "User count should not change");
+            
+            // Verify user encoding count not incremented
+            AppUser verifyUser = userRepo.findById(user.getEmail()).get();
+            assertEquals(0, verifyUser.getUrlEncodingCount(), "User encoding count should not change for invalid URL");
+            // Set up company and authorized user
+
+        }
     }
     
     @Test
     void testSuccessfulEncode() throws Exception {
-        // Set up company and authorized user
-        Company company = setUpCompany();
-        AppUser user = setUpUser(company, RoleManager.EMPLOYEE_ROLE, true);
-        
-        // Find active domain
-        TopLevelDomain activeDomain = topLevelDomainRepo.findByCompanyAndDomainState(
-                company, TopLevelDomain.DomainState.ACTIVE).getFirst();
-        
-        // Request to encode URL
-        String originalUrl = "https://" + activeDomain.getDomain() + "/test";
-        HttpHeaders headers = createAuthHeaders(user);
-        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
-        
-        // Capture state before encoding
-        long urlCount = urlEncodingRepo.count();
-        CompanyUrlData dataBefore = companyUrlDataRepo.findByCompany(company).get();
-        int encodedDataSizeBefore = dataBefore.getDataEncoded().size();
-        int decodedDataSizeBefore = dataBefore.getDataDecoded().size();
-        
-        ResponseEntity<String> response = restTemplate.exchange(
-                "/api/url/encode/?url=" + originalUrl,
-                HttpMethod.GET,
-                requestEntity,
-                String.class
-        );
-        
-        // Verify success
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        
-        // Parse response to get encoded URL
-        JsonNode jsonNode = objectMapper.readTree(response.getBody());
-        assertTrue(jsonNode.has("encoded_url"), "Response should contain encoded_url field");
-        
-        // Verify encoding creation
-        assertEquals(urlCount + 1, urlEncodingRepo.count(), "URL encoding count should increase by 1");
-        
-        // Verify company URL data has been updated
-        CompanyUrlData dataAfter = companyUrlDataRepo.findByCompany(company).get();
-        assertTrue(dataAfter.getDataEncoded().size() >= encodedDataSizeBefore, "Encoded data maps should grow or stay the same");
-        assertTrue(dataAfter.getDataDecoded().size() >= decodedDataSizeBefore, "Decoded data maps should grow or stay the same");
-    }
+        for (int i = 0; i < 50; i++ ) {
+			// Set up company and authorized user
+			Company company = setUpCompany();
+			AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
+			
+			// Find active domain
+			TopLevelDomain activeDomain = topLevelDomainRepo.findByCompanyAndDomainState(
+					company, TopLevelDomain.DomainState.ACTIVE).getFirst();
+			
+			HttpHeaders headers = createAuthHeaders(user);
+			HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+			for (int j = 0; j <= 5; j++) {
+				// 4. Create a URL with active domain
+				String originalUrl = "https://" + activeDomain.getDomain() + "/" + this.gen.randomAlphaString(25) + "/" + this.gen.randomAlphaString(25);
+
+				// 5. Capture state before encoding
+				long companyCount = companyRepo.count();
+				long urlEncodingCount = urlEncodingRepo.count();
+				long userCount = userRepo.count();
+				long userEncodingCount = user.getUrlEncodingCount();
+				CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
+
+				List<String> keysBeforeEncoded = new ArrayList<>(dataBefore.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+				List<String> keysBeforeDecoded = new ArrayList<>(dataBefore.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+				ResponseEntity<String> response = restTemplate.exchange(
+						"/api/url/encode?url=" + originalUrl,
+						HttpMethod.GET,
+						requestEntity,
+						String.class
+				);
+
+                assertEquals(HttpStatus.OK,response.getStatusCode(), "The call to the api must successful");
+
+				// 7. Extract encoded URL from response
+				JsonNode jsonNode = new ObjectMapper().readTree(response.getBody());
+				String encodedUrl = jsonNode.get("encoded_url").asText();
+				
+				// 8. Verify encoded URL is not empty
+				assertNotNull(encodedUrl, "Encoded URL should not be null");
+				assertFalse(encodedUrl.isEmpty(), "Encoded URL should not be empty");
+				
+				// 9. Verify repository updates
+				assertEquals(companyCount, companyRepo.count(), "Company count should not change");
+				assertEquals(userCount, userRepo.count(), "User count should not change");
+				assertEquals(urlEncodingCount + 1, urlEncodingRepo.count(), "URL encoding count should increase by 1");
+
+				// verify the UrlEncoding object was created correctly
+				List<UrlEncoding> userUrlEncodings = urlEncodingRepo.findByUser(user);
+				assertEquals(userUrlEncodings.size(), j + 1, "There should be exactly one UrlEncoding object for the user");
+				UrlEncoding urlEncoding = userUrlEncodings.get(j);
+				assertEquals(urlEncoding.getUrl(), originalUrl, "The UrlEncoding object should have the correct original URL");
+				assertEquals(urlEncoding.getUrlEncoded(), encodedUrl, "The UrlEncoding object should have the correct encoded URL");
+				assertEquals(urlEncoding.getUrlEncodingCount(), j + 1, "The UrlEncoding object should have the correct url encoding count");
+				
+
+				// 10. Verify user encoding count was incremented
+				AppUser verifyUser = userRepo.findById(user.getEmail()).get();
+				assertEquals(userEncodingCount + 1, verifyUser.getUrlEncodingCount(), 
+						"User encoding count should increase by 1");
+				
+				// 11. Verify company URL data was updated
+				CompanyUrlData dataAfter = companyUrlDataRepo.findFirstByCompany(company).get();
+
+				List<String> keysAfterEncoded = new ArrayList<>(dataAfter.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+		
+				assertTrue (!keysBeforeEncoded .containsAll(keysAfterEncoded) &&  keysAfterEncoded .containsAll(keysBeforeEncoded),
+						"data encoded keys should change");
+
+				List<String> keysAfterDecoded = new ArrayList<>(dataAfter.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+		
+				assertTrue (! keysBeforeDecoded.containsAll(keysAfterDecoded) && keysAfterDecoded.containsAll(keysBeforeDecoded),
+						"data encoded keys should change");
+		
+				// 12. Decode URL to verify it matches original
+				String decodedUrl = this.urlProcessor.decode(encodedUrl,
+						activeDomain.getDomain(),
+						getUrlEncodePrefix(),
+						dataAfter.getDataDecoded());
+				
+				// The decoded URL should match the original URL
+				assertEquals(originalUrl, decodedUrl, "Decoded URL should match original URL");
+			}
+			
+		}
+	}
 }
 
 
@@ -294,14 +463,10 @@ class IntegrationUrlDecodeTest extends IntegrationBaseTest {
         Company company = setUpCompany();
         
         // Create user WITHOUT token link (authorized=false)
-        AppUser user = setUpUser(company, RoleManager.EMPLOYEE_ROLE, false);
-        
-        // Find active domain
-        TopLevelDomain activeDomain = topLevelDomainRepo.findByCompanyAndDomainState(
-                company, TopLevelDomain.DomainState.ACTIVE).getFirst();
-        
+        AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), false);
+                
         // Get company URL data
-        CompanyUrlData urlData = companyUrlDataRepo.findByCompany(company).get();
+        CompanyUrlData urlData = companyUrlDataRepo.findFirstByCompany(company).get();
         String domainHash = urlData.getCompanyDomainHashed();
         
         // Sample encoded URL
@@ -326,7 +491,7 @@ class IntegrationUrlDecodeTest extends IntegrationBaseTest {
     void testInvalidDomainHash() {
         // Set up company and authorized user
         Company company = setUpCompany();
-        AppUser user = setUpUser(company, RoleManager.EMPLOYEE_ROLE, true);
+        AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
         
         // Invalid domain hash
         String invalidDomainHash = "invalidhash";
@@ -338,7 +503,7 @@ class IntegrationUrlDecodeTest extends IntegrationBaseTest {
         
         // Capture state before decoding
         long urlCount = urlEncodingRepo.count();
-        CompanyUrlData dataBefore = companyUrlDataRepo.findByCompany(company).get();
+        CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
         
         ResponseEntity<String> response = restTemplate.exchange(
                 "/api/url/decode/?encodedUrl=" + encodedUrl,
@@ -352,7 +517,7 @@ class IntegrationUrlDecodeTest extends IntegrationBaseTest {
         
         // Verify state is unchanged
         assertEquals(urlCount, urlEncodingRepo.count(), "URL encoding count should not change");
-        CompanyUrlData dataAfter = companyUrlDataRepo.findByCompany(company).get();
+        CompanyUrlData dataAfter = companyUrlDataRepo.findFirstByCompany(company).get();
         assertEquals(dataBefore.getDataEncoded().size(), dataAfter.getDataEncoded().size(), 
                 "Encoded data maps should not change");
         assertEquals(dataBefore.getDataDecoded().size(), dataAfter.getDataDecoded().size(), 
@@ -363,7 +528,7 @@ class IntegrationUrlDecodeTest extends IntegrationBaseTest {
     void testSuccessfulEncodeDecode() throws Exception {
         // Set up company and authorized user
         Company company = setUpCompany();
-        AppUser user = setUpUser(company, RoleManager.EMPLOYEE_ROLE, true);
+        AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
         
         // Find active domain
         TopLevelDomain activeDomain = topLevelDomainRepo.findByCompanyAndDomainState(
@@ -389,7 +554,7 @@ class IntegrationUrlDecodeTest extends IntegrationBaseTest {
         
         // Capture state after encoding
         long urlCount = urlEncodingRepo.count();
-        CompanyUrlData dataBefore = companyUrlDataRepo.findByCompany(company).get();
+        CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
         
         // Now decode the URL
         ResponseEntity<String> decodeResponse = restTemplate.exchange(
@@ -409,7 +574,7 @@ class IntegrationUrlDecodeTest extends IntegrationBaseTest {
         assertEquals(urlCount, urlEncodingRepo.count(), "URL encoding count should not change after decode");
         
         // Verify company URL data hasn't changed
-        CompanyUrlData dataAfter = companyUrlDataRepo.findByCompany(company).get();
+        CompanyUrlData dataAfter = companyUrlDataRepo.findFirstByCompany(company).get();
         assertEquals(dataBefore.getDataDecoded().size(), dataAfter.getDataDecoded().size(), 
                 "Data decoded size should not change after decode operation");
         assertEquals(dataBefore.getDataEncoded().size(), dataAfter.getDataEncoded().size(), 
@@ -430,7 +595,7 @@ class IntegrationUrlHistoryTest extends IntegrationBaseTest {
         Company company = setUpCompany();
         
         // Create user WITHOUT token link (authorized=false)
-        AppUser user = setUpUser(company, RoleManager.EMPLOYEE_ROLE, false);
+        AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), false);
         
         // Request to get history
         HttpHeaders headers = createAuthHeaders(user);
@@ -461,7 +626,7 @@ class IntegrationUrlHistoryTest extends IntegrationBaseTest {
     void testHistorySizeLimit() throws Exception {
         // Set up company and authorized user
         Company company = setUpCompany();
-        AppUser user = setUpUser(company, RoleManager.EMPLOYEE_ROLE, true);
+        AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
         
         // Get history size from subscription
         Integer historySize = company.getSubscription().getMaxHistorySize();
@@ -525,7 +690,7 @@ class IntegrationUrlHistoryTest extends IntegrationBaseTest {
     void testHistoryOrder() throws Exception {
         // Set up company and authorized user
         Company company = setUpCompany();
-        AppUser user = setUpUser(company, RoleManager.EMPLOYEE_ROLE, true);
+        AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
         
         // Find active domain for URL creation
         TopLevelDomain activeDomain = topLevelDomainRepo.findByCompanyAndDomainState(

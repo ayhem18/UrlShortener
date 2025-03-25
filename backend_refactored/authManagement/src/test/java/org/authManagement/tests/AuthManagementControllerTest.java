@@ -63,8 +63,8 @@ public class AuthManagementControllerTest {
         companyRepo.save(github);
 
         // 2. Add default domains for these companies
-        TopLevelDomain youtubeDomain = new TopLevelDomain("domain1", "youtube.com", "hash_youtube", youtube);
-        TopLevelDomain githubDomain = new TopLevelDomain("domain2", "github.com", "hash_github", github);
+        TopLevelDomain youtubeDomain = new TopLevelDomain("domain1", "youtube.com", youtube);
+        TopLevelDomain githubDomain = new TopLevelDomain("domain2", "github.com", github);
         topLevelDomainRepo.save(youtubeDomain);
         topLevelDomainRepo.save(githubDomain);
 
@@ -498,7 +498,7 @@ public class AuthManagementControllerTest {
             assertEquals(i + 1, counterRepo.findByCollectionName(Company.COMPANY_COLLECTION_NAME).get().getCount(), "the counter repo must track the count correctly");
 
             // verify that the companyUrlData was created
-            Optional<CompanyUrlData> urlData = companyUrlDataRepo.findByCompany(newCompany);
+            Optional<CompanyUrlData> urlData = companyUrlDataRepo.findFirstByCompany(newCompany);
             assertTrue(urlData.isPresent(), "CompanyUrlData should exist for the company");
             assertEquals(newCompany.getId(), urlData.get().getCompany().getId());
             

@@ -19,15 +19,9 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"null", "NullableProblems", "ConstantConditions"})
 public class StubCompanyRepo implements CompanyRepository {
     private final List<Company> db;
-    private final PasswordEncoder encoder;
 
     public StubCompanyRepo() {
         this.db = new ArrayList<>();
-        this.encoder = new BCryptPasswordEncoder();
-    }
-
-    public PasswordEncoder getEncoder() {
-        return encoder;
     }
 
     public List<Company> getDb() {

@@ -6,6 +6,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+@SuppressWarnings("unused")
 @Document("Company")
 @JsonInclude(JsonInclude.Include.NON_NULL) // a class-wide annotation Making Jackson ignore all null fields
 @Schema(description = "Company entity representing a business organization")
@@ -49,12 +50,12 @@ public class Company {
         }
 
         this.id = id;
-        this.subscription = subscription;
-        this.ownerEmail = ownerEmail;
-        this.emailDomain = emailDomain;
-        this.verified = false;
         this.companyName = companyName;
         this.companyAddress = companyAddress;
+        this.ownerEmail = ownerEmail;
+        this.emailDomain = emailDomain;
+        this.subscription = subscription;
+        this.verified = false;
     }
 
     // a private no-args constructor for Jackson serialization
@@ -142,7 +143,7 @@ public class Company {
         this.subscription = subscription;
     }
 
-    // can verify the company (well atmost once)
+    // can verify the company (well at most once)
     public void verify() {
         if (this.verified) {
             throw new IllegalStateException("The company is already verified");
@@ -178,8 +179,7 @@ public class Company {
             return false;
         } 
         
-        if (other instanceof Company) {
-            Company otherCompany = (Company) other;
+        if (other instanceof Company otherCompany) {
             return this.id.equals(otherCompany.getId());
         }
         return false;

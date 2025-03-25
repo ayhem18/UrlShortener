@@ -1,4 +1,4 @@
-package org.authManagement.validation;
+package org.apiUtils.validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

@@ -197,7 +197,7 @@ public class UrlController extends TokenController {
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Transactional
     private String encodeUrlTransaction(Company userCompany, AppUser currentUser, Subscription sub, String urlWithActiveDomain) {
-        CompanyUrlData companyUrlData = this.urlDataRepo.findByCompany(userCompany).get();
+        CompanyUrlData companyUrlData = this.urlDataRepo.findFirstByCompany(userCompany).get();
 
         List<Map<String, String>> encodedData = companyUrlData.getDataEncoded();
         List<Map<String, String>> decodedData = companyUrlData.getDataDecoded();
@@ -258,7 +258,7 @@ public class UrlController extends TokenController {
 
         AppUser currentUser = this.validateUserToken(currentUserDetails);
 
-        CompanyUrlData companyUrlData = this.urlDataRepo.findByCompany(currentUser.getCompany()).get();
+        CompanyUrlData companyUrlData = this.urlDataRepo.findFirstByCompany(currentUser.getCompany()).get();
 
         // break down the encoded url into url levels   
         UrlLevelEntity urlLevel = this.urlProcessor.breakdown(encodedUrl).get(2);

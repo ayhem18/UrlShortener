@@ -156,7 +156,7 @@ public class WebLayerAuthTest {
 
     // Helper method to set up a test user
     private AppUser setUpUser(Company company, Role role, boolean authorized) {
-        String username = "testuser_" + customGenerator.randomAlphaString(5);
+        String username = "test_user_" + customGenerator.randomAlphaString(5);
         String email = username + "@" + company.getEmailDomain();
         
         AppUser user = new AppUser(
@@ -293,7 +293,7 @@ public class WebLayerAuthTest {
             assertFalse(domains.isEmpty(), "Company should have at least one active domain");
             
             // Get the company URL data to use the domain hash
-            CompanyUrlData urlData = companyUrlDataRepo.findByCompany(company).get();
+            CompanyUrlData urlData = companyUrlDataRepo.findFirstByCompany(company).get();
             String domainHash = urlData.getCompanyDomainHashed();
 
             // the decode method requires having some decoded data saved
@@ -335,7 +335,7 @@ public class WebLayerAuthTest {
         Company company = setUpCompany();
         
         // Get the company URL data to use the domain hash
-        CompanyUrlData urlData = companyUrlDataRepo.findByCompany(company).get();
+        CompanyUrlData urlData = companyUrlDataRepo.findFirstByCompany(company).get();
         String domainHash = urlData.getCompanyDomainHashed();
         
         // Set up user with authorized=false
@@ -372,14 +372,13 @@ public class WebLayerAuthTest {
     /**
      * Test that authenticated users with proper authorization can access the history endpoint
      */
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     public void testAuthorizedAccessHistory() throws Exception {
         for (int i = 0; i < 20; i++) {
             Company company = setUpCompany();
             
             // Get the company URL data
-            CompanyUrlData urlData = companyUrlDataRepo.findByCompany(company).get();
+//            CompanyUrlData urlData = companyUrlDataRepo.findFirstByCompany(company).get();
 
             for (String role : RoleManager.ROLES_STRING) {
                 Role r = RoleManager.getRole(role);
@@ -415,7 +414,6 @@ public class WebLayerAuthTest {
     /**
      * Test that authenticated users without proper authorization receive 403 Forbidden for history endpoint
      */
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     public void testAuthenticatedButUnauthorizedHistory() throws Exception {
         // Set up company and domain

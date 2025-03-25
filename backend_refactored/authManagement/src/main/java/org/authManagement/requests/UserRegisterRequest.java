@@ -1,7 +1,9 @@
 package org.authManagement.requests;
 
 import jakarta.validation.constraints.*;
-import org.authManagement.validation.AllowNullButNotEmpty;
+
+import org.apiUtils.validation.AllowNullButNotEmpty;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Request object for user registration")
