@@ -26,6 +26,15 @@ public class StubCompanyUrlDataRepo implements CompanyUrlDataRepository {
     }
 
     @Override
+    public boolean existsById(String id) {
+        for (CompanyUrlData data : this.db) {
+            if (data.getId().equals(id)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public Optional<CompanyUrlData> findFirstByCompany(Company company) {
         for (CompanyUrlData data : this.db) {
             if (data.getCompany().equals(company)) {

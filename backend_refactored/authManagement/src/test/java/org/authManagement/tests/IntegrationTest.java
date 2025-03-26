@@ -59,7 +59,7 @@ public class IntegrationTest {
     // Test data
     private static final String COMPANY_ID = "test_company";
     private static final String COMPANY_NAME = "Test Company";
-    private static final String DOMAIN = "www.testcompany.com";
+    private static final String DOMAIN = "www.test_company.com";
     private static final String OWNER_EMAIL = "owner@testcompany.com";
     private static final String ADMIN_EMAIL = "admin@testcompany.com";
     private static final String EMPLOYEE_EMAIL = "employee@testcompany.com";
@@ -162,7 +162,7 @@ public class IntegrationTest {
         assertEquals(COMPANY_ID, domainOpt.get().getCompany().getId());
 
         // Verify company URL data was created
-        Optional<CompanyUrlData> urlDataOpt = companyUrlDataRepo.findByCompany(companyRepo.findById(COMPANY_ID).get());
+        Optional<CompanyUrlData> urlDataOpt = companyUrlDataRepo.findFirstByCompany(companyRepo.findById(COMPANY_ID).get());
         assertTrue(urlDataOpt.isPresent());
 
         Company company = companyRepo.findById(COMPANY_ID).get();

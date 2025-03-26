@@ -420,7 +420,7 @@ public class WebLayerUnitTest {
                         "Counter should track the number of companies created");
             
             // 6. Verify that CompanyUrlData was created with correct hash
-            Optional<CompanyUrlData> urlData = companyUrlDataRepo.findByCompany(savedCompany);
+            Optional<CompanyUrlData> urlData = companyUrlDataRepo.findFirstByCompany(savedCompany);
             assertTrue(urlData.isPresent(), "CompanyUrlData should exist for the company");
             assertEquals(savedCompany.getId(), urlData.get().getCompany().getId(), 
                         "CompanyUrlData should reference the correct company");

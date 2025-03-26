@@ -48,6 +48,10 @@ public class CompanyUrlData {
         this.dataDecoded = new ArrayList<>();
     }
 
+    public String getId() {
+        return id;
+    }
+
     public Company getCompany() {
         return company;
     }
@@ -65,6 +69,7 @@ public class CompanyUrlData {
     public List<Map<String, String>> getDataDecoded() {
         return dataDecoded;
     }
+
 
 
     // private setters and no-arg constructor added so that Jackson can work properly
@@ -92,5 +97,10 @@ public class CompanyUrlData {
     @SuppressWarnings("unused")
     private void setDataDecoded(List<Map<String, String>> dataDecoded) {
         this.dataDecoded = dataDecoded;
+    }
+
+    @SuppressWarnings("unused")
+    private void setId(String id) {
+        this.id = id;
     }
 }

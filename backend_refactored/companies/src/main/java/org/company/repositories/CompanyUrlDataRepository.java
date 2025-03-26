@@ -13,6 +13,7 @@ import java.util.Optional;
 // to the main app configuration file. (generally the one with the @SpringBootApplication annotation)
 @Repository
 public interface CompanyUrlDataRepository extends MongoRepository<CompanyUrlData, ObjectId> {
+    boolean existsById(String id);
     Optional<CompanyUrlData> findFirstByCompany(Company company);
     List<CompanyUrlData> findByCompany(Company company);
     List<CompanyUrlData> findAll();

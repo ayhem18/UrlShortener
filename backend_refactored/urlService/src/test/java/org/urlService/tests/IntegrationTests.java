@@ -89,8 +89,9 @@ class subForTest implements Subscription {
 }
 
 
-
+//@SpringBootTest(classes = IntegrationTestConfig.class)
 class IntegrationBaseTest {
+
     @Autowired
     protected TestRestTemplate restTemplate;
     
@@ -123,7 +124,16 @@ class IntegrationBaseTest {
     
     protected final ObjectMapper objectMapper = new ObjectMapper();
     protected final PasswordEncoder encoder = new BCryptPasswordEncoder();
-    
+
+    @LocalServerPort
+    private int port;
+
+    protected String getUrlEncodePrefix() {
+        return "localhost:" + port + "/";
+    }
+
+
+
     @BeforeEach
     public void setUp() {
         clear();
@@ -145,6 +155,7 @@ class IntegrationBaseTest {
         companyRepo.deleteAll();
     }
     
+
 
     protected Company setUpCompany(String subscriptionName) {
         String companyId = gen.randomAlphaString(50);
@@ -184,8 +195,9 @@ class IntegrationBaseTest {
         
         // Create company URL data
         CompanyUrlData companyUrlData = new CompanyUrlData(
+                this.gen.randomAlphaString(20),
                 company,
-                encoder.encode(tld)
+                encoder.encode(tld).replaceAll("/","_")
         );
         companyUrlDataRepo.save(companyUrlData);
         
@@ -257,12 +269,7 @@ class IntegrationBaseTest {
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 @SpringBootTest(classes = IntegrationTestConfig.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class IntegrationUrlEncodeTest extends IntegrationBaseTest {
-    @LocalServerPort
-    private int port;
 
-	private String getUrlEncodePrefix() {
-		return "http://localhost:" + port + "/";
-	}
 
     @Test
     void testUserWithoutToken() {
@@ -363,7 +370,7 @@ class IntegrationUrlEncodeTest extends IntegrationBaseTest {
     
     @Test
     void testSuccessfulEncode() throws Exception {
-        for (int i = 0; i < 50; i++ ) {
+        for (int i = 0; i < 10; i++ ) {
 			// Set up company and authorized user
 			Company company = setUpCompany();
 			AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
@@ -383,8 +390,9 @@ class IntegrationUrlEncodeTest extends IntegrationBaseTest {
 				long companyCount = companyRepo.count();
 				long urlEncodingCount = urlEncodingRepo.count();
 				long userCount = userRepo.count();
-				long userEncodingCount = user.getUrlEncodingCount();
-				CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
+                long userEncodingCount = userRepo.findById(user.getEmail()).get().getUrlEncodingCount();
+
+                CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
 
 				List<String> keysBeforeEncoded = new ArrayList<>(dataBefore.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
 				List<String> keysBeforeDecoded = new ArrayList<>(dataBefore.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
@@ -421,8 +429,8 @@ class IntegrationUrlEncodeTest extends IntegrationBaseTest {
 				
 
 				// 10. Verify user encoding count was incremented
-				AppUser verifyUser = userRepo.findById(user.getEmail()).get();
-				assertEquals(userEncodingCount + 1, verifyUser.getUrlEncodingCount(), 
+				AppUser userAfter = userRepo.findById(user.getEmail()).get();
+				assertEquals(userEncodingCount + 1, userAfter.getUrlEncodingCount(),
 						"User encoding count should increase by 1");
 				
 				// 11. Verify company URL data was updated

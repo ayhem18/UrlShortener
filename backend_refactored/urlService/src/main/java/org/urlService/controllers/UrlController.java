@@ -13,7 +13,6 @@ import org.company.repositories.CompanyUrlDataRepository;
 import org.company.entities.Company;
 import org.company.entities.TopLevelDomain;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -35,8 +34,8 @@ import org.company.repositories.TopLevelDomainRepository;
 import org.user.entities.AppUser;
 import org.user.repositories.UrlEncodingRepository;
 import org.user.repositories.UserRepository;
+import org.springframework.core.env.Environment;
 
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.AbstractMap;
@@ -56,11 +55,8 @@ public class UrlController extends TokenController {
     private final UserRepository userRepository;
     private final UrlProcessor urlProcessor;
     private final UrlValidator urlValidator;
-
     private final ObjectMapper objectMapper;
-    
-
-    @Value("${server.port}")
+    private final Environment environment;
     private int applicationPort;
 
     @Autowired
@@ -69,28 +65,20 @@ public class UrlController extends TokenController {
                          TopLevelDomainRepository topLevelDomainRepo,
                          UserRepository userRepository, 
                          TokenUserLinkRepository tokenUserLinkRepository,
-                         UrlProcessor urlProcessor) {
+                         UrlProcessor urlProcessor,
+                         Environment environment) {
         super(userRepository, tokenUserLinkRepository);
-        
         this.urlDataRepo = urlDataRepo;
         this.urlEncodingRepo = urlEncodingRepo;
         this.topLevelDomainRepo = topLevelDomainRepo;
         this.userRepository = userRepository;
         this.urlProcessor = urlProcessor;
+        this.urlValidator = new UrlValidator(new String[]{"http", "https"});
+        this.environment = environment;
         
-        // limit the protocols to http and https and allow local urls
-        String[] schemes = {"http", "https"};
-        this.urlValidator = new UrlValidator(schemes, UrlValidator.ALLOW_LOCAL_URLS);
-    
-                        
-        SimpleDateFormat df = new SimpleDateFormat("dd-MM-yyyy hh:mm");
         this.objectMapper = new ObjectMapper();
-        this.objectMapper.setDateFormat(df);
         this.objectMapper.registerModule(new JavaTimeModule());
         this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        this.objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-
-
     }
 
     // added for unit testing without loading external resources
@@ -107,14 +95,29 @@ public class UrlController extends TokenController {
         topLevelDomainRepo, 
         userRepository, 
         tokenUserLinkRepository, 
-        urlProcessor);
+        urlProcessor,
+        null);
+
         this.applicationPort = port;
     }
 
 
     //////////////////////////////////////// Methods for the encode/url endpoint ////////////////////////////////////////   
     public String getUrlEncodePrefix() {
-        return "localhost:" + applicationPort + "/";
+        // Try to get the port from the environment
+        String serverPort;
+        if (environment == null) {
+            serverPort = String.valueOf(applicationPort);
+        }
+        else {
+            serverPort = environment.getProperty("local.server.port");
+            if (serverPort == null) {
+                // Fallback to configured port if available
+                serverPort = environment.getProperty("server.port", "8080");
+            }
+        }
+
+        return "localhost:" + serverPort + "/";
     }
 
 

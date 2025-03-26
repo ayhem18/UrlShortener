@@ -142,10 +142,10 @@ public class AuthManagementControllerTest {
 
         userRepo.saveAll(List.of(youtubeOwner, githubOwner, youtubeAdmin, githubAdmin, youtubeEmployee, githubEmployee));
 
-        CompanyUrlData urlDataYoutube = new CompanyUrlData(youtube, "hash_youtube");
+        CompanyUrlData urlDataYoutube = new CompanyUrlData(this.gen.randomAlphaString(20), youtube, "hash_youtube");
         companyUrlDataRepo.save(urlDataYoutube);
 
-        CompanyUrlData urlDataGithub = new CompanyUrlData(github, "hash_github");
+        CompanyUrlData urlDataGithub = new CompanyUrlData(this.gen.randomAlphaString(20), github, "hash_github");
         companyUrlDataRepo.save(urlDataGithub);
     }
 

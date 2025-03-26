@@ -118,6 +118,7 @@ class BaseTest {
 
         // Create company URL data
         CompanyUrlData companyUrlData = new CompanyUrlData(
+            this.gen.randomAlphaString(20),
             testCompany,
             this.encoder.encode(activeDomainName).replaceAll("/", "_")
         );

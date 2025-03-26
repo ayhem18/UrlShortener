@@ -318,7 +318,7 @@ public class UrlProcessor {
         String protocol = levels.getFirst().levelName();
 
         // extract the encodedUrlPrefix as it is not encoded
-        String prefixToCompare = "";
+        String prefixToCompare;
 
         if (!encodedUrlPrefix.isEmpty()) {
             prefixToCompare = encodedUrlPrefix.charAt(encodedUrlPrefix.length() - 1) == '/' ? encodedUrlPrefix.substring(0, encodedUrlPrefix.length() - 1) : encodedUrlPrefix;

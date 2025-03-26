@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Document()
 @Schema(description = "User entity representing a system user")
+@SuppressWarnings("unused")
 public class AppUser {
     // login credentials
     @Id
@@ -152,7 +153,7 @@ public class AppUser {
     }
 
     public void incrementUrlEncodingCount() {
-        this.urlEncodingCount++;
+        this.urlEncodingCount += 1;
     }   
 
     ///////////////////////////////// Jackson Setters /////////////////////////////////////////////

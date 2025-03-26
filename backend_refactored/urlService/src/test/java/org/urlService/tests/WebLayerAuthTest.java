@@ -147,6 +147,7 @@ public class WebLayerAuthTest {
 
         // Create company URL data
         CompanyUrlData companyUrlData = new CompanyUrlData(
+            this.customGenerator.randomAlphaString(10),
             testCompany,
             this.encoder.encode(activeDomainName).replaceAll("/", "_")
         );
