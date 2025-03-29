@@ -195,6 +195,7 @@ public class AuthController {
                      content = @Content(mediaType = "application/json", 
                                        schema = @Schema(implementation = CustomErrorMessage.class)))
     })
+
     @PostMapping("api/auth/register/company")
     public ResponseEntity<String> registerCompany(@Valid @RequestBody CompanyRegisterRequest req) throws JsonProcessingException {
         // registering a company is done through the following steps: 

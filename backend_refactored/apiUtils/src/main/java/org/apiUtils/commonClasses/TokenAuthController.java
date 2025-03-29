@@ -33,11 +33,11 @@ public class TokenAuthController {
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     public AppUser authorizeUserToken(UserDetails userDetails) {
         AppUser user = this.userRepo.findById(userDetails.getUsername()).get();
-        // look for tokens 
+        // look for tokens
         List<TokenUserLink> tokenUserLinks = this.tokenUserLinkRepo.findByUser(user);
 
         if (tokenUserLinks.isEmpty()) {
-            throw new TokenNotFoundException("The user is currently associated with no tokens. His access might have been revoked.");
+            throw new TokenNotFoundException("The user is currently associated with no tokens. Their access might have been revoked.");
         }
 
         return user;

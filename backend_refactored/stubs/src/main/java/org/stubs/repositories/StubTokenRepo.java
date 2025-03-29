@@ -93,7 +93,8 @@ public class StubTokenRepo implements TokenRepository {
                 .filter(token -> token.getCompany() != null && 
                         token.getCompany().getId().equals(company.getId()) && 
                         token.getRole() != null && 
-                        token.getRole().toString().equals(role.toString()))
+                        token.getRole().equals(role)
+                )
                 .collect(Collectors.toList());
     }
 

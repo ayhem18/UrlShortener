@@ -15,12 +15,12 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.tokenApi.controllers.TokenController;
 import org.tokens.entities.AppToken;
 import org.tokens.entities.TokenUserLink;
 import org.tokens.repositories.TokenRepository;
 import org.tokens.repositories.TokenUserLinkRepository;
 import org.tokenApi.configurations.UrlServiceWebConfig;
-import org.tokenApi.controllers.UrlController;
 import org.user.entities.AppUser;
 import org.user.repositories.UserRepository;
 import org.utils.CustomGenerator;
@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringJUnitConfig(classes = UrlServiceWebConfig.class)
-@WebMvcTest(UrlController.class)
+@WebMvcTest(TokenController.class)
 public class WebLayerAuthTest {
 
     private final MockMvc mockMvc;

@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-@SuppressWarnings("unused")
 @RestController
 @Validated
 public class TokenController extends TokenAuthController {
@@ -58,7 +57,6 @@ public class TokenController extends TokenAuthController {
         this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         this.encoder = new BCryptPasswordEncoder();
-
     }
 
     /**
@@ -111,7 +109,7 @@ public class TokenController extends TokenAuthController {
         return tokenValue;
     }
 
-    private AppToken saveToken(String tokenValue, Company company, Role requestedRole) {
+    private void saveToken(String tokenValue, Company company, Role requestedRole) {
         // create the new token
         String tokenId = UUID.randomUUID().toString(); 
 
@@ -122,7 +120,6 @@ public class TokenController extends TokenAuthController {
         AppToken token = new AppToken(tokenId, tokenValue, company, requestedRole);
         tokenRepo.save(token);
 
-        return token;
     }
 
     /**
@@ -136,7 +133,6 @@ public class TokenController extends TokenAuthController {
     public ResponseEntity<String> generateToken(
             @RequestParam String role, 
             @AuthenticationPrincipal UserDetails userDetails) throws JsonProcessingException {
-        
         // Get the current user
         AppUser currentUser = authorizeUserToken(userDetails);
         Company company = currentUser.getCompany();
@@ -151,8 +147,7 @@ public class TokenController extends TokenAuthController {
         // generate a unique token for the company
         String tokenValue = generateCompanyUniqueToken(company);
         
-        AppToken token = saveToken(tokenValue, company, requestedRole);
-        this.tokenRepo.save(token);
+        saveToken(tokenValue, company, requestedRole);
 
         // Create response with token value
         Map<String, String> response = new HashMap<>();

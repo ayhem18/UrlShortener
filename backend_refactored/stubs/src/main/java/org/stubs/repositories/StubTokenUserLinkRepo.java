@@ -1,5 +1,7 @@
 package org.stubs.repositories;
 
+import org.access.Role;
+import org.company.entities.Company;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -59,6 +61,13 @@ public class StubTokenUserLinkRepo implements TokenUserLinkRepository {
     }
 
     @Override
+    public Optional<TokenUserLink> findFirstByUser(AppUser user) {
+        return this.db.stream().filter(
+                u -> u.getId().equals(user.getEmail())
+        ).findFirst();
+    }
+
+    @Override
     public Optional<TokenUserLink> findByUserAndToken(AppUser user, AppToken token) {
         return this.db.stream()
                 .filter(link -> link.getUser() != null && 
@@ -107,6 +116,8 @@ public class StubTokenUserLinkRepo implements TokenUserLinkRepository {
     public <S extends TokenUserLink> boolean exists(Example<S> example) { return false; }
     @Override
     public <S extends TokenUserLink, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) { return null; }
+
+
     @Override
     public <S extends TokenUserLink> List<S> saveAll(Iterable<S> entities) {
         List<S> saved = new ArrayList<>();
