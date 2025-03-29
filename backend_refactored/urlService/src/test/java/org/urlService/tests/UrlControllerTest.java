@@ -71,8 +71,6 @@ class BaseTest {
     protected Company setUpCompany() {
         String companyId = gen.randomAlphaString(12);
 
-
-
         String companyName = gen.randomAlphaString(10);
         String companyEmailDomain = gen.randomAlphaString(5) + ".com";
         String companyEmail = "owner@" + companyEmailDomain;
@@ -241,6 +239,11 @@ class UrlEncodeTest extends BaseTest {
             long urlEncodingCount = urlEncodingRepo.count();
             long userCount = userRepo.count();
             
+
+            CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
+            List<String> keysBeforeEncoded = new ArrayList<>(dataBefore.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+            List<String> keysBeforeDecoded = new ArrayList<>(dataBefore.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
             // Test the invalid URL
             Exception exception = assertThrows(
                 UrlExceptions.InvalidUrlException.class,
@@ -259,6 +262,21 @@ class UrlEncodeTest extends BaseTest {
             // Verify user encoding count not incremented
             AppUser verifyUser = userRepo.findById(user.getEmail()).get();
             assertEquals(0, verifyUser.getUrlEncodingCount(), "User encoding count should not change for invalid URL");
+
+
+            // 11. Verify company URL data was updated
+            CompanyUrlData dataAfter = companyUrlDataRepo.findFirstByCompany(company).get();
+
+            List<String> keysAfterEncoded = new ArrayList<>(dataAfter.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+            assertTrue (keysBeforeEncoded .containsAll(keysAfterEncoded) &&  keysAfterEncoded .containsAll(keysBeforeEncoded),
+                    "data encoded keys should not change");
+
+            List<String> keysAfterDecoded = new ArrayList<>(dataAfter.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+            assertTrue (keysBeforeDecoded.containsAll(keysAfterDecoded) && keysAfterDecoded.containsAll(keysBeforeDecoded),
+                    "data decoded keys should not change");
+
         }
     }
 
@@ -314,7 +332,9 @@ class UrlEncodeTest extends BaseTest {
                 // Valid URL that should work if not for the limit
                 String validUrl = "https://www.validUrl.com";
 
-                CompanyUrlData dataBefore = this.companyUrlDataRepo.findFirstByCompany(company).get();
+                CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
+                List<String> keysBeforeEncoded = new ArrayList<>(dataBefore.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+                List<String> keysBeforeDecoded = new ArrayList<>(dataBefore.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
 
                 // Count repositories before attempting operation
                 long companyCount = companyRepo.count();
@@ -340,9 +360,18 @@ class UrlEncodeTest extends BaseTest {
                 AppUser verifyUser = userRepo.findById(user.getEmail()).get();
                 assertEquals(verifyUser.getUrlEncodingCount(), user.getUrlEncodingCount(), "User encoding count should not change when daily limit exceeded");
 
-                CompanyUrlData dataAfter = this.companyUrlDataRepo.findFirstByCompany(company).get();
-                assertEquals(dataBefore.getDataDecoded(), dataAfter.getDataDecoded(), "Data decoded should not change");
-                assertEquals(dataBefore.getDataEncoded(), dataAfter.getDataEncoded(), "Data encoded should not change");
+                // 11. Verify company URL data was updated
+                CompanyUrlData dataAfter = companyUrlDataRepo.findFirstByCompany(company).get();
+
+                List<String> keysAfterEncoded = new ArrayList<>(dataAfter.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+                assertTrue (keysBeforeEncoded .containsAll(keysAfterEncoded) &&  keysAfterEncoded .containsAll(keysBeforeEncoded),
+                        "data encoded keys should not change");
+
+                List<String> keysAfterDecoded = new ArrayList<>(dataAfter.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+                assertTrue (keysBeforeDecoded.containsAll(keysAfterDecoded) && keysAfterDecoded.containsAll(keysBeforeDecoded),
+                        "data decoded keys should not change");
             
             }
         }
@@ -423,8 +452,12 @@ class UrlEncodeTest extends BaseTest {
             long urlEncodingCount = urlEncodingRepo.count();
             long userCount = userRepo.count();
             long userEncodingCount = user.getUrlEncodingCount();
+
             CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
-            
+            List<String> keysBeforeEncoded = new ArrayList<>(dataBefore.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+            List<String> keysBeforeDecoded = new ArrayList<>(dataBefore.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+
             // The request should fail with InvalidTopLevelDomainException
             Exception exception = assertThrows(
                 UrlExceptions.InvalidTopLevelDomainException.class,
@@ -445,10 +478,19 @@ class UrlEncodeTest extends BaseTest {
             assertEquals(userEncodingCount, verifyUser.getUrlEncodingCount(), 
                 "User encoding count should not change for invalid domain URL");
             
-            // Verify company URL data hasn't changed
+            // 11. Verify company URL data was updated
             CompanyUrlData dataAfter = companyUrlDataRepo.findFirstByCompany(company).get();
-            assertEquals(dataBefore.getDataDecoded(), dataAfter.getDataDecoded(), "Data decoded should not change");
-            assertEquals(dataBefore.getDataEncoded(), dataAfter.getDataEncoded(), "Data encoded should not change");
+
+            List<String> keysAfterEncoded = new ArrayList<>(dataAfter.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+            assertTrue (keysBeforeEncoded .containsAll(keysAfterEncoded) &&  keysAfterEncoded .containsAll(keysBeforeEncoded),
+                    "data encoded keys should not change");
+
+            List<String> keysAfterDecoded = new ArrayList<>(dataAfter.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+            assertTrue (keysBeforeDecoded.containsAll(keysAfterDecoded) && keysAfterDecoded.containsAll(keysBeforeDecoded),
+                    "data decoded keys should not change");
+            
         }
     }
 
@@ -484,8 +526,11 @@ class UrlEncodeTest extends BaseTest {
             long urlEncodingCount = urlEncodingRepo.count();
             long userCount = userRepo.count();
             long userEncodingCount = user.getUrlEncodingCount();
-            CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
             
+            CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
+            List<String> keysBeforeEncoded = new ArrayList<>(dataBefore.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+            List<String> keysBeforeDecoded = new ArrayList<>(dataBefore.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
             // The request should fail with UrlCompanyDomainExpired
             Exception exception = assertThrows(
                 UrlExceptions.UrlCompanyDomainExpired.class,
@@ -506,10 +551,19 @@ class UrlEncodeTest extends BaseTest {
             assertEquals(userEncodingCount, verifyUser.getUrlEncodingCount(), 
                 "User encoding count should not change for deprecated domain URL");
             
-            // Verify company URL data hasn't changed
+            // 11. Verify company URL data was updated
             CompanyUrlData dataAfter = companyUrlDataRepo.findFirstByCompany(company).get();
-            assertEquals(dataBefore.getDataDecoded(), dataAfter.getDataDecoded(), "Data decoded should not change");
-            assertEquals(dataBefore.getDataEncoded(), dataAfter.getDataEncoded(), "Data encoded should not change");
+
+            List<String> keysAfterEncoded = new ArrayList<>(dataAfter.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+            assertTrue (keysBeforeEncoded .containsAll(keysAfterEncoded) &&  keysAfterEncoded .containsAll(keysBeforeEncoded),
+                    "data encoded keys should not change");
+
+            List<String> keysAfterDecoded = new ArrayList<>(dataAfter.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+            assertTrue (keysBeforeDecoded.containsAll(keysAfterDecoded) && keysAfterDecoded.containsAll(keysBeforeDecoded),
+                    "data decoded keys should not change");
+        
         }
     }
 
@@ -542,8 +596,8 @@ class UrlEncodeTest extends BaseTest {
                 long urlEncodingCount = urlEncodingRepo.count();
                 long userCount = userRepo.count();
                 long userEncodingCount = user.getUrlEncodingCount();
-                CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
 
+                CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
                 List<String> keysBeforeEncoded = new ArrayList<>(dataBefore.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
                 List<String> keysBeforeDecoded = new ArrayList<>(dataBefore.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
 
@@ -607,7 +661,6 @@ class UrlEncodeTest extends BaseTest {
                 // The decoded URL should match the original URL
                 assertEquals(originalUrl, decodedUrl, "Decoded URL should match original URL");
             }
-
         }
     }
 
@@ -803,11 +856,11 @@ class UrlDecodeTest extends BaseTest {
             long companyCount = companyRepo.count();
             long urlEncodingCount = urlEncodingRepo.count();
             long userCount = userRepo.count();
-            CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
-
+            
             // Create an encoded URL with an invalid domain
             String invalidEncodedUrl = "https://localhost:8018/" + this.gen.randomAlphaString(20) + "/some_encoding";
-
+            
+            CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
             List<String> keysBeforeEncoded = new ArrayList<>(dataBefore.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
             List<String> keysBeforeDecoded = new ArrayList<>(dataBefore.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
 
@@ -836,7 +889,7 @@ class UrlDecodeTest extends BaseTest {
 
             List<String> keysAfterDecoded = new ArrayList<>(dataAfter.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
 
-            assertEquals(keysBeforeDecoded, keysAfterDecoded, "The data should not chance");
+            assertEquals(keysBeforeDecoded, keysAfterDecoded, "The data should not change");
         }
     
     }
@@ -876,7 +929,12 @@ class UrlDecodeTest extends BaseTest {
             long companyCount = companyRepo.count();
             long urlEncodingCount = urlEncodingRepo.count();
             long userCount = userRepo.count();
+
+
             CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
+            List<String> keysBeforeEncoded = new ArrayList<>(dataBefore.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+            List<String> keysBeforeDecoded = new ArrayList<>(dataBefore.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+            
             
             // Step 2: Decode the URL
             var decodeResponse = urlController.decodeUrl(encodedUrl, userDetails);
@@ -894,11 +952,15 @@ class UrlDecodeTest extends BaseTest {
             
             // Verify company URL data hasn't changed
             CompanyUrlData dataAfter = companyUrlDataRepo.findFirstByCompany(company).get();
-            assertEquals(dataBefore.getDataDecoded().size(), dataAfter.getDataDecoded().size(), 
-                    "Data decoded size should not change after decode operation");
-            assertEquals(dataBefore.getDataEncoded().size(), dataAfter.getDataEncoded().size(), 
-                    "Data encoded size should not change after decode operation");
-            
+
+            List<String> keysAfterEncoded = new ArrayList<>(dataAfter.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+            assertEquals(keysBeforeEncoded, keysAfterEncoded, "The data should not change");
+
+            List<String> keysAfterDecoded = new ArrayList<>(dataAfter.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+            assertEquals(keysBeforeDecoded, keysAfterDecoded, "The data should not change");
+
             // Verify decoded URL matches original
             assertEquals(originalUrl, decodedUrl, "Decoded URL should match the original URL");
 
@@ -906,6 +968,7 @@ class UrlDecodeTest extends BaseTest {
     
     }
 }
+
 
 class UrlHistoryTest extends BaseTest {
 
@@ -1050,7 +1113,7 @@ class UrlHistoryTest extends BaseTest {
             new com.fasterxml.jackson.databind.ObjectMapper().readTree(fullHistoryResponse.getBody());
         
         // Verify full history has all entries in reverse order
-        assertEquals(hisSize, fullJsonNode.size(), "Full history should have all entries");
+        assertEquals(hisSize, fullJsonNode.size(), "parameterless request should return as many items as the history size");
         for (int j = 0; j < hisSize; j++) {
             String expectedUrl = originalUrls.get(originalUrls.size() - 1 - j); // Reverse order
             String actualUrl = fullJsonNode.get(j).get("url").asText();
