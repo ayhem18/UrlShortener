@@ -107,13 +107,13 @@ class CanViewSubscription implements GrantedAuthority {
 }
 
 
-class CanGenerateTokens implements GrantedAuthority {
-    private static final String AUTHORITY = "CAN_GENERATE_TOKENS";
-    private static volatile CanGenerateTokens instance;
+class CanWorkWithTokens implements GrantedAuthority {
+    private static final String AUTHORITY = "CAN_WORK_WITH_TOKENS";
+    private static volatile CanWorkWithTokens instance;
     
-    public CanGenerateTokens() {
+    public CanWorkWithTokens() {
         if (instance == null) {
-            synchronized (CanGenerateTokens.class) {
+            synchronized (CanWorkWithTokens.class) {
                 if (instance == null) {
                     instance = this;
                 }

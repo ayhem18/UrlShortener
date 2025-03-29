@@ -13,7 +13,7 @@ public class AuthoritiesManager {
             "CAN_CANCEL_SUBSCRIPTION", new CanCancelSubscription(),
             "CAN_VIEW_COMPANY_DETAILS", new CanViewCompanyDetails(),
             "CAN_VIEW_SUBSCRIPTION", new CanViewSubscription(),
-            "CAN_GENERATE_TOKENS", new CanGenerateTokens(),
+            "CAN_WORK_WITH_TOKENS", new CanWorkWithTokens(),
             "CAN_USE_SHORT_URL", new CanUseShortUrl(),
             "CAN_ENCODE_URL", new CanEncodeUrl(),
             "CAN_VIEW_HISTORY", new CanViewHistory()
@@ -45,6 +45,6 @@ public class AuthoritiesManager {
     public static String CAN_CANCEL_SUBSCRIPTION_STR = getAuthority("CAN_CANCEL_SUBSCRIPTION").getAuthority();
     public static String CAN_VIEW_COMPANY_DETAILS_STR = getAuthority("CAN_VIEW_COMPANY_DETAILS").getAuthority();
     public static String CAN_VIEW_SUBSCRIPTION_STR = getAuthority("CAN_VIEW_SUBSCRIPTION").getAuthority();
-    public static String CAN_GENERATE_TOKENS_STR = getAuthority("CAN_GENERATE_TOKENS").getAuthority();
+    public static String CAN_WORK_WITH_TOKENS_STR = getAuthority("CAN_WORK_WITH_TOKENS").getAuthority();
 
 }

@@ -14,9 +14,11 @@ public interface TokenUserLinkRepository extends MongoRepository<TokenUserLink, 
     @SuppressWarnings("null")
     Optional<TokenUserLink> findById(String id);
     
+    Optional<TokenUserLink> findByUserAndToken(AppUser user, AppToken token);
+    
     List<TokenUserLink> findByUser(AppUser user);
     
     List<TokenUserLink> findByToken(AppToken token);
-    
-    Optional<TokenUserLink> findByUserAndToken(AppUser user, AppToken token);
+
+    Optional<TokenUserLink> findFirstByUser(AppUser user);
 }

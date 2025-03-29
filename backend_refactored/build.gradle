@@ -37,8 +37,9 @@ dependencies {
 	implementation project(':tokens')
 	implementation project(':apiUtils')
 	implementation project(":stubs")
-	implementation project(':authManagement')
-	implementation project(':urlService')
+	implementation project(':authApi')
+	implementation project(':urlApi')
+	implementation project(':tokenApi')
 
 }
 

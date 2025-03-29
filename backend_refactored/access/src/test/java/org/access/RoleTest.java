@@ -17,7 +17,7 @@ class RoleTest {
 
     private final GrantedAuthority canUpdateDomainName = AuthoritiesManager.getAuthority("CAN_UPDATE_DOMAIN_NAME");
     private final GrantedAuthority canCancelSubscription = AuthoritiesManager.getAuthority("CAN_CANCEL_SUBSCRIPTION");
-    private final GrantedAuthority canGenerateTokens = AuthoritiesManager.getAuthority("CAN_GENERATE_TOKENS");
+    private final GrantedAuthority canWorkWithTokens = AuthoritiesManager.getAuthority("CAN_WORK_WITH_TOKENS");
 
     private final GrantedAuthority canViewCompanyDetails = AuthoritiesManager.getAuthority("CAN_VIEW_COMPANY_DETAILS");
     private final GrantedAuthority canViewSubscription = AuthoritiesManager.getAuthority("CAN_VIEW_SUBSCRIPTION");
@@ -59,7 +59,7 @@ class RoleTest {
         Role owner = RoleManager.getRole("owner");
         List<GrantedAuthority> expected = List.of(canUpdateDomainName, 
         canCancelSubscription, 
-        canGenerateTokens, 
+        canWorkWithTokens,
         canViewCompanyDetails, 
         canViewSubscription, 
         canEncodeUrl, 
@@ -73,10 +73,11 @@ class RoleTest {
     @Test
     void testAdminUserAuths() {
         Role admin = RoleManager.getRole("admin");
-        List<GrantedAuthority> expected = List.of(canViewCompanyDetails, 
-        canUseShortUrl, 
+        List<GrantedAuthority> expected = List.of(canViewCompanyDetails,
+        canUseShortUrl,
         canEncodeUrl,
-        canViewHistory);
+        canViewHistory,
+        canWorkWithTokens);
 
 
         assertThat(admin.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList()).

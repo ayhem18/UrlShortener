@@ -22,19 +22,6 @@ public class SubscriptionManager {
         }
     }
 
-
-    // public static void throwSubscriptionViolatedException(UrlEntity valueType,
-    //                                                       int level,
-    //                                                       int num,
-    //                                                       int max) {
-    //     switch (valueType) {
-    //         case UrlEntity.LEVEL_NAME -> throw new LevelNamesSubExceeded(level, num, max);
-    //         case UrlEntity.PATH_VARIABLE -> throw new LevelPathVariablesSubExceeded(level, num, max);
-    //         case UrlEntity.QUERY_PARAM_VALUE -> throw new QueryParametersValuesSubExceeded(level, num, max);
-    //         default -> throw new QueryParametersSubExceeded(level, num, max);
-    //     }
-    // }
-
     // make the class public to be accessed anywhere in the codebase
     public static class NoExistingSubscription extends RuntimeException {
         public NoExistingSubscription(String message) {

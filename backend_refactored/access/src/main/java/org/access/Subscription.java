@@ -32,6 +32,19 @@ public interface Subscription {
 
     Integer getMaxEmployees();
 
+    default Integer getMaxUsers(Role role) {
+        if (role == RoleManager.getRole(RoleManager.ADMIN_ROLE)) {
+            return this.getMaxAdmins();
+        } else if (role == RoleManager.getRole(RoleManager.EMPLOYEE_ROLE)) {
+            return this.getMaxEmployees();
+        } else {
+            // the line below will throw an appropriate error
+            RoleManager.getRole("");
+            // the return statement below is for the compiler
+            return 0;
+        }
+    }
+
     // constraints on the size of the history
     Integer getMaxHistorySize();
 
@@ -42,6 +55,8 @@ public interface Subscription {
     Integer getMinParameterLength();
 
     Integer getMinVariableLength();
+
+
 }
 
 
