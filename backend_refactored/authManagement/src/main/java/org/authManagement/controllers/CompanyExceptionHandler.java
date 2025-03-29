@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.util.InvalidUrlException;
 import org.utils.CustomErrorMessage;
 import io.swagger.v3.oas.annotations.Hidden;
 
@@ -52,4 +53,11 @@ public class CompanyExceptionHandler extends CustomExceptionHandler {
             CompanyAndUserExceptions.MultipleOwnersException e, WebRequest request) {
         return handle(e, request, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(InvalidUrlException.class)
+    public ResponseEntity<CustomErrorMessage> handleInvalidUrlException(
+            CompanyAndUserExceptions.MultipleOwnersException e, WebRequest request) {
+        return handle(e, request, HttpStatus.BAD_REQUEST);
+    }
+
 }

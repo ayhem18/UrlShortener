@@ -107,7 +107,10 @@ POST /api/auth/loginNewToken
 }
 ```
 
+
 ## Implementation
+Take a look at the token endpoints for completeness.
+
 
 1. check if the user already exists. The user must be authenticated
 2. the user must be a member of the company whose Id is passed in the request body. 

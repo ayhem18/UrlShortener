@@ -59,10 +59,11 @@ public class IntegrationTest {
     // Test data
     private static final String COMPANY_ID = "test_company";
     private static final String COMPANY_NAME = "Test Company";
-    private static final String DOMAIN = "www.test_company.com";
-    private static final String OWNER_EMAIL = "owner@testcompany.com";
-    private static final String ADMIN_EMAIL = "admin@testcompany.com";
-    private static final String EMPLOYEE_EMAIL = "employee@testcompany.com";
+    private static final String EMAIL_DOMAIN = "testCompany.com";
+    private static final String TLD = "www.test1company.com";
+    private static final String OWNER_EMAIL = "owner@testCompany.com";
+    private static final String ADMIN_EMAIL = "admin@testCompany.com";
+    private static final String EMPLOYEE_EMAIL = "employee@testCompany.com";
     private static final String DEFAULT_PASSWORD = "password123";
 
     @Autowired
@@ -127,9 +128,9 @@ public class IntegrationTest {
             COMPANY_ID,
             COMPANY_NAME,
             "123 Test Street",
-            DOMAIN,
+            TLD,
             OWNER_EMAIL,
-            "testcompany.com",
+            EMAIL_DOMAIN,
             "TIER_1"
         );
 
@@ -157,7 +158,7 @@ public class IntegrationTest {
         assertFalse((boolean) companyFields.get("verified"));
 
         // Verify top-level domain was created
-        Optional<TopLevelDomain> domainOpt = topLevelDomainRepo.findByDomain(DOMAIN);
+        Optional<TopLevelDomain> domainOpt = topLevelDomainRepo.findByDomain(TLD);
         assertTrue(domainOpt.isPresent());
         assertEquals(COMPANY_ID, domainOpt.get().getCompany().getId());
 

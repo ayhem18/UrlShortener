@@ -32,7 +32,7 @@ class DomainTest {
         Company company = new Company("123", "companyName", "companyAddress", "test@example.com", "example.com", SubscriptionManager.getSubscription("TIER_1"));
         
         // Create the TopLevelDomain with test values
-        TopLevelDomain domain = new TopLevelDomain("456", "example.com", "some_hash", company);
+        TopLevelDomain domain = new TopLevelDomain("456", "example.com", company);
         
         // Test id field
         Field idField = TopLevelDomain.class.getDeclaredField("id");
@@ -44,11 +44,7 @@ class DomainTest {
         domainField.setAccessible(true);
         assertEquals("example.com", domainField.get(domain));
         
-        // Test hashedDomain field
-        Field hashedDomainField = TopLevelDomain.class.getDeclaredField("hashedDomain");
-        hashedDomainField.setAccessible(true);
-        assertEquals("some_hash", hashedDomainField.get(domain));
-        
+
         // Test company field
         Field companyField = TopLevelDomain.class.getDeclaredField("company");
         companyField.setAccessible(true);
@@ -76,7 +72,7 @@ class DomainTest {
         Company company = new Company("123", "companyName", "companyAddress", "test@example.com", "example.com", SubscriptionManager.getSubscription("TIER_1"));
         
         // Create the TopLevelDomain
-        TopLevelDomain domain = new TopLevelDomain("456", "example.com", "some_hash", company);
+        TopLevelDomain domain = new TopLevelDomain("456", "example.com", company);
         
         // Verify initial state is ACTIVE
         Field domainStateField = TopLevelDomain.class.getDeclaredField("domainState");
@@ -109,7 +105,7 @@ class DomainTest {
         Company company = new Company("123", "companyName", "companyAddress", "test@example.com", "example.com", SubscriptionManager.getSubscription("TIER_1"));
         
         // Create the TopLevelDomain
-        TopLevelDomain domain = new TopLevelDomain("456", "example.com", "some_hash", company);
+        TopLevelDomain domain = new TopLevelDomain("456", "example.com", company);
         
         // Verify initial state is ACTIVE
         Field domainStateField = TopLevelDomain.class.getDeclaredField("domainState");
@@ -142,7 +138,7 @@ class DomainTest {
         Company company = new Company("123", "companyName", "companyAddress", "test@example.com", "example.com", SubscriptionManager.getSubscription("TIER_1"));
         
         // Create the TopLevelDomain with test values
-        TopLevelDomain domain = new TopLevelDomain("456", "example.com", "some_hash", company);
+        TopLevelDomain domain = new TopLevelDomain("456", "example.com", company);
         
         // Serialize the domain
         String domainJson = om.writeValueAsString(domain);

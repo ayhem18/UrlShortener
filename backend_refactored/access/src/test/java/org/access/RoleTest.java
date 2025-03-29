@@ -24,6 +24,7 @@ class RoleTest {
     private final GrantedAuthority canEncodeUrl = AuthoritiesManager.getAuthority("CAN_ENCODE_URL");
 
     private final GrantedAuthority canUseShortUrl = AuthoritiesManager.getAuthority("CAN_USE_SHORT_URL");
+    private final GrantedAuthority canViewHistory = AuthoritiesManager.getAuthority("CAN_VIEW_HISTORY");
 
 
 
@@ -62,8 +63,9 @@ class RoleTest {
         canViewCompanyDetails, 
         canViewSubscription, 
         canEncodeUrl, 
-        canUseShortUrl);
-        
+        canUseShortUrl,
+        canViewHistory);
+
         assertThat(owner.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList()).
                 hasSameElementsAs(expected.stream().map(GrantedAuthority::getAuthority).toList());
     }
@@ -73,7 +75,9 @@ class RoleTest {
         Role admin = RoleManager.getRole("admin");
         List<GrantedAuthority> expected = List.of(canViewCompanyDetails, 
         canUseShortUrl, 
-        canEncodeUrl);
+        canEncodeUrl,
+        canViewHistory);
+
 
         assertThat(admin.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList()).
                 hasSameElementsAs(expected.stream().map(GrantedAuthority::getAuthority).toList());
@@ -85,7 +89,8 @@ class RoleTest {
 
         List<GrantedAuthority> expected = List.of(canUseShortUrl, 
         canEncodeUrl, 
-        canViewSubscription);
+        canViewSubscription,
+        canViewHistory);
 
         assertThat(employee.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList()).
                 hasSameElementsAs(expected.stream().map(GrantedAuthority::getAuthority).toList());

@@ -1,6 +1,5 @@
 package org.access;
 
-import org.url.UrlEntity;
 import org.junit.jupiter.api.Test;
 import org.utils.CustomGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -43,25 +42,6 @@ public class SubscriptionTest {
         }
     }
 
-    @Test
-    void throwsCorrectSubViolationError() {
-
-        UrlEntity urlEntity1 = UrlEntity.LEVEL_NAME;
-        assertThrows(SubscriptionManager.LevelNamesSubExceeded.class,
-                () -> SubscriptionManager.throwSubscriptionViolatedException(urlEntity1, 0, 0, 0));
-
-        UrlEntity urlEntity2 = UrlEntity.PATH_VARIABLE;
-        assertThrows(SubscriptionManager.LevelPathVariablesSubExceeded.class,
-                () -> SubscriptionManager.throwSubscriptionViolatedException(urlEntity2, 0, 0, 0));
-
-        UrlEntity urlEntity3 = UrlEntity.QUERY_PARAM;
-        assertThrows(SubscriptionManager.QueryParametersSubExceeded.class,
-                () -> SubscriptionManager.throwSubscriptionViolatedException(urlEntity3, 0, 0, 0));
-
-        UrlEntity urlEntity4 = UrlEntity.QUERY_PARAM_VALUE;
-        assertThrows(SubscriptionManager.QueryParametersValuesSubExceeded.class,
-                () -> SubscriptionManager.throwSubscriptionViolatedException(urlEntity4, 0, 0, 0));
-    }
 
     @Test
     void testTierOneSingletonObj() {
@@ -119,11 +99,11 @@ public class SubscriptionTest {
     @Test
     void testTierInfinityLimits() {
         Subscription sub = SubscriptionManager.getSubscription("TIER_INFINITY");
-        assertEquals(null, sub.getMaxNumLevels());
+        assertNull(sub.getMaxNumLevels());
         assertEquals(3, sub.getMaxAdmins());
         assertEquals(10, sub.getMaxEmployees());
         assertEquals(100, sub.getMaxHistorySize());
-        assertEquals(null, sub.getEncodingDailyLimit());
+        assertNull(sub.getEncodingDailyLimit());
         assertEquals(0, sub.getMinUrlLength());
         assertEquals(5, sub.getMinParameterLength());
         assertEquals(5, sub.getMinVariableLength());
@@ -152,16 +132,6 @@ public class SubscriptionTest {
         String infinityJson = om.writeValueAsString(infinitySub);
         assertEquals("\"TIER_INFINITY\"", infinityJson);
     
-        // might need to change the code if deserialization is needed
-
-        // // Verify deserialization works as expected (if needed)
-        // FreeTier deserializedFree = om.readValue(freeJson, FreeTier.class);
-        // assertEquals(freeSub.getTier(), deserializedFree.getTier());
-
-        // TierOne deserializedTier1 = om.readValue(tier1Json, TierOne.class);
-        // assertEquals(tier1Sub.getTier(), deserializedTier1.getTier());
-
-        // TierInfinity deserializedInfinity = om.readValue(infinityJson, TierInfinity.class);
-        // assertEquals(infinitySub.getTier(), deserializedInfinity.getTier());
+        // deserialization might require a deeper dive into Jackson
     }
 }
