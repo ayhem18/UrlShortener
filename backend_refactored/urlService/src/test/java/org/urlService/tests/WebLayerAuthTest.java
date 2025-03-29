@@ -223,7 +223,7 @@ public class WebLayerAuthTest {
                 );
 
 
-                MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/encode").param("encodedUrl", "https://" + domain + "/product/123")
+                MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/encode").param("url", "https://" + domain + "/product/123")
                     .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
 
 
@@ -252,7 +252,7 @@ public class WebLayerAuthTest {
     public void testAuthenticatedButUnauthorized() throws Exception {
         // Set up company and domain
         Company company = setUpCompany();
-        List<TopLevelDomain> domains = this.topLevelDomainRepo.findByCompany(company);
+        List<TopLevelDomain> domains = this.topLevelDomainRepo.findByCompanyAndDomainState(company, TopLevelDomain.DomainState.ACTIVE);
         String domain = domains.getFirst().getDomain();
         
         // Set up user with authorized=false
@@ -262,7 +262,7 @@ public class WebLayerAuthTest {
             false
         );
         
-        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/encode").param("encodedUrl", "https://" + domain + "/product/123")
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/encode").param("url", "https://" + domain + "/product/123")
             .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
 
         // Make request with authentication but without authorization
@@ -276,7 +276,7 @@ public class WebLayerAuthTest {
     @Test
     public void testUnauthorizedAccessDecode() throws Exception {
         // Use non-existent credentials
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/url/decode/")
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/url/decode")
                 .param("encodedUrl", "https://localhost:8018/examplehash/abc123"))
                 .andExpect(status().isUnauthorized());
     }
@@ -314,7 +314,7 @@ public class WebLayerAuthTest {
                 // Create a sample encoded URL
                 String encodedUrl = "https://localhost:8018/" + domainHash + "/abc123";
 
-                MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/decode/")
+                MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/decode")
                     .param("encodedUrl", encodedUrl)
                     .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
 
@@ -349,7 +349,7 @@ public class WebLayerAuthTest {
         // Create a sample encoded URL
         String encodedUrl = "https://localhost:8018/" + domainHash + "/abc123";
         
-        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/decode/")
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/decode")
             .param("encodedUrl", encodedUrl)
             .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
 
@@ -364,7 +364,7 @@ public class WebLayerAuthTest {
     @Test
     public void testUnauthorizedAccessHistory() throws Exception {
         // Use non-existent credentials
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/url/history/")
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/url/history")
                 .param("page", "0")
                 .param("size", "10"))
                 .andExpect(status().isUnauthorized());
@@ -391,7 +391,7 @@ public class WebLayerAuthTest {
                     true
                 );
 
-                MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/history/")
+                MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/history")
                     .param("page", "0")
                     .param("size", "10")
                     .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
@@ -402,7 +402,7 @@ public class WebLayerAuthTest {
                     .andExpect(status().is(not(403))); // Not forbidden
                     
                 // Also test the parameterless endpoint
-                MockHttpServletRequestBuilder reqNoParams = MockMvcRequestBuilders.get("/api/url/history/")
+                MockHttpServletRequestBuilder reqNoParams = MockMvcRequestBuilders.get("/api/url/history")
                     .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
                     
                 mockMvc.perform(reqNoParams)
@@ -428,7 +428,7 @@ public class WebLayerAuthTest {
         );
         
         // Test with parameters
-        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/history/")
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/history")
             .param("page", "0")
             .param("size", "10")
             .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
@@ -438,7 +438,7 @@ public class WebLayerAuthTest {
             .andExpect(status().isForbidden());
             
         // Test without parameters
-        MockHttpServletRequestBuilder reqNoParams = MockMvcRequestBuilders.get("/api/url/history/")
+        MockHttpServletRequestBuilder reqNoParams = MockMvcRequestBuilders.get("/api/url/history")
             .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
             
         mockMvc.perform(reqNoParams)

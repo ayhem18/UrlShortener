@@ -33,9 +33,9 @@ public class SecurityConfiguration {
                     .requestMatchers("/webjars/**").permitAll()
                     
                     // url encoding endpoints
-                    .requestMatchers(RegexRequestMatcher.regexMatcher("/api/url/encode")).hasAuthority(AuthoritiesManager.CAN_ENCODE_URL_STR)
-                    .requestMatchers(RegexRequestMatcher.regexMatcher("/api/url/decode")).hasAuthority(AuthoritiesManager.CAN_USE_SHORT_URL_STR)
-                    .requestMatchers(RegexRequestMatcher.regexMatcher("/api/url/history")).hasAuthority(AuthoritiesManager.CAN_VIEW_HISTORY_STR)
+                    .requestMatchers(RegexRequestMatcher.regexMatcher("/api/url/encode.*")).hasAuthority(AuthoritiesManager.CAN_ENCODE_URL_STR)
+                    .requestMatchers(RegexRequestMatcher.regexMatcher("/api/url/decode.*")).hasAuthority(AuthoritiesManager.CAN_USE_SHORT_URL_STR)
+                    .requestMatchers(RegexRequestMatcher.regexMatcher("/api/url/history.*")).hasAuthority(AuthoritiesManager.CAN_VIEW_HISTORY_STR)
 
                     // 
                     .anyRequest().authenticated()                

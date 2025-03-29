@@ -307,7 +307,6 @@ class UrlEncodeTest extends BaseTest {
             topLevelDomainRepo,
             userRepo,
             tokenUserLinkRepo,
-
             urlProcessor,
             10
         );

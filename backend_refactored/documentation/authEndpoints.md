@@ -1,16 +1,14 @@
 # Overview
 
-This markdown file contains the list of features implemented in the backend and their implementation / explanation
+This markdown file contains the reasoning behind the authentication / registration endpoints
 
-# Company endpoints
+# Register a new company
 
-## Register a new company
-
-### Request
+## Request
 
 POST /api/auth/register/company
 
-### Request Body
+## Request Body
 
 ```json
 {
@@ -21,20 +19,20 @@ POST /api/auth/register/company
     "owner_email": "string": email of the owner of the company 
 }
 ```
-### Implementation
+## Implementation
 
 1. checks for uniqueness, id and topLevelDomain must be unique 
 2. save a Company object in the database 
 3. create a token in the database for the owner of the company  
 4. returns the company serialized 
 
-TAKE a look at register a new user endpoints for completness 
+TAKE a look at register a new user endpoints for completeness 
 
-## VerifyCompany
+# VerifyCompany
 
 POST /api/auth/verify-company
 
-### Request Body    
+## Request Body    
 
 ```json
 {
@@ -43,7 +41,7 @@ POST /api/auth/verify-company
     "email": "string"
 }
 ``` 
-### Implementation 
+## Implementation 
 
 1. the company must exist, and be unverified. 
 2. there should be only one token object with the same companyId in the database.
@@ -54,15 +52,13 @@ POST /api/auth/verify-company
 7. return the company serialized. 
 
 
-# User endpoints
+# Register a new user
 
-## Register a new user
-
-### Request
+## Request
 
 POST /api/auth/register/user
 
-### Request Body
+## Request Body
 
 ```json
 {
@@ -75,7 +71,7 @@ POST /api/auth/register/user
 }
 ```
 
-### Implementation 
+## Implementation 
 
 1. if the company does not exist, return a 400 error 
 
@@ -90,7 +86,35 @@ if the user is not an owner:
 
     4. create a userTokenLink object and save it to the database.
 
-    5. return the user serialized.
+    5. return the user serialized. 
+
+
+# Login with a new Token
+
+## Request
+
+POST /api/auth/loginNewToken
+
+## Request Body
+
+```json
+{
+    "email": "string",
+    "password": "string",
+    "companyId": "string",
+    "role": "string",
+    "roleToken": "string"
+}
+```
+
+## Implementation
+
+1. check if the user already exists. The user must be authenticated
+2. the user must be a member of the company whose Id is passed in the request body. 
+3. the role must be a valid role.
+4. the roleToken must be valid, unoccupied and match the role
+5. create a new token, activate it, save it, create a new tokenUserLink and save it. 
+6. return a simple Response with "User logged in successfully" 
 
 
 

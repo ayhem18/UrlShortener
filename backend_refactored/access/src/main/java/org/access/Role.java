@@ -27,10 +27,10 @@ class Owner implements Role {
             new CanUpdateDomainName(),
             new CanCancelSubscription(),
             new CanGenerateTokens(),
-
             new CanViewCompanyDetails(),
             new CanViewSubscription(),
             new CanEncodeUrl(),
+            new CanViewHistory(),
             new CanUseShortUrl()
     );
     }
@@ -59,7 +59,8 @@ class Admin implements Role {
         return List.of(
                 new CanViewCompanyDetails(),
                 new CanUseShortUrl(),
-                new CanEncodeUrl()
+                new CanEncodeUrl(),
+                new CanViewHistory()
         );
     }
 

@@ -17,8 +17,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -43,7 +43,7 @@ class subForTest implements Subscription {
 
         @Override
         public Integer getMaxHistorySize() {
-                return 1;
+                return 3;
         }
 
         @Override
@@ -754,7 +754,7 @@ class IntegrationUrlDecodeTest extends IntegrationBaseTest {
         HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
         
         ResponseEntity<String> response = restTemplate.exchange(
-                "/api/url/decode/?encodedUrl=" + encodedUrl,
+                "/api/url/decode?encodedUrl=" + encodedUrl,
                 HttpMethod.GET,
                 requestEntity,
                 String.class
@@ -766,99 +766,136 @@ class IntegrationUrlDecodeTest extends IntegrationBaseTest {
     
     @Test
     void testInvalidDomainHash() {
-        // Set up company and authorized user
-        Company company = setUpCompany();
-        AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
-        
-        // Invalid domain hash
-        String invalidDomainHash = "invalid_hash";
-        String encodedUrl = "https://localhost:8080/" + invalidDomainHash + "/abc123";
-        
-        // Request to decode URL
-        HttpHeaders headers = createAuthHeaders(user);
-        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
-        
-        // Capture state before decoding
-        long urlCount = urlEncodingRepo.count();
-        CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
-        
-        ResponseEntity<String> response = restTemplate.exchange(
-                "/api/url/decode/?encodedUrl=" + encodedUrl,
-                HttpMethod.GET,
-                requestEntity,
-                String.class
-        );
-        
-        // Verify bad request
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        
-        // Verify state is unchanged
-        assertEquals(urlCount, urlEncodingRepo.count(), "URL encoding count should not change");
-        CompanyUrlData dataAfter = companyUrlDataRepo.findFirstByCompany(company).get();
-        assertEquals(dataBefore.getDataEncoded().size(), dataAfter.getDataEncoded().size(), 
-                "Encoded data maps should not change");
-        assertEquals(dataBefore.getDataDecoded()	.size(), dataAfter.getDataDecoded().size(), 
-                "Decoded data maps should not change");
+        for (int i = 0; i < 100; i++) {
+            // Set up company and authorized user
+            Company company = setUpCompany();
+            AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
+
+            // Capture initial state
+            long companyCount = companyRepo.count();
+            long urlEncodingCount = urlEncodingRepo.count();
+            long userCount = userRepo.count();
+            
+            // Create an encoded URL with an invalid domain
+            String invalidEncodedUrl = "https://localhost:8018/" + this.gen.randomAlphaString(20) + "/some_encoding";
+            
+            CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
+            List<String> keysBeforeEncoded = new ArrayList<>(dataBefore.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+            List<String> keysBeforeDecoded = new ArrayList<>(dataBefore.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+			HttpHeaders headers = createAuthHeaders(user);
+			HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+			ResponseEntity<String> response = restTemplate.exchange(
+				"/api/url/decode?encodedUrl=" + invalidEncodedUrl,
+				HttpMethod.GET,
+				requestEntity,
+				String.class
+			);
+
+			assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+			assertTrue(Objects.requireNonNull(response.getBody()).contains("The encoded url does not match the user's company top level domain"),
+				"Exception message should mention 'invalid domain hash' for: " + invalidEncodedUrl);
+
+			// Verify database state is unchanged
+            assertEquals(companyCount, companyRepo.count(), "The company should not change");
+            assertEquals(urlEncodingCount, urlEncodingRepo.count(), "The url encoding count should not change");
+            assertEquals(userCount, userRepo.count(), "The user count should not change");
+
+
+            // Verify user encoding count not incremented
+            AppUser verifyUser = userRepo.findById(user.getEmail()).get();
+            assertEquals(verifyUser.getUrlEncodingCount(), user.getUrlEncodingCount(), "User encoding count should not change when daily limit exceeded");
+
+            // Verify company URL data hasn't changed
+            CompanyUrlData dataAfter = companyUrlDataRepo.findFirstByCompany(company).get();
+
+            List<String> keysAfterEncoded = new ArrayList<>(dataAfter.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+            assertEquals(keysBeforeEncoded, keysAfterEncoded, "The data should not change");
+
+            List<String> keysAfterDecoded = new ArrayList<>(dataAfter.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+            assertEquals(keysBeforeDecoded, keysAfterDecoded, "The data should not change");
+        }
     }
     
     @Test
     void testSuccessfulEncodeDecode() throws Exception {
-        // Set up company and authorized user
-        Company company = setUpCompany();
-        AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
-        
-        // Find active domain
-        TopLevelDomain activeDomain = topLevelDomainRepo.findByCompanyAndDomainState(
-                company, TopLevelDomain.DomainState.ACTIVE).getFirst();
-        
-        // First encode a URL
-        String originalUrl = "https://" + activeDomain.getDomain() + "/test?param=value";
-        HttpHeaders headers = createAuthHeaders(user);
-        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
-        
-        ResponseEntity<String> encodeResponse = restTemplate.exchange(
-                "/api/url/encode/?url=" + originalUrl,
-                HttpMethod.GET,
-                requestEntity,
-                String.class
-        );
-        
-        assertEquals(HttpStatus.OK, encodeResponse.getStatusCode());
-        
-        // Parse response to get encoded URL
-        JsonNode encodeJson = objectMapper.readTree(encodeResponse.getBody());
-        String encodedUrl = encodeJson.get("encoded_url").asText();
-        
-        // Capture state after encoding
-        long urlCount = urlEncodingRepo.count();
-        CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
-        
-        // Now decode the URL
-        ResponseEntity<String> decodeResponse = restTemplate.exchange(
-                "/api/url/decode/?encodedUrl=" + encodedUrl,
-                HttpMethod.GET,
-                requestEntity,
-                String.class
-        );
-        
-        assertEquals(HttpStatus.OK, decodeResponse.getStatusCode());
-        
-        // Parse response to get decoded URL
-        JsonNode decodeJson = objectMapper.readTree(decodeResponse.getBody());
-        String decodedUrl = decodeJson.get("decoded_url").asText();
-        
-        // Verify database state is unchanged after decoding
-        assertEquals(urlCount, urlEncodingRepo.count(), "URL encoding count should not change after decode");
-        
-        // Verify company URL data hasn't changed
-        CompanyUrlData dataAfter = companyUrlDataRepo.findFirstByCompany(company).get();
-        assertEquals(dataBefore.getDataDecoded().size(), dataAfter.getDataDecoded().size(), 
-                "Data decoded size should not change after decode operation");
-        assertEquals(dataBefore.getDataEncoded().size(), dataAfter.getDataEncoded().size(), 
-                "Data encoded size should not change after decode operation");
-        
-        // Verify decoded URL matches original
-        assertEquals(originalUrl, decodedUrl, "Decoded URL should match the original URL");
+        for (int i = 0; i < 10; i++) {
+
+            // Set up company and authorized user
+            Company company = setUpCompany();
+            AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
+            
+            
+            // Find active domain
+            TopLevelDomain activeDomain = topLevelDomainRepo.findByCompanyAndDomainState(
+                    company, TopLevelDomain.DomainState.ACTIVE).getFirst();
+            
+            // Create original URL with active domain
+            String originalUrl = "https://" + activeDomain.getDomain() + "/product/123?param=value";
+            
+			HttpHeaders headers = createAuthHeaders(user);
+			HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+			ResponseEntity<String> encodeResponse = restTemplate.exchange(
+				"/api/url/encode?url=" + originalUrl,
+				HttpMethod.GET,
+				requestEntity,
+				String.class
+			);
+
+            // Parse response to get encoded URL
+            com.fasterxml.jackson.databind.JsonNode jsonNode = 
+                new com.fasterxml.jackson.databind.ObjectMapper().readTree(encodeResponse.getBody());
+            String encodedUrl = jsonNode.get("encoded_url").asText();
+            
+            // Capture state after encoding
+            long companyCount = companyRepo.count();
+            long urlEncodingCount = urlEncodingRepo.count();
+            long userCount = userRepo.count();
+
+
+            CompanyUrlData dataBefore = companyUrlDataRepo.findFirstByCompany(company).get();
+            List<String> keysBeforeEncoded = new ArrayList<>(dataBefore.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+            List<String> keysBeforeDecoded = new ArrayList<>(dataBefore.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+            
+			ResponseEntity<String> decodeResponse = restTemplate.exchange(
+				"/api/url/decode?encodedUrl=" + encodedUrl,
+				HttpMethod.GET,
+				requestEntity,
+				String.class
+			);
+			
+			assertEquals(HttpStatus.OK, decodeResponse.getStatusCode());
+
+            // Parse response to get decoded URL
+            com.fasterxml.jackson.databind.JsonNode decodeJson = 
+                new com.fasterxml.jackson.databind.ObjectMapper().readTree(decodeResponse.getBody());
+            String decodedUrl = decodeJson.get("decoded_url").asText();
+            
+            // Verify database state is unchanged after decoding
+            assertEquals(companyCount, companyRepo.count(), "Company count should not change");
+            assertEquals(urlEncodingCount, urlEncodingRepo.count(), "URL encoding count should not change after decode");
+            assertEquals(userCount, userRepo.count(), "User count should not change");
+            
+            // Verify company URL data hasn't changed
+            CompanyUrlData dataAfter = companyUrlDataRepo.findFirstByCompany(company).get();
+
+            List<String> keysAfterEncoded = new ArrayList<>(dataAfter.getDataEncoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+            assertEquals(keysBeforeEncoded, keysAfterEncoded, "The data should not change");
+
+            List<String> keysAfterDecoded = new ArrayList<>(dataAfter.getDataDecoded().stream().map(Map::keySet).flatMap(Collection::stream).toList());
+
+            assertEquals(keysBeforeDecoded, keysAfterDecoded, "The data should not change");
+
+            // Verify decoded URL matches original
+            assertEquals(originalUrl, decodedUrl, "Decoded URL should match the original URL");
+
+        }
+
     }
 }
 
@@ -879,7 +916,7 @@ class IntegrationUrlHistoryTest extends IntegrationBaseTest {
         HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
         
         ResponseEntity<String> response = restTemplate.exchange(
-                "/api/url/history/?page=0&size=10",
+                "/api/url/history?page=0&size=10",
                 HttpMethod.GET,
                 requestEntity,
                 String.class
@@ -923,7 +960,7 @@ class IntegrationUrlHistoryTest extends IntegrationBaseTest {
             
             // Encode URL
             restTemplate.exchange(
-                    "/api/url/encode/?url=" + originalUrl,
+                    "/api/url/encode?url=" + originalUrl,
                     HttpMethod.GET,
                     requestEntity,
                     String.class
@@ -931,7 +968,7 @@ class IntegrationUrlHistoryTest extends IntegrationBaseTest {
             
             // Test history size at each step
             ResponseEntity<String> historyResponse = restTemplate.exchange(
-                    "/api/url/history/?page=0&size=" + totalUrls,
+                    "/api/url/history?page=0&size=" + totalUrls,
                     HttpMethod.GET,
                     requestEntity,
                     String.class
@@ -990,7 +1027,7 @@ class IntegrationUrlHistoryTest extends IntegrationBaseTest {
             
             // Encode URL
             restTemplate.exchange(
-                    "/api/url/encode/?url=" + currentUrl,
+                    "/api/url/encode?url=" + currentUrl,
                     HttpMethod.GET,
                     requestEntity,
                     String.class
@@ -998,7 +1035,7 @@ class IntegrationUrlHistoryTest extends IntegrationBaseTest {
             
             // Get history
             ResponseEntity<String> historyResponse = restTemplate.exchange(
-                    "/api/url/history/?page=0&size=" + (i + 1),
+                    "/api/url/history?page=0&size=" + (i + 1),
                     HttpMethod.GET,
                     requestEntity,
                     String.class

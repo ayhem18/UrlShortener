@@ -217,7 +217,7 @@ public class UrlController extends TokenController {
 
 
     @GetMapping("/api/url/encode")
-    public ResponseEntity<String> encodeUrl(@RequestParam String url, @AuthenticationPrincipal UserDetails currentUserDetails) throws JsonProcessingException {
+    public ResponseEntity<String> encodeUrl(@RequestParam(name="url") String url, @AuthenticationPrincipal UserDetails currentUserDetails) throws JsonProcessingException {
         // make sure the user is authenticated.
         AppUser currentUser = this.validateUserToken(currentUserDetails);
 
@@ -285,6 +285,7 @@ public class UrlController extends TokenController {
         return ResponseEntity.ok(this.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(map));
     }
 
+    @SuppressWarnings("DataFlowIssue")
     @GetMapping("/api/url/history")
     public ResponseEntity<String> getHistory(
             @RequestParam(required = false) Integer page,
@@ -300,23 +301,23 @@ public class UrlController extends TokenController {
         }
 
         List<Map<String, String>> result;
-        
+
+        PageRequest pageable = null;
         // If both page and size are provided, use pagination
         if (page != null && size != null) {
             
-            PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "urlEncodingTime"));
-            Page<UrlEncoding> history = this.urlEncodingRepo.findByUserAndUrlEncodingCountGreaterThan(
-                    currentUser, threshold, pageable);
-            result = history.get().map(entry -> 
-                    Map.of("url", entry.getUrl(), "url_encoded", entry.getUrlEncoded())).toList();
+            pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "urlEncodingTime"));
 
         } else {
-            // Otherwise return all results (up to the history size limit)
-            List<UrlEncoding> history = this.urlEncodingRepo.findByUserAndUrlEncodingCountGreaterThan(
-                    currentUser, threshold);
-            result = history.stream().map(entry -> 
-                    Map.of("url", entry.getUrl(), "url_encoded", entry.getUrlEncoded())).toList();
+            // otherwise return all the results up to the history size limit 
+            // make sure to set the size to the history size limit and the last page
+            pageable = PageRequest.of(0, historySize, Sort.by(Sort.Direction.DESC, "urlEncodingTime"));
         }
+
+        Page<UrlEncoding> history = this.urlEncodingRepo.findByUserAndUrlEncodingCountGreaterThan(
+            currentUser, threshold, pageable);
+        result = history.get().map(entry -> 
+            Map.of("url", entry.getUrl(), "url_encoded", entry.getUrlEncoded())).toList();
 
         return ResponseEntity.ok(this.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result));
     }

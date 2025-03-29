@@ -7,10 +7,14 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.url.UrlProcessor;
 import org.utils.CustomGenerator;
+
+import org.springframework.core.env.Environment;
+
 
 @Configuration
 @EntityScan(basePackages = {"org.company.entities",
@@ -25,7 +29,7 @@ import org.utils.CustomGenerator;
         "org.urlService.controllers",
 })
 @PropertySource("classpath:mail.properties")
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "deprecation"})
 public class UrlServiceWebConfig {
 
     // create some beans needed for the app
@@ -49,5 +53,12 @@ public class UrlServiceWebConfig {
         return NoOpPasswordEncoder.getInstance(); // this is used solely for testing purposes
     }
 
+    @Bean
+    public Environment environment() {
+        MockEnvironment mockEnv = new MockEnvironment();
+        mockEnv.setProperty("local.server.port", "8018");
+        mockEnv.setProperty("server.port", "8018");
+        return mockEnv;
+    }
 }
 
