@@ -31,11 +31,6 @@ public class StubUrlEncodingRepo implements UrlEncodingRepository {
     }
 
     @Override
-    public List<UrlEncoding> findAllById(Iterable<String> strings) {
-        return List.of();
-    }
-
-    @Override
     public Page<UrlEncoding> findAll(Pageable pageable) {
         List<UrlEncoding> content = urlEncodings.stream()
                 .skip(pageable.getOffset())
@@ -224,4 +219,8 @@ public class StubUrlEncodingRepo implements UrlEncodingRepository {
         return null;
     }
 
+    @Override
+    public List<UrlEncoding> findAllById(Iterable<String> strings) {
+        return List.of();
+    }
 } 

@@ -65,16 +65,4 @@ public class TokenControllerHandler extends CustomExceptionHandler {
                 request.getDescription(false)),
             HttpStatus.NOT_FOUND);
     }
-
-    @ExceptionHandler(TokenExceptions.ActiveTokenNotFoundException.class)
-    public ResponseEntity<CustomErrorMessage> handleActiveTokenNotFoundException(
-            TokenExceptions.ActiveTokenNotFoundException ex, WebRequest request) {
-        return new ResponseEntity<>(
-            new CustomErrorMessage(
-                HttpStatus.NOT_FOUND.value(),
-                LocalDateTime.now(),
-                ex.getMessage(),
-                request.getDescription(false)),
-            HttpStatus.NOT_FOUND);
-    }
 }

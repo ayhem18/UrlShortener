@@ -137,7 +137,51 @@ public class StubTokenRepo implements TokenRepository {
         return this.db.stream().anyMatch(token -> token.getTokenId().equals(id));
     }
 
+    @Override
+    public long count() { return this.db.size(); }
+    
+    @Override
+    public void deleteById(String id) {
+        this.db.removeIf(token -> token.getTokenId().equals(id));
+    }
+    
+    @Override
+    public void delete(AppToken entity) {
+        this.db.remove(entity);
+    }
+
+    @Override
+    public <S extends AppToken> List<S> saveAll(Iterable<S> entities) {
+        List<S> saved = new ArrayList<>();
+        for (S entity : entities) {
+            saved.add(this.save(entity));
+        }
+        return saved;
+    }
+
+
+    @Override
+    public List<AppToken> findAll() { return new ArrayList<>(this.db); }
+
+    // Implement the countByCompanyAndRole method
+    @Override
+    public long countByCompanyAndRole(Company company, Role role) {
+        return this.db.stream()
+                .filter(token -> token.getCompany() != null && 
+                        token.getCompany().getId().equals(company.getId()) && 
+                        token.getRole() != null && 
+                        token.getRole().equals(role)
+                )
+                .count();
+    }
+
+
+
     // Stub implementations for other required methods
+    @Override
+    public List<AppToken> findAll(Sort sort) { return List.of(); }
+
+
     @Override
     public <S extends AppToken> S insert(S entity) { return null; }
     @Override
@@ -156,36 +200,21 @@ public class StubTokenRepo implements TokenRepository {
     public <S extends AppToken> boolean exists(Example<S> example) { return false; }
     @Override
     public <S extends AppToken, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) { return null; }
-    @Override
-    public <S extends AppToken> List<S> saveAll(Iterable<S> entities) {
-        List<S> saved = new ArrayList<>();
-        for (S entity : entities) {
-            saved.add(this.save(entity));
-        }
-        return saved;
-    }
-    @Override
-    public List<AppToken> findAll() { return new ArrayList<>(this.db); }
+
     @Override
     public List<AppToken> findAllById(Iterable<String> ids) { return List.of(); }
-    @Override
-    public long count() { return this.db.size(); }
-    @Override
-    public void deleteById(String id) {
-        this.db.removeIf(token -> token.getTokenId().equals(id));
-    }
-    @Override
-    public void delete(AppToken entity) {
-        this.db.remove(entity);
-    }
+    
+
     @Override
     public void deleteAllById(Iterable<? extends String> ids) {}
     @Override
     public void deleteAll(Iterable<? extends AppToken> entities) {this.db.clear();}
     @Override
     public void deleteAll() { this.db.clear(); }
-    @Override
-    public List<AppToken> findAll(Sort sort) { return List.of(); }
+
     @Override
     public Page<AppToken> findAll(Pageable pageable) { return null; }
+
+    
+
 } 

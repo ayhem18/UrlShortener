@@ -63,7 +63,7 @@ public class StubTokenUserLinkRepo implements TokenUserLinkRepository {
     @Override
     public Optional<TokenUserLink> findFirstByUser(AppUser user) {
         return this.db.stream().filter(
-                u -> u.getId().equals(user.getEmail())
+                u -> u.getUser().getEmail().equals(user.getEmail())
         ).findFirst();
     }
 
@@ -97,6 +97,24 @@ public class StubTokenUserLinkRepo implements TokenUserLinkRepository {
         return this.db.stream().anyMatch(link -> link.getId().equals(id));
     }
 
+    @Override
+    public void deleteAll() { this.db.clear(); }
+
+    @Override
+    public <S extends TokenUserLink> List<S> saveAll(Iterable<S> entities) {
+        List<S> saved = new ArrayList<>();
+        for (S entity : entities) {
+            saved.add(this.save(entity));
+        }
+        return saved;
+    }
+
+    @Override
+    public void delete(TokenUserLink entity) {
+        this.db.remove(entity);
+    }
+
+
     // Stub implementations for other required methods
     @Override
     public <S extends TokenUserLink> S insert(S entity) { return null; }
@@ -119,14 +137,6 @@ public class StubTokenUserLinkRepo implements TokenUserLinkRepository {
 
 
     @Override
-    public <S extends TokenUserLink> List<S> saveAll(Iterable<S> entities) {
-        List<S> saved = new ArrayList<>();
-        for (S entity : entities) {
-            saved.add(this.save(entity));
-        }
-        return saved;
-    }
-    @Override
     public List<TokenUserLink> findAll() { return new ArrayList<>(this.db); }
     @Override
     public List<TokenUserLink> findAllById(Iterable<String> ids) { return List.of(); }
@@ -134,14 +144,11 @@ public class StubTokenUserLinkRepo implements TokenUserLinkRepository {
     public long count() { return this.db.size(); }
     @Override
     public void deleteById(String id) {}
-    @Override
-    public void delete(TokenUserLink entity) {}
+
     @Override
     public void deleteAllById(Iterable<? extends String> ids) {}
     @Override
     public void deleteAll(Iterable<? extends TokenUserLink> entities) {this.db.clear();}
-    @Override
-    public void deleteAll() { this.db.clear(); }
     @Override
     public List<TokenUserLink> findAll(Sort sort) { return List.of(); }
     @Override

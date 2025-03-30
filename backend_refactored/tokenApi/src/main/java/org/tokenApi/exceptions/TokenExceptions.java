@@ -55,13 +55,4 @@ public class TokenExceptions {
             super(message);
         }
     }
-    
-    /**
-     * Thrown when no active token is found for a user
-     */
-    public static class ActiveTokenNotFoundException extends RuntimeException {
-        public ActiveTokenNotFoundException(String message) {
-            super(message);
-        }
-    }
 }

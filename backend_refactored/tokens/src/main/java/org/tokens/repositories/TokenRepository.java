@@ -21,7 +21,9 @@ public interface TokenRepository extends MongoRepository<AppToken, String> {
     List<AppToken> findByCompany(Company company);
     
     List<AppToken> findByCompanyAndRole(Company company, Role role);
-    
+
+    long countByCompanyAndRole(Company company, Role role);
+
     List<AppToken> findByCompanyAndTokenState(Company company, AppToken.TokenState tokenState);
     
     List<AppToken> findByCompanyAndRoleAndTokenState(Company company, Role role, AppToken.TokenState tokenState);

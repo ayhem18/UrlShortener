@@ -38,6 +38,7 @@ class BaseTest {
     protected final StubTopLevelDomainRepo topLevelDomainRepo;
     protected final StubUserRepo userRepo;
     protected final StubUrlEncodingRepo urlEncodingRepo;
+
     protected final StubTokenRepo tokenRepo;  
     protected final StubTokenUserLinkRepo tokenUserLinkRepo;
     protected final CustomGenerator gen;
@@ -57,7 +58,6 @@ class BaseTest {
         urlProcessor = new UrlProcessor(gen);
         encoder = new BCryptPasswordEncoder();
     }
-
 
     protected void clear() {
         // Reset the repositories before each test
@@ -232,9 +232,7 @@ class GenerateTokenTest extends BaseTest {
             // Setup company and users with different roles
             Company company = setUpCompany("test1");
 
-            AppUser owner = setUpUser(company, RoleManager.getRole(RoleManager.OWNER_ROLE), true);
             AppUser admin1 = setUpUser(company, RoleManager.getRole(RoleManager.ADMIN_ROLE), true);
-            AppUser admin2 = setUpUser(company, RoleManager.getRole(RoleManager.ADMIN_ROLE), true);
             AppUser employee1 = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
             
             // Test invalid role combinations (lower role attempting to generate token for higher/equal role)
@@ -255,7 +253,8 @@ class GenerateTokenTest extends BaseTest {
 
         }
     }
-    
+
+
     private void testInvalidRoleCombination(AppUser user, String roleName) {
         UserDetails userDetails = new UserDetailsImp(user);
         
@@ -286,7 +285,7 @@ class GenerateTokenTest extends BaseTest {
     @Test
     public void testTokenLimit() {
         for (int i = 0; i < 10; i++) {
-            // Create a company with TestSub subscription (which has limited users)
+            // Create a company with Test2 Subscription with a max of 1 admin
             Company company = setUpCompany("test2");
             AppUser owner = setUpUser(company, RoleManager.getRole(RoleManager.OWNER_ROLE), true);
             UserDetails ownerDetails = new UserDetailsImp(owner);
@@ -317,6 +316,8 @@ class GenerateTokenTest extends BaseTest {
             // Verify no change in database state
             assertEquals(tokenCountBefore, tokenRepo.count(), "Token count should not change");
             assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), "TokenUserLink count should not change");
+            assertEquals(companyCountBefore, companyRepo.count(), "The company count should not change");
+            assertEquals(cUrlDataBefore, companyUrlDataRepo.count(), "The company count should not change");
             
             // First employee should work fine
             try {
@@ -346,7 +347,7 @@ class GenerateTokenTest extends BaseTest {
             assertEquals(cUrlDataBefore, companyUrlDataRepo.count(), "The company count should not change");
         }
     }
-
+        
     @Test
     public void testSuccessfulTokenGeneration() {
         for (int i = 0; i < 10; i++) {
@@ -396,6 +397,282 @@ class GenerateTokenTest extends BaseTest {
         }
     }
 }
+
+
+class RevokeTokenTest extends BaseTest {
+
+    private final TokenController tokenController;
+
+    public RevokeTokenTest() {
+        super();
+        tokenController = new TokenController(
+            userRepo,
+            tokenUserLinkRepo,
+            tokenRepo
+        );
+    }
+
+    @BeforeEach
+    public void setUp() {
+        super.clear();
+    }
+
+    @AfterEach
+    public void tearDown() {
+        super.clear();
+    }
     
+    
+    @Test
+    public void testUnauthorizedUserRevokeToken() {
+        for (int i = 0; i < 10; i++) {
+            // Setup company and unauthorized user (no token)
+            Company company = setUpCompany("TIER_1");
+            AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.ADMIN_ROLE), false);
+            UserDetails userDetails = new UserDetailsImp(user);
+            
+            // Capture database state before
+            long tokenCountBefore = tokenRepo.count();
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+            long companyCountBefore = companyRepo.count();
+            long cUrlDataBefore = companyUrlDataRepo.count();
+            
+            // Execute and verify
+            Exception exception = assertThrows(
+                    TokenAuthController.TokenNotFoundException.class,
+                    () -> tokenController.revokeToken("someuser@example.com", userDetails),
+                    "Should throw TokenNotFoundException for user with no token"
+            );
+            
+            assertTrue(exception.getMessage().contains("Their access might have been revoked."),
+                    "Exception message should indicate missing token");
+            
+            // Verify no change in database state
+            assertEquals(tokenCountBefore, tokenRepo.count(), "Token count should not change");
+            assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), "TokenUserLink count should not change");
+            assertEquals(companyCountBefore, companyRepo.count(), "The company count should not change");
+            assertEquals(cUrlDataBefore, companyUrlDataRepo.count(), "The company URL data should not change");
+        }
+    }
+
+    @Test
+    public void testRevokeTokenLowerPriority() {
+        for (int i = 0; i < 10; i++) {
+            // Setup company and users with different roles
+            Company company = setUpCompany("TIER_1");
+            AppUser owner = setUpUser(company, RoleManager.getRole(RoleManager.OWNER_ROLE), true);
+            AppUser admin1 = setUpUser(company, RoleManager.getRole(RoleManager.ADMIN_ROLE), true);
+            AppUser admin2 = setUpUser(company, RoleManager.getRole(RoleManager.ADMIN_ROLE), true);
+            AppUser employee1 = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
+            AppUser employee2 = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
+            
+            // Test invalid role combinations (lower role attempting to revoke token for higher/equal role)
+            testInvalidRoleCombinationForRevoke(admin1, owner.getEmail());
+            testInvalidRoleCombinationForRevoke(admin1, admin2.getEmail());
+            testInvalidRoleCombinationForRevoke(admin2, admin2.getEmail());
+            testInvalidRoleCombinationForRevoke(employee1, owner.getEmail());
+            testInvalidRoleCombinationForRevoke(employee1, admin1.getEmail());
+            testInvalidRoleCombinationForRevoke(employee1, employee2.getEmail());
+            
+            // Test valid role combinations (higher role attempting to revoke token for lower role)
+            // Owner can revoke admin token
+            testValidRoleCombinationForRevoke(owner, admin1.getEmail());
+            // Owner can revoke employee token
+            testValidRoleCombinationForRevoke(owner, employee1.getEmail());
+            // Admin can revoke employee token
+            testValidRoleCombinationForRevoke(admin1, employee1.getEmail());
+        }
+    }
+
+    private void testInvalidRoleCombinationForRevoke(AppUser user, String targetEmail) {
+        UserDetails userDetails = new UserDetailsImp(user);
+        
+        // Capture database state before
+        long tokenCountBefore = tokenRepo.count();
+        long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+        long companyCountBefore = companyRepo.count();
+        long cUrlDataBefore = companyUrlDataRepo.count();
+        
+        // Execute and verify
+        Exception exception = assertThrows(
+                TokenExceptions.InsufficientRoleAuthority.class,
+                () -> tokenController.revokeToken(targetEmail, userDetails),
+                "Should throw InsufficientRoleAuthority when revoking token for equal or higher role"
+        );
+        
+        assertTrue(exception.getMessage().contains("Cannot revoke token for role with equal or higher priority"),
+                "Exception message should indicate insufficient role authority");
+        
+        // Verify no change in database state
+        assertEquals(tokenCountBefore, tokenRepo.count(), "Token count should not change");
+        assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), "TokenUserLink count should not change");
+        assertEquals(companyCountBefore, companyRepo.count(), "The company count should not change");
+        assertEquals(cUrlDataBefore, companyUrlDataRepo.count(), "The company URL data should not change");
+    }
+    
+    private void testValidRoleCombinationForRevoke(AppUser user, String targetEmail) {
+        UserDetails userDetails = new UserDetailsImp(user);
+        try {
+            tokenController.revokeToken(targetEmail, userDetails);
+        } catch (TokenExceptions.InsufficientRoleAuthority e) {
+            fail("Valid role combination should not throw InsufficientRoleAuthority: " + e.getMessage());
+        } catch (Exception e) {
+            // Other exceptions are possible (like user not found) but not the role authority exception
+        }
+    }
+
+    @Test 
+    public void testRevokeTokenNonExistingUser() {
+        for (int i = 0; i < 10; i++) {
+            // Setup company with an owner
+            Company company = setUpCompany("TIER_1");
+            AppUser owner = setUpUser(company, RoleManager.getRole(RoleManager.OWNER_ROLE), true);
+            UserDetails ownerDetails = new UserDetailsImp(owner);
+            
+            // Generate a non-existent email
+            String nonExistentEmail = "nonexistent" + i + "@example.com";
+            
+            // Capture database state before
+            long tokenCountBefore = tokenRepo.count();
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+            long companyCountBefore = companyRepo.count();
+            long cUrlDataBefore = companyUrlDataRepo.count();
+            
+            // Execute and verify
+            Exception exception = assertThrows(
+                TokenExceptions.RevokedUserNotFoundException.class,
+                    () -> tokenController.revokeToken(nonExistentEmail, ownerDetails),
+                    "Should throw UserNotFoundException for non-existent user"
+            );
+            
+            assertTrue(exception.getMessage().contains("User not found"),
+                    "Exception message should indicate user not found");
+            
+            // Verify no change in database state
+            assertEquals(tokenCountBefore, tokenRepo.count(), "Token count should not change");
+            assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), "TokenUserLink count should not change");
+            assertEquals(companyCountBefore, companyRepo.count(), "The company count should not change");
+            assertEquals(cUrlDataBefore, companyUrlDataRepo.count(), "The company URL data should not change");
+        }
+    }
+
+    @Test
+    public void testRevokeTokenExistingUserDifferentCompany() {
+        for (int i = 0; i < 10; i++) {
+            // Setup company1 with an owner
+            Company company1 = setUpCompany("TIER_1");
+            AppUser owner1 = setUpUser(company1, RoleManager.getRole(RoleManager.OWNER_ROLE), true);
+            UserDetails owner1Details = new UserDetailsImp(owner1);
+            
+            // Setup company2 with an employee
+            Company company2 = setUpCompany("TIER_1");
+            AppUser employee2 = setUpUser(company2, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
+            
+            // Capture database state before
+            long tokenCountBefore = tokenRepo.count();
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+            long companyCountBefore = companyRepo.count();
+            long cUrlDataBefore = companyUrlDataRepo.count();
+            
+            // Execute and verify - owner from company1 trying to revoke token of employee from company2
+            Exception exception = assertThrows(
+                    TokenExceptions.RevokedUserNotFoundException.class,
+                    () -> tokenController.revokeToken(employee2.getEmail(), owner1Details),
+                    "Should throw TokenNotFoundException for user from different company"
+            );
+            
+            assertTrue(exception.getMessage().contains("No user working for company"),
+                    "Exception message should indicate different company");
+            
+            // Verify no change in database state
+            assertEquals(tokenCountBefore, tokenRepo.count(), "Token count should not change");
+            assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), "TokenUserLink count should not change");
+            assertEquals(companyCountBefore, companyRepo.count(), "The company count should not change");
+            assertEquals(cUrlDataBefore, companyUrlDataRepo.count(), "The company URL data should not change");
+        }
+    }
+
+    @Test
+    public void testRevokeTokenWithInvalidTokenUserLink() {
+        for (int i = 0; i < 10; i++) {
+            // Setup company with an owner and an employee without token
+            Company company = setUpCompany("TIER_1");
+            AppUser owner = setUpUser(company, RoleManager.getRole(RoleManager.OWNER_ROLE), true);
+            AppUser employee = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), false); // No token
+            UserDetails ownerDetails = new UserDetailsImp(owner);
+            
+            // Capture database state before
+            long tokenCountBefore = tokenRepo.count();
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+            long companyCountBefore = companyRepo.count();
+            long cUrlDataBefore = companyUrlDataRepo.count();
+            
+            // Execute and verify
+            Exception exception = assertThrows(
+                    TokenExceptions.NoUserTokenLinkException.class,
+                    () -> tokenController.revokeToken(employee.getEmail(), ownerDetails),
+                    "Should throw ActiveTokenNotFoundException when target user has no token"
+            );
+            
+            assertTrue(exception.getMessage().contains("No token link found for user: "),
+                    "Exception message should indicate no active token");
+            
+            // Verify no change in database state
+            assertEquals(tokenCountBefore, tokenRepo.count(), "Token count should not change");
+            assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), "TokenUserLink count should not change");
+            assertEquals(companyCountBefore, companyRepo.count(), "The company count should not change");
+            assertEquals(cUrlDataBefore, companyUrlDataRepo.count(), "The company URL data should not change");
+        }
+    }
+
+    @Test
+    public void testSuccessfulRevokeToken() {
+        for (int i = 0; i < 10; i++) {
+            // Setup company with an owner and an employee with token
+            Company company = setUpCompany("TIER_1");
+            AppUser owner = setUpUser(company, RoleManager.getRole(RoleManager.OWNER_ROLE), true);
+            AppUser employee = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true); // Has token
+            UserDetails ownerDetails = new UserDetailsImp(owner);
+            
+            // Verify employee has token and link before revocation
+            List<TokenUserLink> employeeLinks = tokenUserLinkRepo.findByUser(employee);
+            assertFalse(employeeLinks.isEmpty(), "Employee should have token links before revocation");
+            AppToken employeeToken = employeeLinks.getFirst().getToken();
+            
+            // Capture database state before
+            long tokenCountBefore = tokenRepo.count();
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+            long companyCountBefore = companyRepo.count();
+            long cUrlDataBefore = companyUrlDataRepo.count();
+            
+            try {
+                // Execute revocation
+                ResponseEntity<String> response = tokenController.revokeToken(employee.getEmail(), ownerDetails);
+                
+                // Verify successful response
+                assertEquals(HttpStatus.OK, response.getStatusCode(), "Successful revocation should return 200 OK");
+                
+                // Verify token state changes
+                assertEquals(tokenCountBefore - 1, tokenRepo.count(), "Token count should decrease by 1");
+                assertEquals(tokenUserLinkCountBefore - 1, tokenUserLinkRepo.count(), "TokenUserLink count should decrease by 1");
+                
+                // Verify employee no longer has token links
+                List<TokenUserLink> linksAfterRevoke = tokenUserLinkRepo.findByUser(employee);
+                assertTrue(linksAfterRevoke.isEmpty(), "Employee should have no token links after revocation");
+                
+                // Verify token is removed or deactivated
+                assertFalse(tokenRepo.existsById(employeeToken.getTokenId()), 
+                        "Token should be removed after revocation");
+                
+                // Verify other state is unchanged
+                assertEquals(companyCountBefore, companyRepo.count(), "The company count should not change");
+                assertEquals(cUrlDataBefore, companyUrlDataRepo.count(), "The company URL data should not change");
+                
+            } catch (Exception e) {
+                fail("Token revocation should succeed: " + e.getMessage());
+            }
+        }
+    }
+}
 
 
