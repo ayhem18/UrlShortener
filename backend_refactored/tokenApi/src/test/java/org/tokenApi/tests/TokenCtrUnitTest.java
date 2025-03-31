@@ -1,5 +1,8 @@
 package org.tokenApi.tests;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.access.Role;
 import org.access.RoleManager;
 import org.access.Subscription;
@@ -26,7 +29,13 @@ import org.url.UrlProcessor;
 import org.user.entities.AppUser;
 import org.utils.CustomGenerator;
 
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -676,3 +685,335 @@ class RevokeTokenTest extends BaseTest {
 }
 
 
+class GetAllTokensTest extends BaseTest {
+    private final TokenController tokenController;
+    
+    public GetAllTokensTest() {
+        super();
+        tokenController = new TokenController(
+            userRepo,
+            tokenUserLinkRepo,
+            tokenRepo
+        );
+    }
+
+    @BeforeEach
+    public void setUp() {
+        super.clear();
+    }
+
+    @AfterEach
+    public void tearDown() {
+        super.clear();
+    }
+
+
+    private void testUserWithNoTokenGivenRole(Role role) {
+        // Setup company and unauthorized user (no token)
+        Company company = setUpCompany("TIER_1");
+        AppUser user = setUpUser(company, RoleManager.getRole(RoleManager.ADMIN_ROLE), false);
+        UserDetails userDetails = new UserDetailsImp(user);
+
+        // Capture database state before
+        long tokenCountBefore = tokenRepo.count();
+        long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+        long companyCountBefore = companyRepo.count();
+        long cUrlDataBefore = companyUrlDataRepo.count();
+
+        String roleString = role == null ? null : role.role();
+
+        // Execute and verify
+        Exception exception = assertThrows(
+                TokenAuthController.TokenNotFoundException.class,
+                () -> tokenController.getAllTokens(roleString, userDetails),
+                "Should throw TokenNotFoundException for user with no token"
+        );
+
+        assertTrue(exception.getMessage().contains("Their access might have been revoked."),
+                "Exception message should indicate missing token");
+
+        // Verify no change in database state
+        assertEquals(tokenCountBefore, tokenRepo.count(), "Token count should not change");
+        assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), "TokenUserLink count should not change");
+        assertEquals(companyCountBefore, companyRepo.count(), "The company count should not change");
+        assertEquals(cUrlDataBefore, companyUrlDataRepo.count(), "The company URL data should not change");
+
+    }
+
+    @Test
+    public void testUserWithNoToken() {
+        for (int i = 0; i < 10; i++) {
+            testUserWithNoTokenGivenRole(null);
+        }
+        for (Role r: RoleManager.ROLES) {
+            testUserWithNoTokenGivenRole(r);
+        }
+    }
+
+    private void testValidRoleCombinationForGetToken(AppUser user, String role) {
+        UserDetails userDetails = new UserDetailsImp(user);
+        try {
+            tokenController.getAllTokens(role, userDetails);
+        } catch (TokenExceptions.InsufficientRoleAuthority e) {
+            fail("Valid role combination should not throw InsufficientRoleAuthority: " + e.getMessage());
+        } catch (Exception e) {
+            // Other exceptions are possible (like user not found) but not the role authority exception
+        }
+    }
+
+    private void testInvalidRoleCombinationForGetToken(AppUser user, String roleName) {
+        UserDetails userDetails = new UserDetailsImp(user);
+
+        // Capture database state before
+        long tokenCountBefore = tokenRepo.count();
+        long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+        long companyCountBefore = companyRepo.count();
+        long cUrlDataBefore = companyUrlDataRepo.count();
+
+        // Execute and verify
+        Exception exception = assertThrows(
+                TokenExceptions.InsufficientRoleAuthority.class,
+                () -> tokenController.getAllTokens(roleName, userDetails),
+                "Should throw InsufficientRoleAuthority when retrieving tokens for equal or higher role"
+        );
+
+        assertTrue(exception.getMessage().contains("Cannot request tokens of users with higher priority"),
+                "Exception message should indicate insufficient authority");
+
+        // Verify no change in database state
+        assertEquals(tokenCountBefore, tokenRepo.count(), "Token count should not change");
+        assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), "TokenUserLink count should not change");
+        assertEquals(companyCountBefore, companyRepo.count(), "Company count should not change");
+        assertEquals(cUrlDataBefore, companyUrlDataRepo.count(), "CompanyUrlData count should not change");
+    }
+
+
+    @Test
+    public void testGetTokenWithHigherPriorityRole() {
+        for (int i = 0; i < 10; i++) {
+            // Setup company and users with different roles
+            Company company = setUpCompany("TIER_1");
+            AppUser owner = setUpUser(company, RoleManager.getRole(RoleManager.OWNER_ROLE), true);
+
+            AppUser admin1 = setUpUser(company, RoleManager.getRole(RoleManager.ADMIN_ROLE), true);
+            setUpUser(company, RoleManager.getRole(RoleManager.ADMIN_ROLE), true);
+
+            AppUser employee1 = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
+            setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
+            
+            // Test invalid role combinations
+            testInvalidRoleCombinationForGetToken(admin1, RoleManager.OWNER_ROLE);
+            testInvalidRoleCombinationForGetToken(admin1, RoleManager.ADMIN_ROLE);  
+            testInvalidRoleCombinationForGetToken(employee1, RoleManager.OWNER_ROLE);
+            testInvalidRoleCombinationForGetToken(employee1, RoleManager.ADMIN_ROLE);
+            testInvalidRoleCombinationForGetToken(employee1, RoleManager.EMPLOYEE_ROLE);
+
+
+            testValidRoleCombinationForGetToken(owner, RoleManager.ADMIN_ROLE);
+            testValidRoleCombinationForGetToken(owner, RoleManager.EMPLOYEE_ROLE);
+            testValidRoleCombinationForGetToken(admin1, RoleManager.EMPLOYEE_ROLE);
+        }
+    }
+
+
+    @Test
+    public void testSuccessfulGetTokenWithRole() throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        // add a time formatter to the object mapper
+        SimpleDateFormat df = new SimpleDateFormat("dd-MM-yyyy hh:mm:ss");
+        objectMapper.setDateFormat(df);
+
+        for (int i = 0; i < 10; i++) {
+            // Setup company with owner, 2 admins, 3 employees
+            Company company = setUpCompany("TIER_1");
+
+            AppUser owner = setUpUser(company, RoleManager.getRole(RoleManager.OWNER_ROLE), true);            
+            Thread.sleep(500);
+
+            AppUser admin1 = setUpUser(company, RoleManager.getRole(RoleManager.ADMIN_ROLE), true);
+            Thread.sleep(500);            
+            
+            setUpUser(company, RoleManager.getRole(RoleManager.ADMIN_ROLE), true);
+            Thread.sleep(500);
+
+            setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
+            Thread.sleep(500);
+
+            setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
+            Thread.sleep(500);
+
+            setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
+            
+            UserDetails ownerDetails = new UserDetailsImp(owner);
+            UserDetails adminDetails = new UserDetailsImp(admin1);
+            
+            // Capture database state before
+            long tokenCountBefore = tokenRepo.count();
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+            
+            // Owner retrieves admin tokens
+            ResponseEntity<String> ownerResponse = tokenController.getAllTokens(RoleManager.ADMIN_ROLE, ownerDetails);
+            assertEquals(HttpStatus.OK, ownerResponse.getStatusCode(), "Response status should be 200 OK");
+            
+            // Parse response and verify
+            List<Map<String, Object>> adminTokensStrings = objectMapper.readValue(
+                    ownerResponse.getBody(),
+                    new TypeReference<>() {
+                    }
+            );
+            
+            assertEquals(2, adminTokensStrings.size(), "Should return exactly 2 admin tokens");
+
+            // Verify tokens are for admin role
+            for (Map<String, Object> token : adminTokensStrings) {
+                assertEquals(RoleManager.ADMIN_ROLE.toLowerCase(), token.get("role").toString().toLowerCase(), "Token should be for ADMIN role");
+            }
+
+            // extract the createAt timestamps from the tokens
+            List<LocalDateTime> cDates1 = adminTokensStrings.stream()
+                .map(m -> LocalDateTime.parse(m.get("createdAt").toString(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).toList();
+
+            // make sure it is sorted
+            assertEquals(cDates1.stream().sorted(Comparator.reverseOrder()).toList(), cDates1);
+            
+
+            // Admin retrieves employee tokens
+            ResponseEntity<String> adminResponse = tokenController.getAllTokens(RoleManager.EMPLOYEE_ROLE, adminDetails);
+            assertEquals(HttpStatus.OK, adminResponse.getStatusCode(), "Response status should be 200 OK");
+            
+            // Parse response and verify
+            List<Map<String, Object>> employeeTokens = objectMapper.readValue(
+                    adminResponse.getBody(),
+                    new TypeReference<>() {
+                    }
+            );
+            
+            assertEquals(3, employeeTokens.size(), "Should return exactly 3 employee tokens");
+            
+            // Verify tokens are for employee role
+            for (Map<String, Object> token : employeeTokens) {
+                assertEquals(RoleManager.EMPLOYEE_ROLE.toLowerCase(), token.get("role").toString().toLowerCase(), "Token should be for EMPLOYEE role");
+            }
+
+            // extract the createAt timestamps from the tokens
+            List<LocalDateTime> cDates2 = employeeTokens.stream()
+                .map(m -> LocalDateTime.parse(m.get("createdAt").toString(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).toList();
+
+            // make sure it is sorted
+            assertEquals(cDates2.stream().sorted(Comparator.reverseOrder()).toList(), cDates2);
+
+            // Verify database state is unchanged
+            assertEquals(tokenCountBefore, tokenRepo.count(), "Token count should not change");
+            assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), "TokenUserLink count should not change");
+        }
+    }
+
+    @Test
+    public void testSuccessfulGetTokenWithNoRole() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            // Setup company with owner, 2 admins, 3 employees
+            Company company = setUpCompany("TIER_1");
+
+            // owner
+            AppUser owner = setUpUser(company, RoleManager.getRole(RoleManager.OWNER_ROLE), true);
+            // 2 admins
+            AppUser admin1 = setUpUser(company, RoleManager.getRole(RoleManager.ADMIN_ROLE), true);
+            Thread.sleep(1000);
+            setUpUser(company, RoleManager.getRole(RoleManager.ADMIN_ROLE), true);
+
+
+            // 3 employees
+            AppUser employee1 = setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
+            Thread.sleep(1000);
+            setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
+
+            Thread.sleep(1000);
+            setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
+            
+            // user details objects
+            UserDetails ownerDetails = new UserDetailsImp(owner);
+            UserDetails adminDetails = new UserDetailsImp(admin1);
+            UserDetails employeeDetails = new UserDetailsImp(employee1);
+            
+            // Capture database state before
+            long tokenCountBefore = tokenRepo.count();
+            long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
+            
+            // 1. Owner retrieves all tokens (null role parameter)
+            ResponseEntity<String> ownerResponse = tokenController.getAllTokens(null, ownerDetails);
+            assertEquals(HttpStatus.OK, ownerResponse.getStatusCode(), "Response status should be 200 OK");
+            
+            // Parse response and verify
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+            List<Map<String, Object>> allTokens = objectMapper.readValue(
+                    ownerResponse.getBody(),
+                    new TypeReference<>() {
+                    }
+            );
+            
+            assertEquals(5, allTokens.size(), "Should return 5 tokens (2 admin + 3 employee)");
+            
+            // Verify first 2 tokens are admin tokens and next 3 are employee tokens
+            assertEquals(RoleManager.ADMIN_ROLE.toLowerCase(), allTokens.get(0).get("role").toString().toLowerCase(), "First token should be ADMIN role");
+            assertEquals(RoleManager.ADMIN_ROLE.toLowerCase(), allTokens.get(1).get("role").toString().toLowerCase(), "Second token should be ADMIN role");
+            assertEquals(RoleManager.EMPLOYEE_ROLE.toLowerCase(), allTokens.get(2).get("role").toString().toLowerCase(), "Third token should be EMPLOYEE role");
+            assertEquals(RoleManager.EMPLOYEE_ROLE.toLowerCase(), allTokens.get(3).get("role").toString().toLowerCase(), "Fourth token should be EMPLOYEE role");
+            assertEquals(RoleManager.EMPLOYEE_ROLE.toLowerCase(), allTokens.get(4).get("role").toString().toLowerCase(), "Fifth token should be EMPLOYEE role");
+            
+
+            List<LocalDateTime> adminTimeStamps = Stream.of(allTokens.get(0).get("createdAt"), allTokens.get(1).get("createdAt")).map(
+                                m -> LocalDateTime.parse(m.toString(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                            .toList();
+
+            assertEquals(adminTimeStamps.stream().sorted(Comparator.reverseOrder()).toList(), adminTimeStamps);
+
+            List<LocalDateTime> employeeTimeStamps = Stream.of(allTokens.get(2).get("createdAt"), allTokens.get(3).get("createdAt"), allTokens.get(4).get("createdAt")).map(
+                                m -> LocalDateTime.parse(m.toString(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                            .toList();
+
+            assertEquals(employeeTimeStamps.stream().sorted(Comparator.reverseOrder()).toList(), employeeTimeStamps);
+
+
+            // 2. Admin retrieves tokens (null role parameter)
+            ResponseEntity<String> adminResponse = tokenController.getAllTokens(null, adminDetails);
+            assertEquals(HttpStatus.OK, adminResponse.getStatusCode(), "Response status should be 200 OK");
+            
+            // Parse response and verify
+            List<Map<String, Object>> adminViewTokens = objectMapper.readValue(
+                    adminResponse.getBody(),
+                    new TypeReference<>() {
+                    }
+            );
+            
+            assertEquals(3, adminViewTokens.size(), "Admin should see 3 employee tokens");
+            
+            // Verify all tokens are employee tokens
+            for (Map<String, Object> token : adminViewTokens) {
+                assertEquals(RoleManager.EMPLOYEE_ROLE.toLowerCase(), token.get("role").toString().toLowerCase(), "Token should be for EMPLOYEE role");
+            }
+ 
+            List<LocalDateTime> adminViewTimeStamps = Stream.of(adminViewTokens.get(0).get("createdAt"), adminViewTokens.get(1).get("createdAt"), adminViewTokens.get(2).get("createdAt")).map(
+                                m -> LocalDateTime.parse(m.toString(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                            .toList();
+
+            assertEquals(adminViewTimeStamps.stream().sorted(Comparator.reverseOrder()).toList(), adminViewTimeStamps);
+
+
+            // 3. Employee attempts to retrieve tokens (should throw exception)
+            Exception exception = assertThrows(
+                    TokenExceptions.InsufficientRoleAuthority.class,
+                    () -> tokenController.getAllTokens(null, employeeDetails),
+                    "Employee should not be able to retrieve tokens with null role parameter"
+            );
+            
+            assertTrue(exception.getMessage().contains("The role of the current user has no priority over any other role"),
+                    "Exception message should indicate insufficient authority");
+            
+            // Verify database state is unchanged
+            assertEquals(tokenCountBefore, tokenRepo.count(), "Token count should not change");
+            assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), "TokenUserLink count should not change");
+        }
+    }
+}

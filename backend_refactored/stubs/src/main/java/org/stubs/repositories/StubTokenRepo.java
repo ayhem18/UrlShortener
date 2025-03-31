@@ -1,20 +1,18 @@
 package org.stubs.repositories;
 
 import org.access.Role;
-import org.access.RoleManager;
 import org.company.entities.Company;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.FluentQuery;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
 import org.tokens.entities.AppToken;
 import org.tokens.entities.AppToken.TokenState;
 import org.tokens.repositories.TokenRepository;
 
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -23,40 +21,16 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"unused", "null", "NullableProblems", "ConstantConditions"})
 public class StubTokenRepo implements TokenRepository {
     private final List<AppToken> db;
-    private final PasswordEncoder encoder;
     private final StubCompanyRepo companyRepo;
 
     public StubTokenRepo(StubCompanyRepo companyRepo) {
         this.db = new ArrayList<>();
-        this.encoder = new BCryptPasswordEncoder();
         this.companyRepo = companyRepo;
     }
 
-    public PasswordEncoder getEncoder() {
-        return encoder;
-    }
 
     public List<AppToken> getDb() {
         return db;
-    }
-
-    public void addDefaultTokens() {
-        Company c1 = this.companyRepo.getDb().getFirst();
-        Company c2 = this.companyRepo.getDb().get(1);
-
-        // Create tokens for different roles for each company
-        AppToken ownerTokenC1 = new AppToken("token1", encoder.encode("ownertoken1"), c1, RoleManager.getRole("owner"));
-        AppToken adminTokenC1 = new AppToken("token2", encoder.encode("admintoken1"), c1, RoleManager.getRole("admin"));
-        AppToken ownerTokenC2 = new AppToken("token3", encoder.encode("ownertoken2"), c2, RoleManager.getRole("owner"));
-        AppToken adminTokenC2 = new AppToken("token4", encoder.encode("admintoken2"), c2, RoleManager.getRole("admin"));
-
-        // Set some tokens to different states
-        ownerTokenC1.activate();
-        
-//        // Add expiration time to some tokens
-//        adminTokenC2.expire();
-
-        this.db.addAll(List.of(ownerTokenC1, adminTokenC1, ownerTokenC2, adminTokenC2));
     }
 
     @Override
@@ -176,6 +150,83 @@ public class StubTokenRepo implements TokenRepository {
     }
 
 
+    @Override
+    public List<AppToken> findByCompanyAndRoleIn(Company company, List<Role> roles) {
+        return this.db.stream()
+        .filter(token -> token.getCompany() != null && 
+                token.getCompany().getId().equals(company.getId()) && 
+                token.getRole() != null && 
+                roles.contains(token.getRole())
+        )
+        .collect(Collectors.toList());        
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private List<AppToken> innerSort(List<AppToken> list, Sort sort) {
+        // use reflection to access all the fields in the Token class
+        Field[] fields = AppToken.class.getDeclaredFields();
+        
+        List<Field> sortingFields = new ArrayList<>();
+        List<Boolean> isAscending = new ArrayList<>();
+
+        for (Field field : fields) {
+            field.setAccessible(true);
+            Sort.Order order = sort.getOrderFor(field.getName());
+
+            if (order != null) {
+                sortingFields.add(field);
+                isAscending.add(order.isAscending());
+            }
+        }
+
+        list.sort((a, b) -> {
+
+            for (int i = 0; i < sortingFields.size(); i++) {
+                Field field = sortingFields.get(i);
+                boolean as = isAscending.get(i);
+                
+                try {
+                    Comparable aComp = (Comparable) field.get(a);
+                    Comparable bComp = (Comparable) field.get(b);
+
+                    if (aComp.compareTo(bComp) > 0) {
+                        // at this point we know that a > b
+                        // if the order is ascending, then we return 1 which signals that a is bigger than b
+                        // a will be moved further
+                        // if the order is descending, return -1 to have a before b
+                        return as ? 1 : -1;
+                    }
+                    else if (aComp.compareTo(bComp) < 0) {
+                        // at this point, we know b > a
+                        // if the order is ascending, then we return 1 so that "a" will be before "b"
+                        // and -1 otherwise
+                        return as ? -1: 1;
+                    }
+
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            return 0;
+        });
+
+        return list;
+    }
+
+
+    @Override
+    public List<AppToken> findByCompanyAndRoleIn(Company company, List<Role> roles, Sort sort) {
+        List<AppToken> res = this.findByCompanyAndRoleIn(company, roles);
+        return this.innerSort(res, sort);
+    }
+
+    @Override
+    public List<AppToken> findByCompanyAndRole(Company company, Role role, Sort sort) {
+        List<AppToken> res = this.findByCompanyAndRole(company, role);
+        return this.innerSort(res, sort);
+    }
+
 
     // Stub implementations for other required methods
     @Override
@@ -215,6 +266,5 @@ public class StubTokenRepo implements TokenRepository {
     @Override
     public Page<AppToken> findAll(Pageable pageable) { return null; }
 
-    
 
 } 

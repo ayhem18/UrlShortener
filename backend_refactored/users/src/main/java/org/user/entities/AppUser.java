@@ -9,7 +9,11 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 
@@ -68,7 +72,7 @@ public class AppUser {
         this.company = company;
         this.role = role;
         this.urlEncodingCount = 0; // starts at 0...
-        this.timeJoined = LocalDateTime.now();
+        this.timeJoined = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     }
 
     // the no-argument constructor is needed for Jackson de/serialization
@@ -116,10 +120,14 @@ public class AppUser {
     }
 
     @JsonGetter(value="timeJoined")
+    public String getTimeJoinedJackson() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return formatter.format(timeJoined);
+    }
+
     public LocalDateTime getTimeJoined() {
         return timeJoined;
     }
-
 
     ///////////////////////////////// Setters /////////////////////////////////////////////
     // can set first name

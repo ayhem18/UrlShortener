@@ -29,7 +29,8 @@ class AppUserTest {
 
 
     public AppUserTest() {
-        SimpleDateFormat df = new SimpleDateFormat("dd-MM-yyyy hh:mm");
+
+        SimpleDateFormat df = new SimpleDateFormat("dd-MM-yyyy hh:mm:ss");
         this.om = new ObjectMapper();
         this.om.setDateFormat(df);
         this.om.registerModule(new JavaTimeModule());

@@ -1,7 +1,10 @@
 package org.tokens.entities;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import org.access.Role;
 import org.company.entities.Company;
 import org.springframework.data.annotation.Id;
@@ -47,13 +50,19 @@ public class AppToken {
     @Schema(description = "Role this token grants")
     private Role role;
 
+    @Schema(description = "Time when the token was created", example = "2023-12-31T23:59:59")
+    private LocalDateTime createdAt;
+
     public AppToken(String tokenId, String tokenHash, Company company, Role role, LocalDateTime expirationTime) {
         this.tokenId = tokenId;
         this.tokenHash = tokenHash;
-        this.tokenState = TokenState.INACTIVE;
-        this.expirationTime = expirationTime;
         this.company = company;
         this.role = role;
+
+        this.tokenState = TokenState.INACTIVE;
+        this.expirationTime = expirationTime;
+
+        this.createdAt = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     }
 
     public AppToken(String tokenId, String tokenHash, Company company, Role role) {
@@ -104,6 +113,16 @@ public class AppToken {
         return role;
     }
 
+    @JsonGetter("createdAt")
+    public String getCreatedAtJackson() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return formatter.format(createdAt);
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
     // Private setters for jackson
     @SuppressWarnings("unused")
     private void setTokenId(String tokenId) {
@@ -133,6 +152,11 @@ public class AppToken {
     @SuppressWarnings("unused")
     private void setRole(Role role) {
         this.role = role;
+    }
+
+    @SuppressWarnings("unused")
+    private void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }
 

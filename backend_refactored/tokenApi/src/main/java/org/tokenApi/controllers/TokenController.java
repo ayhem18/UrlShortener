@@ -11,6 +11,7 @@ import org.access.Subscription;
 import org.apiUtils.commonClasses.TokenAuthController;
 import org.company.entities.Company;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -28,6 +29,7 @@ import org.tokenApi.exceptions.TokenExceptions;
 import org.user.entities.AppUser;
 import org.user.repositories.UserRepository;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +42,6 @@ import java.util.UUID;
 public class TokenController extends TokenAuthController {
 
     private final TokenRepository tokenRepo;
-
     private final ObjectMapper objectMapper;
     private final BCryptPasswordEncoder encoder;
 
@@ -56,6 +57,7 @@ public class TokenController extends TokenAuthController {
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
         this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        this.objectMapper.setDateFormat(new SimpleDateFormat("dd-MM-yyyy hh:mm"));
 
         this.encoder = new BCryptPasswordEncoder();
     }
@@ -224,7 +226,7 @@ public class TokenController extends TokenAuthController {
      * @return List of tokens
      * @throws JsonProcessingException If error occurs during JSON serialization
      */
-    @GetMapping("/api/token/all")
+    @GetMapping("/api/token/get")
     public ResponseEntity<String> getAllTokens(
             @RequestParam(required = false) String role,
             @AuthenticationPrincipal UserDetails userDetails) throws JsonProcessingException {
@@ -241,24 +243,29 @@ public class TokenController extends TokenAuthController {
                 if (currentRole.isHigherPriorityThan(r)) {
                     lowerPriorityRoles.add(r);
                 }
-            }    
+            }
         }
+
         else { 
             Role requestedRole = RoleManager.getRole(role);
             lowerPriorityRoles.add(requestedRole);
         }
         
+        if (lowerPriorityRoles.isEmpty()) {
+            throw new TokenExceptions.InsufficientRoleAuthority("The role of the current user has no priority over any other role");
+        }
+
         // make sure the roles are of lower priority than the current role 
         for (Role r : lowerPriorityRoles) {
             validateRoleAuthority(currentUser, r, "Cannot request tokens of users with higher priority");
         }
-        
-        List<AppToken> resultTokens = new ArrayList<>();
-        for (Role r : lowerPriorityRoles) {
-            resultTokens.addAll(tokenRepo.findByCompanyAndRole(company, r));
-        }
-    
+
+        // sort by the role and then by the creation date
+        List<AppToken> resultTokens = tokenRepo.findByCompanyAndRoleIn(company, lowerPriorityRoles, 
+                        Sort.by(Sort.Direction.DESC, "role")
+                        .and(Sort.by(Sort.Direction.DESC, "createdAt"))
+                        );
+
         return ResponseEntity.ok(objectMapper.writeValueAsString(resultTokens));
-    }
-    
+    }    
 }
