@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.access.Role;
 import org.access.RoleManager;
+import org.access.Subscription;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,27 +42,23 @@ import org.company.repositories.CompanyUrlDataRepository;
 import org.company.repositories.TopLevelDomainRepository;
 
 import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringJUnitConfig(classes = UrlServiceWebConfig.class)
-@WebMvcTest(TokenController.class)
-public class WebLayerAuthTest {
 
-    private final MockMvc mockMvc;
-    private final CustomGenerator customGenerator;
-    private final CompanyRepository companyRepo;
-    private final UserRepository userRepo;
-    private final TokenRepository tokenRepo;
-    private final TokenUserLinkRepository tokenUserLinkRepo;
-    private final TopLevelDomainRepository topLevelDomainRepo;
-    private final CompanyUrlDataRepository companyUrlDataRepo;
-    private final PasswordEncoder encoder;
-    private final ObjectMapper om;
+class WebLayerBaseTest {
+    protected final MockMvc mockMvc;
+    protected final CustomGenerator customGenerator;
+    protected final CompanyRepository companyRepo;
+    protected final UserRepository userRepo;
+    protected final TokenRepository tokenRepo;
+    protected final TokenUserLinkRepository tokenUserLinkRepo;
+    protected final TopLevelDomainRepository topLevelDomainRepo;
+    protected final CompanyUrlDataRepository companyUrlDataRepo;
+    protected final PasswordEncoder encoder;
+    protected final ObjectMapper om;
 
     @Autowired
-    public WebLayerAuthTest(
+    public WebLayerBaseTest(
             MockMvc mockMvc,
             CustomGenerator customGenerator,
             CompanyRepository companyRepo,
@@ -90,7 +88,8 @@ public class WebLayerAuthTest {
     }
 
     @BeforeEach
-    void setUp() {
+    @AfterEach
+    void clear() {
         // Reset the repositories before each test
         companyRepo.deleteAll();
         companyUrlDataRepo.deleteAll();
@@ -98,9 +97,20 @@ public class WebLayerAuthTest {
         userRepo.deleteAll();
     }
 
-
     // Helper method to set up a test company with domains
-    private Company setUpCompany() {
+    protected Company setUpCompany(String subscriptionName) {
+        Subscription sub;
+
+        if (subscriptionName.equalsIgnoreCase("test1")) {
+            sub = new SubTest1();
+        }
+        else if (subscriptionName.equalsIgnoreCase("test2")) {
+            sub = new SubTest2();
+        }
+        else {
+            sub = SubscriptionManager.getSubscription(subscriptionName);
+        }
+
         String companyId = customGenerator.randomAlphaString(12);
         String companyName = customGenerator.randomAlphaString(10);
         String companyEmailDomain = customGenerator.randomAlphaString(5) + ".com";
@@ -112,7 +122,7 @@ public class WebLayerAuthTest {
             customGenerator.randomAlphaString(10),
             companyEmail,
             companyEmailDomain,
-            SubscriptionManager.getSubscription("TIER_1")
+            sub
         );
         companyRepo.save(testCompany);
 
@@ -147,7 +157,7 @@ public class WebLayerAuthTest {
 
         // Create company URL data
         CompanyUrlData companyUrlData = new CompanyUrlData(
-            this.customGenerator.randomAlphaString(10),
+            customGenerator.randomAlphaString(20),
             testCompany,
             this.encoder.encode(activeDomainName).replaceAll("/", "_")
         );
@@ -156,20 +166,25 @@ public class WebLayerAuthTest {
     }
 
     // Helper method to set up a test user
-    private AppUser setUpUser(Company company, Role role, boolean authorized) {
-        String username = "test_user_" + customGenerator.randomAlphaString(5);
+    protected AppUser setUpUser(Company company, Role role, boolean authorized) {
+        String username = "test_user_" + customGenerator.randomAlphaString(10);
         String email = username + "@" + company.getEmailDomain();
         
+        String password = customGenerator.randomAlphaString(12);
+
         AppUser user = new AppUser(
             email, 
             username,
-            "password123",
+            encoder.encode(password),
             "Test",
             "User",
             null,
             company,
             role
         );
+
+        // save the use t
+        userRepo.save(user);
 
         // create a token for the user
         AppToken token = new AppToken(customGenerator.randomString(12), encoder.encode("tokenId"), company, role );
@@ -178,12 +193,176 @@ public class WebLayerAuthTest {
 
         if (authorized) {
             // create a token user link for the user
-            TokenUserLink tokenUserLink = new TokenUserLink("link_id", token, user);
+            TokenUserLink tokenUserLink = new TokenUserLink("link_id_" + username, token, user);
             tokenUserLinkRepo.save(tokenUserLink);
         }
 
-        return userRepo.save(user);
+        user.setPassword(password);
+        // return the use with the original password; this way the user in the database in encoded while we still have access to the original password for testing purposes.
+        return user;
+    }
 
+    /**
+     * Test that requests without credentials receive 401 Unauthorized
+     */
+    public void testUnauthorizedAccess(String endpoint, Map<String, String> paramsMap) throws Exception {
+        // the server below will call the endpoint without any credentials
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get(endpoint);
+
+        if (paramsMap != null) {
+            for (Map.Entry<String, String> entry : paramsMap.entrySet()) {
+                req = req.param(entry.getKey(), entry.getValue());
+            }
+        }
+
+        mockMvc.perform(req)
+                .andExpect(status().isUnauthorized());
+    }
+
+    /**
+     * Test that authenticated users without proper token receive 403 Forbidden
+     */
+    public void testAuthenticatedButNoToken(String endpoint) throws Exception {
+        for (int i = 0; i < 20; i++) {
+            int companyIndex = i % 2;
+            Company company = setUpCompany("test" + companyIndex);
+
+            for (String role : RoleManager.ROLES_STRING) {
+                // employees are not allowed to generate tokens
+                if (role.equalsIgnoreCase(RoleManager.EMPLOYEE_ROLE)) {
+                    continue;
+                }
+    
+                Role r = RoleManager.getRole(role);
+
+                // Create user with authorized=true
+                AppUser user = setUpUser(
+                    company,
+                    r,
+                    false
+                );
+
+                // find roles with lower priority than the current role
+                List<Role> lowerPriorityRoles = RoleManager.ROLES_STRING.stream()
+                    .filter(r2 -> RoleManager.getRole(r2).getPriority() < r.getPriority())
+                    .map(RoleManager::getRole).toList();
+
+                for (Role lowerPriorityRole : lowerPriorityRoles) {
+                    String lowerPriorityRoleString = lowerPriorityRole.role();
+
+                    MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get(endpoint).param("role", lowerPriorityRoleString)
+                        .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
+
+
+                    // Make request with authentication
+                    mockMvc.perform(
+                            req
+                            )
+                            .andExpect(status().is(not(401)))  // Not unauthorized
+                            .andExpect(status().is(not(403)))  // Not forbidden
+                            .andReturn().getResponse().getContentAsString();        
+                }
+            }
+        }
+    }
+
+}
+
+
+@SpringJUnitConfig(classes = UrlServiceWebConfig.class)
+@WebMvcTest(TokenController.class)
+class GenerateTokenAuthTest extends WebLayerBaseTest {
+    
+    public GenerateTokenAuthTest(
+            MockMvc mockMvc,
+            CustomGenerator customGenerator,
+            CompanyRepository companyRepo,
+            UserRepository userRepo,
+            TokenRepository tokenRepo,
+            TokenUserLinkRepository tokenUserLinkRepo,
+            TopLevelDomainRepository topLevelDomainRepo,
+            CompanyUrlDataRepository companyUrlDataRepo) {
+        super(mockMvc, customGenerator, companyRepo, userRepo, tokenRepo, tokenUserLinkRepo, topLevelDomainRepo, companyUrlDataRepo);
+    }
+
+    /**
+     * Test that requests without credentials receive 401 Unauthorized
+     */
+    @Test
+    public void testUnauthorizedAccess() throws Exception {
+        for (String role : RoleManager.ROLES_STRING) {
+            Map<String, String> params = Map.of("role", role);
+            testUnauthorizedAccess("/api/token/generate", params);
+        }
+    }
+    
+    /**
+     * Test that authenticated users without proper token receive 403 Forbidden
+     */
+    @Test
+    public void testAuthenticatedButNoToken() throws Exception {
+        testAuthenticatedButNoToken("/api/token/generate");
+    }
+
+    /**
+     * Test that authenticated users with proper roles can access the endpoint (roles that have the CAN_WORK_WITH_TOKENS authority)
+     */
+    @Test
+    public void testAuthorizedAccess() throws Exception {
+        for (int i = 0; i < 20; i++) {
+            Company company = setUpCompany("test1");
+
+            for (String role : RoleManager.ROLES_STRING) {
+                // employees are not allowed to generate tokens
+                if (role.equalsIgnoreCase(RoleManager.EMPLOYEE_ROLE)) {
+                    continue;
+                }
+    
+                Role r = RoleManager.getRole(role);
+
+                // Create user with authorized=true
+                AppUser user = setUpUser(
+                    company,
+                    r,
+                    true
+                );
+
+                // find roles with lower priority than the current role
+                List<Role> lowerPriorityRoles = RoleManager.ROLES_STRING.stream()
+                    .filter(r2 -> RoleManager.getRole(r2).getPriority() < r.getPriority())
+                    .map(RoleManager::getRole).toList();
+
+                for (Role lowerPriorityRole : lowerPriorityRoles) {
+                    String lowerPriorityRoleString = lowerPriorityRole.role();
+
+                    MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/token/generate").param("role", lowerPriorityRoleString)
+                        .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
+
+
+                    // Make request with authentication
+                    mockMvc.perform(
+                            req
+                            )
+                            .andExpect(status().is(not(401)))  // Not unauthorized
+                            .andExpect(status().is(not(403)));  // Not forbidden
+                }
+            }
+        }
+    }
+}
+
+class RevokeTokenAuthTest extends WebLayerBaseTest {
+
+    public RevokeTokenAuthTest(
+            MockMvc mockMvc,    
+            CustomGenerator customGenerator,
+            CompanyRepository companyRepo,
+            UserRepository userRepo,
+            TokenRepository tokenRepo,
+            TokenUserLinkRepository tokenUserLinkRepo,
+            TopLevelDomainRepository topLevelDomainRepo,
+            CompanyUrlDataRepository companyUrlDataRepo) {
+        super(mockMvc, customGenerator, companyRepo, userRepo, tokenRepo, tokenUserLinkRepo, topLevelDomainRepo, companyUrlDataRepo);
     }
 
 
@@ -192,56 +371,9 @@ public class WebLayerAuthTest {
      */
     @Test
     public void testUnauthorizedAccess() throws Exception {
-        // Use non-existent credentials
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/url/encode").param("url", "https://www.example.com"))
-                .andExpect(status().isUnauthorized());
-    }
-    
-    /**
-     * Test that authenticated users with proper authorization can access the endpoint
-     */
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testAuthorizedAccess() throws Exception {
-        for (int i = 0; i < 20; i++) {
-            Company company = setUpCompany();
-
-            List<TopLevelDomain> domains = this.topLevelDomainRepo.findByCompany(company);
-
-            assertFalse(domains.isEmpty(), "Company should have at least one active domain");
-
-            String domain = domains.getFirst().getDomain();
-
-            for (String role : RoleManager.ROLES_STRING) {
-                Role r = RoleManager.getRole(role);
-
-                // Create user with authorized=true
-                AppUser user = setUpUser(
-                    company, 
-                    r, 
-                    true
-                );
-
-
-                MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/encode").param("url", "https://" + domain + "/product/123")
-                    .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
-
-
-                // Make request with authentication
-                String result = mockMvc.perform(
-                        req
-                        )
-                        .andExpect(status().is(not(401)))  // Not unauthorized
-                        .andExpect(status().is(not(403)))  // Not forbidden
-                        .andReturn().getResponse().getContentAsString();
-
-                // read the json response as a map
-                Map<String, String> responseMap = om.readValue(result, Map.class);
-
-                // Additional verification - should have successful response
-                assertTrue(responseMap.containsKey("encoded_url"), 
-                        "Response should contain encoded URL for user " + user.getEmail());
-                }
+        for (String role : RoleManager.ROLES_STRING) {
+            Map<String, String> params = Map.of("role", role);
+            testUnauthorizedAccess("/api/token/revoke", params);
         }
     }
     
@@ -249,59 +381,24 @@ public class WebLayerAuthTest {
      * Test that authenticated users without proper authorization receive 403 Forbidden
      */
     @Test
-    public void testAuthenticatedButUnauthorized() throws Exception {
-        // Set up company and domain
-        Company company = setUpCompany();
-        List<TopLevelDomain> domains = this.topLevelDomainRepo.findByCompanyAndDomainState(company, TopLevelDomain.DomainState.ACTIVE);
-        String domain = domains.getFirst().getDomain();
-        
-        // Set up user with authorized=false
-        AppUser user = setUpUser(
-            company, 
-            RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), 
-            false
-        );
-        
-        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/encode").param("url", "https://" + domain + "/product/123")
-            .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
-
-        // Make request with authentication but without authorization
-        mockMvc.perform(req)
-                .andExpect(status().isForbidden());
+    public void testAuthenticatedButNoToken() throws Exception {
+        testAuthenticatedButNoToken("/api/token/revoke");
     }
 
+
     /**
-     * Test that requests with non-existing users return 401 Unauthorized for decode endpoint
+     * Test that authenticated users with proper authorization can access the revoke token endpoint
      */
     @Test
-    public void testUnauthorizedAccessDecode() throws Exception {
-        // Use non-existent credentials
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/url/decode")
-                .param("encodedUrl", "https://localhost:8018/examplehash/abc123"))
-                .andExpect(status().isUnauthorized());
-    }
-    
-    /**
-     * Test that authenticated users with proper authorization can access the decode endpoint
-     */
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
-    @Test
-    public void testAuthorizedAccessDecode() throws Exception {
+    public void testAuthorizedAccess() throws Exception {
         for (int i = 0; i < 20; i++) {
-            Company company = setUpCompany();
-
-            List<TopLevelDomain> domains = this.topLevelDomainRepo.findByCompany(company);
-            assertFalse(domains.isEmpty(), "Company should have at least one active domain");
-            
-            // Get the company URL data to use the domain hash
-            CompanyUrlData urlData = companyUrlDataRepo.findFirstByCompany(company).get();
-            String domainHash = urlData.getCompanyDomainHashed();
-
-            // the decode method requires having some decoded data saved
-            urlData.getDataDecoded().add(Map.of("parameter1", "1", "parameter2", "2"));
-            urlData.getDataDecoded().add(Map.of("parameter3", "1", "parameter4", "2"));
+            Company company = setUpCompany("test1");
 
             for (String role : RoleManager.ROLES_STRING) {
+                if (role.equalsIgnoreCase(RoleManager.EMPLOYEE_ROLE)) {
+                    continue;
+                }
+
                 Role r = RoleManager.getRole(role);
 
                 // Create user with authorized=true
@@ -311,11 +408,8 @@ public class WebLayerAuthTest {
                     true
                 );
 
-                // Create a sample encoded URL
-                String encodedUrl = "https://localhost:8018/" + domainHash + "/abc123";
-
-                MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/decode")
-                    .param("encodedUrl", encodedUrl)
+                MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/token/revoke")
+                    .param("userEmail", user.getEmail())
                     .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
 
                 // Make request with authentication
@@ -325,63 +419,53 @@ public class WebLayerAuthTest {
             }
         }
     }
-    
-    /**
-     * Test that authenticated users without proper authorization receive 403 Forbidden for decode endpoint
-     */
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
-    @Test
-    public void testAuthenticatedButUnauthorizedDecode() throws Exception {
-        // Set up company and domain
-        Company company = setUpCompany();
-        
-        // Get the company URL data to use the domain hash
-        CompanyUrlData urlData = companyUrlDataRepo.findFirstByCompany(company).get();
-        String domainHash = urlData.getCompanyDomainHashed();
-        
-        // Set up user with authorized=false
-        AppUser user = setUpUser(
-            company, 
-            RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), 
-            false
-        );
-        
-        // Create a sample encoded URL
-        String encodedUrl = "https://localhost:8018/" + domainHash + "/abc123";
-        
-        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/decode")
-            .param("encodedUrl", encodedUrl)
-            .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
+}
 
-        // Make request with authentication but without authorization
-        mockMvc.perform(req)
-            .andExpect(status().isForbidden());
+class GetAllTokensAuthTest extends WebLayerBaseTest {
+
+    public GetAllTokensAuthTest(
+            MockMvc mockMvc,
+            CustomGenerator customGenerator,
+            CompanyRepository companyRepo,
+            UserRepository userRepo,
+            TokenRepository tokenRepo,
+            TokenUserLinkRepository tokenUserLinkRepo,
+            TopLevelDomainRepository topLevelDomainRepo,
+            CompanyUrlDataRepository companyUrlDataRepo) {
+        super(mockMvc, customGenerator, companyRepo, userRepo, tokenRepo, tokenUserLinkRepo, topLevelDomainRepo, companyUrlDataRepo);
+    }
+
+    @Test
+    public void testUnauthorizedAccess() throws Exception {
+        for (String role : RoleManager.ROLES_STRING) {
+            Map<String, String> params = Map.of("role", role);
+            testUnauthorizedAccess("/api/token/get", params);
+        }
     }
 
     /**
-     * Test that requests with non-existing users return 401 Unauthorized for history endpoint
+     * Test that authenticated users without proper token receive 403 Forbidden for decode endpoint
      */
     @Test
-    public void testUnauthorizedAccessHistory() throws Exception {
-        // Use non-existent credentials
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/url/history")
-                .param("page", "0")
-                .param("size", "10"))
-                .andExpect(status().isUnauthorized());
+    public void testAuthenticatedButNoToken() throws Exception {
+        testAuthenticatedButNoToken("/api/token/get");
     }
+
     
+
     /**
-     * Test that authenticated users with proper authorization can access the history endpoint
+     * Test that authenticated users with proper roles can access the endpoint
      */
     @Test
-    public void testAuthorizedAccessHistory() throws Exception {
+    public void testAuthorizedAccess() throws Exception {
         for (int i = 0; i < 20; i++) {
-            Company company = setUpCompany();
+            Company company = setUpCompany("test1");
             
-            // Get the company URL data
-//            CompanyUrlData urlData = companyUrlDataRepo.findFirstByCompany(company).get();
-
             for (String role : RoleManager.ROLES_STRING) {
+                if (role.equalsIgnoreCase(RoleManager.EMPLOYEE_ROLE)) {
+                    continue;
+                }
+
                 Role r = RoleManager.getRole(role);
 
                 // Create user with authorized=true
@@ -391,57 +475,16 @@ public class WebLayerAuthTest {
                     true
                 );
 
-                MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/history")
-                    .param("page", "0")
-                    .param("size", "10")
+                MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/token/get")
+                    .param("role", role)
                     .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
 
                 // Make request with authentication
                 mockMvc.perform(req)
                     .andExpect(status().is(not(401)))  // Not unauthorized
                     .andExpect(status().is(not(403))); // Not forbidden
-                    
-                // Also test the parameterless endpoint
-                MockHttpServletRequestBuilder reqNoParams = MockMvcRequestBuilders.get("/api/url/history")
-                    .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
-                    
-                mockMvc.perform(reqNoParams)
-                    .andExpect(status().is(not(401)))  // Not unauthorized
-                    .andExpect(status().is(not(403))); // Not forbidden
             }
         }
     }
-    
-    /**
-     * Test that authenticated users without proper authorization receive 403 Forbidden for history endpoint
-     */
-    @Test
-    public void testAuthenticatedButUnauthorizedHistory() throws Exception {
-        // Set up company and domain
-        Company company = setUpCompany();
-        
-        // Set up user with authorized=false
-        AppUser user = setUpUser(
-            company, 
-            RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), 
-            false
-        );
-        
-        // Test with parameters
-        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/api/url/history")
-            .param("page", "0")
-            .param("size", "10")
-            .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
 
-        // Make request with authentication but without authorization
-        mockMvc.perform(req)
-            .andExpect(status().isForbidden());
-            
-        // Test without parameters
-        MockHttpServletRequestBuilder reqNoParams = MockMvcRequestBuilders.get("/api/url/history")
-            .with(SecurityMockMvcRequestPostProcessors.httpBasic(user.getEmail(), user.getPassword()));
-            
-        mockMvc.perform(reqNoParams)
-            .andExpect(status().isForbidden());
-    }
 }
