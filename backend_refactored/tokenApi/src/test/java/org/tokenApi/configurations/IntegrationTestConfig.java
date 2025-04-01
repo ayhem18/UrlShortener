@@ -19,9 +19,6 @@ import java.util.Properties;
 
 
 
-
-@SuppressWarnings("unused")
-
 @SpringBootApplication
 
 @ComponentScan(basePackages = {

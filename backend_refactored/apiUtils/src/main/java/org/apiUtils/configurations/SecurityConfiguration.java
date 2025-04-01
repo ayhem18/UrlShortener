@@ -37,7 +37,12 @@ public class SecurityConfiguration {
                     .requestMatchers(RegexRequestMatcher.regexMatcher("/api/url/decode.*")).hasAuthority(AuthoritiesManager.CAN_USE_SHORT_URL_STR)
                     .requestMatchers(RegexRequestMatcher.regexMatcher("/api/url/history.*")).hasAuthority(AuthoritiesManager.CAN_VIEW_HISTORY_STR)
 
-                    // 
+                    // token endpoints
+                    .requestMatchers(RegexRequestMatcher.regexMatcher("/api/token/generate.*")).hasAuthority(AuthoritiesManager.CAN_WORK_WITH_TOKENS_STR)
+                    .requestMatchers(RegexRequestMatcher.regexMatcher("/api/token/revoke.*")).hasAuthority(AuthoritiesManager.CAN_WORK_WITH_TOKENS_STR)
+                    .requestMatchers(RegexRequestMatcher.regexMatcher("/api/token/get.*")).hasAuthority(AuthoritiesManager.CAN_WORK_WITH_TOKENS_STR)
+
+                    // any other request is authenticated
                     .anyRequest().authenticated()                
                 );
 

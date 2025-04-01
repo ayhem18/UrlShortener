@@ -28,9 +28,8 @@ import org.springframework.core.env.Environment;
         "org.stubs.repositories",
         "org.urlService.controllers",
 })
-@PropertySource("classpath:mail.properties")
-@SuppressWarnings({"unused", "deprecation"})
-public class UrlServiceWebConfig {
+@SuppressWarnings({"deprecation"})
+public class TokenApiWebConfig {
 
     // create some beans needed for the app
     @Bean
@@ -51,14 +50,6 @@ public class UrlServiceWebConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return NoOpPasswordEncoder.getInstance(); // this is used solely for testing purposes
-    }
-
-    @Bean
-    public Environment environment() {
-        MockEnvironment mockEnv = new MockEnvironment();
-        mockEnv.setProperty("local.server.port", "8018");
-        mockEnv.setProperty("server.port", "8018");
-        return mockEnv;
     }
 }
 

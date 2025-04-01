@@ -17,12 +17,12 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.tokenApi.configurations.TokenApiWebConfig;
 import org.tokenApi.controllers.TokenController;
 import org.tokens.entities.AppToken;
 import org.tokens.entities.TokenUserLink;
 import org.tokens.repositories.TokenRepository;
 import org.tokens.repositories.TokenUserLinkRepository;
-import org.tokenApi.configurations.UrlServiceWebConfig;
 import org.user.entities.AppUser;
 import org.user.repositories.UserRepository;
 import org.utils.CustomGenerator;
@@ -45,6 +45,8 @@ import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
+@SpringJUnitConfig(classes = TokenApiWebConfig.class)
+@WebMvcTest(TokenController.class)
 class WebLayerBaseTest {
     protected final MockMvc mockMvc;
     protected final CustomGenerator customGenerator;
@@ -224,7 +226,7 @@ class WebLayerBaseTest {
      */
     public void testAuthenticatedButNoToken(String endpoint) throws Exception {
         for (int i = 0; i < 20; i++) {
-            int companyIndex = i % 2;
+            int companyIndex = 1 + i % 2;
             Company company = setUpCompany("test" + companyIndex);
 
             for (String role : RoleManager.ROLES_STRING) {
@@ -269,10 +271,11 @@ class WebLayerBaseTest {
 }
 
 
-@SpringJUnitConfig(classes = UrlServiceWebConfig.class)
+@SpringJUnitConfig(classes = TokenApiWebConfig.class)
 @WebMvcTest(TokenController.class)
 class GenerateTokenAuthTest extends WebLayerBaseTest {
-    
+
+    @Autowired
     public GenerateTokenAuthTest(
             MockMvc mockMvc,
             CustomGenerator customGenerator,
@@ -353,6 +356,8 @@ class GenerateTokenAuthTest extends WebLayerBaseTest {
 
 class RevokeTokenAuthTest extends WebLayerBaseTest {
 
+    // autowired is necessary here to load the parameters from the context
+    @Autowired
     public RevokeTokenAuthTest(
             MockMvc mockMvc,    
             CustomGenerator customGenerator,
@@ -423,6 +428,7 @@ class RevokeTokenAuthTest extends WebLayerBaseTest {
 
 class GetAllTokensAuthTest extends WebLayerBaseTest {
 
+    @Autowired
     public GetAllTokensAuthTest(
             MockMvc mockMvc,
             CustomGenerator customGenerator,
