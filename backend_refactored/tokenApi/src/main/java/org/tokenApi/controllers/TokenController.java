@@ -31,6 +31,7 @@ import org.user.repositories.UserRepository;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -260,11 +261,14 @@ public class TokenController extends TokenAuthController {
             validateRoleAuthority(currentUser, r, "Cannot request tokens of users with higher priority");
         }
 
-        // sort by the role and then by the creation date
-        List<AppToken> resultTokens = tokenRepo.findByCompanyAndRoleIn(company, lowerPriorityRoles, 
-                        Sort.by(Sort.Direction.DESC, "role")
-                        .and(Sort.by(Sort.Direction.DESC, "createdAt"))
-                        );
+        
+        // Get tokens without specifying sort in the MongoDB query
+        List<AppToken> resultTokens = tokenRepo.findByCompanyAndRoleIn(company, lowerPriorityRoles);
+
+        // it is not possible to sort the tokens by the role (as per the compareTo method) in mongoDB, so the tokens need to sorted in memory
+        // this is not a not problem, since the number of tokens is at most 100 per company
+        resultTokens.sort(Comparator.comparing((AppToken t) -> t.getRole(), Comparator.reverseOrder())
+                     .thenComparing(AppToken::getCreatedAt, Comparator.reverseOrder()));
 
         return ResponseEntity.ok(objectMapper.writeValueAsString(resultTokens));
     }    

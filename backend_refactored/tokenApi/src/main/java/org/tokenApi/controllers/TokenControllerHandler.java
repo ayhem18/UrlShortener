@@ -42,9 +42,9 @@ public class TokenControllerHandler extends CustomExceptionHandler {
             HttpStatus.BAD_REQUEST);
     }
     
-    @ExceptionHandler(TokenExceptions.TokenGenerationException.class)
+    @ExceptionHandler(TokenExceptions.NoUserTokenLinkException.class)
     public ResponseEntity<CustomErrorMessage> handleTokenGenerationException(
-            TokenExceptions.TokenGenerationException ex, WebRequest request) {
+            TokenExceptions.NoUserTokenLinkException ex, WebRequest request) {
         return new ResponseEntity<>(
             new CustomErrorMessage(
                 HttpStatus.BAD_REQUEST.value(),
@@ -54,9 +54,9 @@ public class TokenControllerHandler extends CustomExceptionHandler {
             HttpStatus.BAD_REQUEST);
     }
     
-    @ExceptionHandler(TokenExceptions.NoActiveTokenException.class)
+    @ExceptionHandler(TokenExceptions.RevokedUserNotFoundException.class)
     public ResponseEntity<CustomErrorMessage> handleUserNotFoundException(
-            TokenExceptions.NoActiveTokenException ex, WebRequest request) {
+            TokenExceptions.RevokedUserNotFoundException ex, WebRequest request) {
         return new ResponseEntity<>(
             new CustomErrorMessage(
                 HttpStatus.BAD_REQUEST.value(),

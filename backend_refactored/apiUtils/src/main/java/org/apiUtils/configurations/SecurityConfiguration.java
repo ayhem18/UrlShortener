@@ -17,8 +17,7 @@ public class SecurityConfiguration {
     @SuppressWarnings("Convert2MethodRef")
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        System.out.println("This function was called");
-        
+
         http.httpBasic(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 // any request to the api/auth/register is allowed

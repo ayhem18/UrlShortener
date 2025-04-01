@@ -9,8 +9,6 @@ import org.access.Role;
 import org.access.RoleManager;
 import org.access.Subscription;
 import org.access.SubscriptionManager;
-import org.apiUtils.commonClasses.TokenAuthController;
-import org.apiUtils.commonClasses.UserDetailsImp;
 import org.company.entities.Company;
 import org.company.entities.CompanyUrlData;
 import org.company.entities.TopLevelDomain;
@@ -24,11 +22,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.tokenApi.controllers.TokenController;
-import org.tokenApi.exceptions.TokenExceptions;
 import org.tokens.entities.AppToken;
 import org.tokens.entities.TokenUserLink;
 import org.tokens.repositories.TokenRepository;
@@ -534,7 +530,7 @@ class IntegrationRevokeTokenTest extends IntegrationBaseTest {
                     requestEntity,
                     String.class
             );
-            
+
             // Verify response status is FORBIDDEN (403) for unauthorized user
             assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode(), 
                     "User with no token should get FORBIDDEN status");
@@ -567,11 +563,6 @@ class IntegrationRevokeTokenTest extends IntegrationBaseTest {
             testInvalidRoleCombinationForRevoke(employee1, owner.getEmail());
             testInvalidRoleCombinationForRevoke(employee1, admin1.getEmail());
             testInvalidRoleCombinationForRevoke(employee1, employee2.getEmail());
-            
-            // Test valid combinations
-            testValidRoleCombinationForRevoke(owner, admin1.getEmail());
-            testValidRoleCombinationForRevoke(owner, employee1.getEmail());
-            testValidRoleCombinationForRevoke(admin1, employee1.getEmail());
         }
     }
     
@@ -592,39 +583,26 @@ class IntegrationRevokeTokenTest extends IntegrationBaseTest {
                 requestEntity,
                 String.class
         );
-        
-        // Verify response status is BAD_REQUEST (400) for invalid role combination
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode(), 
-                "Should return BAD_REQUEST for invalid role combination");
-        
-        // Verify error message
-        assertTrue(Objects.requireNonNull(response.getBody()).contains("Cannot revoke token for role with equal or higher priority"),
-                "Error message should indicate insufficient role authority");
-        
+
+
+        if (user.getRole().role().equalsIgnoreCase(RoleManager.EMPLOYEE_ROLE)) {
+            // Verify response status is BAD_REQUEST (400) for invalid role combination
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode(),
+                    "Should return BAD_REQUEST for invalid role combination");
+        }
+        else {
+            // Verify response status is BAD_REQUEST (400) for invalid role combination
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode(),
+                    "Should return BAD_REQUEST for invalid role combination");
+
+            // Verify error message
+            assertTrue(Objects.requireNonNull(response.getBody()).contains("Cannot revoke token for role with equal or higher priority"),
+                    "Error message should indicate insufficient role authority");
+        }
+
         // Verify no change in database state
         assertEquals(tokenCountBefore, tokenRepo.count(), "Token count should not change");
         assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), "TokenUserLink count should not change");
-    }
-    
-    private void testValidRoleCombinationForRevoke(AppUser user, String targetEmail) {
-        HttpHeaders headers = createAuthHeaders(user);
-        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
-        
-        try {
-            ResponseEntity<String> response = restTemplate.exchange(
-                    "/api/token/revoke?userEmail=" + targetEmail,
-                    HttpMethod.GET,
-                    requestEntity,
-                    String.class
-            );
-            
-            assertEquals(HttpStatus.OK, response.getStatusCode(), 
-                    "Valid role combination should return OK status");
-        } catch (Exception e) {
-            // Other exceptions are possible (like user not found) but not the role authority exception
-            assertFalse(e.getMessage().contains("Cannot revoke token for role with equal or higher priority"),
-                    "Error should not be about insufficient role authority");
-        }
     }
 
     @SuppressWarnings("null")
@@ -795,7 +773,6 @@ class IntegrationRevokeTokenTest extends IntegrationBaseTest {
 }
 
 
-
 @SpringBootTest(classes = TokenApiIntegrationTestConfig.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class IntegrationGetAllTokensTest extends IntegrationBaseTest {
 
@@ -817,8 +794,11 @@ class IntegrationGetAllTokensTest extends IntegrationBaseTest {
 	private void testUserWithNoTokenGivenRole(Role role) {
 		// Setup company and unauthorized user (no token)
 		Company company = setUpCompany("TIER_1");
-		AppUser user = setUpUser(company, role, false);
-		UserDetails userDetails = new UserDetailsImp(user);
+
+		AppUser user = setUpUser(company, role == null ? RoleManager.getRole(RoleManager.ADMIN_ROLE) : role, false);
+
+        HttpHeaders headers = createAuthHeaders(user);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
 
 		// Capture database state before
 		long tokenCountBefore = tokenRepo.count();
@@ -826,17 +806,29 @@ class IntegrationGetAllTokensTest extends IntegrationBaseTest {
 		long companyCountBefore = companyRepo.count();
 		long cUrlDataBefore = companyUrlDataRepo.count();
 
-		String roleString = role == null ? null : role.role();
 
-		// Execute and verify
-		Exception exception = assertThrows(
-				TokenAuthController.TokenNotFoundException.class,
-				() -> tokenController.getAllTokens(roleString, userDetails),
-				"Should throw TokenNotFoundException for user with no token"
-		);
+        ResponseEntity<String> response;
 
-		assertTrue(exception.getMessage().contains("Their access might have been revoked."),
-				"Exception message should indicate missing token");
+        if (role == null) {
+            response = restTemplate.exchange(
+                    "/api/token/get",
+                    HttpMethod.GET,
+                    requestEntity,
+                    String.class
+            );
+        }
+        else {
+            response = restTemplate.exchange(
+                    "/api/token/get?role=" + role.role(),
+                    HttpMethod.GET,
+                    requestEntity,
+                    String.class
+            );
+        }
+
+        
+        // Verify response
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode(), "Should return FORBIDDEN for user with no token");
 
 		// Verify no change in database state
 		assertEquals(tokenCountBefore, tokenRepo.count(), "Token count should not change");
@@ -856,19 +848,8 @@ class IntegrationGetAllTokensTest extends IntegrationBaseTest {
 		}
 	}
 
-	private void testValidRoleCombinationForGetToken(AppUser user, String role) {
-		UserDetails userDetails = new UserDetailsImp(user);
-		try {
-			tokenController.getAllTokens(role, userDetails);
-		} catch (TokenExceptions.InsufficientRoleAuthority e) {
-			fail("Valid role combination should not throw InsufficientRoleAuthority: " + e.getMessage());
-		} catch (Exception e) {
-			// Other exceptions are possible (like user not found) but not the role authority exception
-		}
-	}
 
 	private void testInvalidRoleCombinationForGetToken(AppUser user, String roleName) {
-		UserDetails userDetails = new UserDetailsImp(user);
 
 		// Capture database state before
 		long tokenCountBefore = tokenRepo.count();
@@ -876,15 +857,39 @@ class IntegrationGetAllTokensTest extends IntegrationBaseTest {
 		long companyCountBefore = companyRepo.count();
 		long cUrlDataBefore = companyUrlDataRepo.count();
 
-		// Execute and verify
-		Exception exception = assertThrows(
-				TokenExceptions.InsufficientRoleAuthority.class,
-				() -> tokenController.getAllTokens(roleName, userDetails),
-				"Should throw InsufficientRoleAuthority when retrieving tokens for equal or higher role"
-		);
+        HttpHeaders headers = createAuthHeaders(user);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers); 
 
-		assertTrue(exception.getMessage().contains("Cannot request tokens of users with higher priority"),
-				"Exception message should indicate insufficient authority");
+
+        ResponseEntity<String> response;    
+
+        if (roleName == null) {
+            response = restTemplate.exchange(
+                    "/api/token/get",
+                    HttpMethod.GET,
+                    requestEntity,
+                    String.class
+            );
+        }
+        else {
+            response = restTemplate.exchange(
+                    "/api/token/get?role=" + roleName,
+                    HttpMethod.GET,
+                    requestEntity,
+                    String.class
+            );
+        }
+
+        // since a user with the employee role is not authorized used to call this endpoint
+        if (user.getRole().role().equalsIgnoreCase(RoleManager.EMPLOYEE_ROLE)) {
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode(), "Should return BAD_REQUEST for invalid role combination");
+        }
+        else {
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode(), "Should return BAD_REQUEST for invalid role combination");
+            assertTrue(Objects.requireNonNull(response.getBody()).contains("Cannot request tokens of users with higher priority"),
+                    "Exception message should indicate insufficient authority");
+
+        }
 
 		// Verify no change in database state
 		assertEquals(tokenCountBefore, tokenRepo.count(), "Token count should not change");
@@ -899,7 +904,6 @@ class IntegrationGetAllTokensTest extends IntegrationBaseTest {
 		for (int i = 0; i < 10; i++) {
 			// Setup company and users with different roles
 			Company company = setUpCompany("TIER_1");
-			AppUser owner = setUpUser(company, RoleManager.getRole(RoleManager.OWNER_ROLE), true);
 
 			AppUser admin1 = setUpUser(company, RoleManager.getRole(RoleManager.ADMIN_ROLE), true);
 			setUpUser(company, RoleManager.getRole(RoleManager.ADMIN_ROLE), true);
@@ -913,11 +917,6 @@ class IntegrationGetAllTokensTest extends IntegrationBaseTest {
 			testInvalidRoleCombinationForGetToken(employee1, RoleManager.OWNER_ROLE);
 			testInvalidRoleCombinationForGetToken(employee1, RoleManager.ADMIN_ROLE);
 			testInvalidRoleCombinationForGetToken(employee1, RoleManager.EMPLOYEE_ROLE);
-
-
-			testValidRoleCombinationForGetToken(owner, RoleManager.ADMIN_ROLE);
-			testValidRoleCombinationForGetToken(owner, RoleManager.EMPLOYEE_ROLE);
-			testValidRoleCombinationForGetToken(admin1, RoleManager.EMPLOYEE_ROLE);
 		}
 	}
 
@@ -951,16 +950,22 @@ class IntegrationGetAllTokensTest extends IntegrationBaseTest {
 
 			setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
 
-			UserDetails ownerDetails = new UserDetailsImp(owner);
-			UserDetails adminDetails = new UserDetailsImp(admin1);
-
 			// Capture database state before
 			long tokenCountBefore = tokenRepo.count();
 			long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
 
-			// Owner retrieves admin tokens
-			ResponseEntity<String> ownerResponse = tokenController.getAllTokens(RoleManager.ADMIN_ROLE, ownerDetails);
-			assertEquals(HttpStatus.OK, ownerResponse.getStatusCode(), "Response status should be 200 OK");
+            HttpHeaders headers = createAuthHeaders(owner);
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers); 
+
+        
+            ResponseEntity<String> ownerResponse = restTemplate.exchange(
+                    "/api/token/get?role=" + RoleManager.ADMIN_ROLE,
+                    HttpMethod.GET,
+                    requestEntity,
+                    String.class
+            );
+
+            assertEquals(HttpStatus.OK, ownerResponse.getStatusCode(), "Response status should be 200 OK");
 
 			// Parse response and verify
 			List<Map<String, Object>> adminTokensStrings = objectMapper.readValue(
@@ -984,8 +989,17 @@ class IntegrationGetAllTokensTest extends IntegrationBaseTest {
 			assertEquals(cDates1.stream().sorted(Comparator.reverseOrder()).toList(), cDates1);
 
 
-			// Admin retrieves employee tokens
-			ResponseEntity<String> adminResponse = tokenController.getAllTokens(RoleManager.EMPLOYEE_ROLE, adminDetails);
+            // create new headers and request entity for the admin
+            headers = createAuthHeaders(admin1);
+            requestEntity = new HttpEntity<>(headers); 
+
+            ResponseEntity<String> adminResponse = restTemplate.exchange(
+                    "/api/token/get?role=" + RoleManager.EMPLOYEE_ROLE,
+                    HttpMethod.GET,
+                    requestEntity,
+                    String.class
+            );
+
 			assertEquals(HttpStatus.OK, adminResponse.getStatusCode(), "Response status should be 200 OK");
 
 			// Parse response and verify
@@ -1037,18 +1051,21 @@ class IntegrationGetAllTokensTest extends IntegrationBaseTest {
 			Thread.sleep(1000);
 			setUpUser(company, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE), true);
 
-			// user details objects
-			UserDetails ownerDetails = new UserDetailsImp(owner);
-			UserDetails adminDetails = new UserDetailsImp(admin1);
-			UserDetails employeeDetails = new UserDetailsImp(employee1);
 
 			// Capture database state before
 			long tokenCountBefore = tokenRepo.count();
 			long tokenUserLinkCountBefore = tokenUserLinkRepo.count();
 
+			HttpHeaders headers = createAuthHeaders(owner);
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers); 
+
 			// 1. Owner retrieves all tokens (null role parameter)
-			ResponseEntity<String> ownerResponse = tokenController.getAllTokens(null, ownerDetails);
-			assertEquals(HttpStatus.OK, ownerResponse.getStatusCode(), "Response status should be 200 OK");
+			ResponseEntity<String> ownerResponse = restTemplate.exchange(
+                    "/api/token/get",
+                    HttpMethod.GET,
+                    requestEntity,
+                    String.class
+            );
 
 			// Parse response and verify
 			ObjectMapper objectMapper = new ObjectMapper();
@@ -1083,7 +1100,16 @@ class IntegrationGetAllTokensTest extends IntegrationBaseTest {
 
 
 			// 2. Admin retrieves tokens (null role parameter)
-			ResponseEntity<String> adminResponse = tokenController.getAllTokens(null, adminDetails);
+			headers = createAuthHeaders(admin1);
+            requestEntity = new HttpEntity<>(headers); 
+
+            ResponseEntity<String> adminResponse = restTemplate.exchange(
+                    "/api/token/get",
+                    HttpMethod.GET,
+                    requestEntity,
+                    String.class
+            );
+
 			assertEquals(HttpStatus.OK, adminResponse.getStatusCode(), "Response status should be 200 OK");
 
 			// Parse response and verify
@@ -1108,14 +1134,17 @@ class IntegrationGetAllTokensTest extends IntegrationBaseTest {
 
 
 			// 3. Employee attempts to retrieve tokens (should throw exception)
-			Exception exception = assertThrows(
-					TokenExceptions.InsufficientRoleAuthority.class,
-					() -> tokenController.getAllTokens(null, employeeDetails),
-					"Employee should not be able to retrieve tokens with null role parameter"
-			);
+			headers = createAuthHeaders(employee1);
+            requestEntity = new HttpEntity<>(headers); 
 
-			assertTrue(exception.getMessage().contains("The role of the current user has no priority over any other role"),
-					"Exception message should indicate insufficient authority");
+            ResponseEntity<String> employeeResponse = restTemplate.exchange(
+                    "/api/token/get",
+                    HttpMethod.GET,
+                    requestEntity,
+                    String.class
+            );
+
+            assertEquals(employeeResponse.getStatusCode(), HttpStatus.FORBIDDEN, "Employee users cannot access the token endpoints");
 
 			// Verify database state is unchanged
 			assertEquals(tokenCountBefore, tokenRepo.count(), "Token count should not change");

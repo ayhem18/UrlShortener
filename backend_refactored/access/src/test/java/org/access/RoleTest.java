@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
 import org.utils.CustomGenerator;
 
-import java.util.List;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.assertj.core.api.Assertions.*;
@@ -127,4 +127,23 @@ class RoleTest {
         }
     }
 
+    @Test
+    void testRoleCompareOperator() {
+        assertTrue(RoleManager.getRole(RoleManager.OWNER_ROLE).compareTo(RoleManager.getRole(RoleManager.ADMIN_ROLE)) > 0);
+        assertTrue(RoleManager.getRole(RoleManager.OWNER_ROLE).compareTo(RoleManager.getRole(RoleManager.EMPLOYEE_ROLE)) > 0);
+        assertTrue(RoleManager.getRole(RoleManager.ADMIN_ROLE).compareTo(RoleManager.getRole(RoleManager.EMPLOYEE_ROLE)) > 0);
+
+        assertTrue(RoleManager.getRole(RoleManager.ADMIN_ROLE).compareTo(RoleManager.getRole(RoleManager.OWNER_ROLE)) < 0);
+        assertTrue(RoleManager.getRole(RoleManager.EMPLOYEE_ROLE).compareTo(RoleManager.getRole(RoleManager.OWNER_ROLE)) < 0);
+        assertTrue(RoleManager.getRole(RoleManager.EMPLOYEE_ROLE).compareTo(RoleManager.getRole(RoleManager.ADMIN_ROLE )) < 0);
+
+        assertEquals(0, RoleManager.getRole(RoleManager.OWNER_ROLE).compareTo(RoleManager.getRole(RoleManager.OWNER_ROLE)));
+        assertEquals(0, RoleManager.getRole(RoleManager.ADMIN_ROLE).compareTo(RoleManager.getRole(RoleManager.ADMIN_ROLE)));
+        assertEquals(0, RoleManager.getRole(RoleManager.EMPLOYEE_ROLE).compareTo(RoleManager.getRole(RoleManager.EMPLOYEE_ROLE)));
+
+        List<Role> l = new ArrayList<>(List.of(new Owner(), new Employee(), new Admin()));
+        Collections.sort(l);
+        assertEquals(l, List.of(new Employee(), new Admin(), new Owner()));
+
+    }
 }
