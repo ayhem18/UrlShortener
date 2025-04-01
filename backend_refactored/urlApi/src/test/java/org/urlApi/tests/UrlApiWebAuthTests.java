@@ -46,7 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringJUnitConfig(classes = UrlServiceWebConfig.class)
 @WebMvcTest(UrlController.class)
-public class WebLayerAuthTest {
+public class UrlApiWebAuthTests {
 
     private final MockMvc mockMvc;
     private final CustomGenerator customGenerator;
@@ -60,7 +60,7 @@ public class WebLayerAuthTest {
     private final ObjectMapper om;
 
     @Autowired
-    public WebLayerAuthTest(
+    public UrlApiWebAuthTests(
             MockMvc mockMvc,
             CustomGenerator customGenerator,
             CompanyRepository companyRepo,

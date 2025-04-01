@@ -22,11 +22,11 @@ public class TokenControllerHandler extends CustomExceptionHandler {
             TokenExceptions.InsufficientRoleAuthority ex, WebRequest request) {
         return new ResponseEntity<>(
             new CustomErrorMessage(
-                HttpStatus.FORBIDDEN.value(),
+                HttpStatus.BAD_REQUEST.value(),
                 LocalDateTime.now(),
                 ex.getMessage(),
                 request.getDescription(false)),
-            HttpStatus.FORBIDDEN);
+            HttpStatus.BAD_REQUEST);
     }
     
 
@@ -35,11 +35,11 @@ public class TokenControllerHandler extends CustomExceptionHandler {
             TokenExceptions.NumTokensLimitExceeded ex, WebRequest request) {
         return new ResponseEntity<>(
             new CustomErrorMessage(
-                HttpStatus.CONFLICT.value(),
+                HttpStatus.BAD_REQUEST.value(),
                 LocalDateTime.now(),
                 ex.getMessage(),
                 request.getDescription(false)),
-            HttpStatus.CONFLICT);
+            HttpStatus.BAD_REQUEST);
     }
     
     @ExceptionHandler(TokenExceptions.TokenGenerationException.class)
@@ -47,11 +47,11 @@ public class TokenControllerHandler extends CustomExceptionHandler {
             TokenExceptions.TokenGenerationException ex, WebRequest request) {
         return new ResponseEntity<>(
             new CustomErrorMessage(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                HttpStatus.BAD_REQUEST.value(),
                 LocalDateTime.now(),
                 ex.getMessage(),
                 request.getDescription(false)),
-            HttpStatus.INTERNAL_SERVER_ERROR);
+            HttpStatus.BAD_REQUEST);
     }
     
     @ExceptionHandler(TokenExceptions.NoActiveTokenException.class)
@@ -59,10 +59,10 @@ public class TokenControllerHandler extends CustomExceptionHandler {
             TokenExceptions.NoActiveTokenException ex, WebRequest request) {
         return new ResponseEntity<>(
             new CustomErrorMessage(
-                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.BAD_REQUEST.value(),
                 LocalDateTime.now(),
                 ex.getMessage(),
                 request.getDescription(false)),
-            HttpStatus.NOT_FOUND);
+            HttpStatus.BAD_REQUEST);
     }
 }

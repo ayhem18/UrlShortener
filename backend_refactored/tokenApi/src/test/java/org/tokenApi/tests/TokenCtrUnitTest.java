@@ -68,6 +68,8 @@ class BaseTest {
         encoder = new BCryptPasswordEncoder();
     }
 
+    @BeforeEach
+    @AfterEach
     protected void clear() {
         // Reset the repositories before each test
         companyRepo.deleteAll();
@@ -193,15 +195,6 @@ class GenerateTokenTest extends BaseTest {
         );
     }
 
-    @BeforeEach
-    public void setUp() {
-        super.clear();
-    }        
-    
-    @AfterEach
-    public void tearDown() {
-        super.clear();
-    }   
 
     @Test
     public void testUserWithNoToken() {    
@@ -419,18 +412,7 @@ class RevokeTokenTest extends BaseTest {
             tokenUserLinkRepo,
             tokenRepo
         );
-    }
-
-    @BeforeEach
-    public void setUp() {
-        super.clear();
-    }
-
-    @AfterEach
-    public void tearDown() {
-        super.clear();
-    }
-    
+    }    
     
     @Test
     public void testUnauthorizedUserRevokeToken() {
@@ -695,16 +677,6 @@ class GetAllTokensTest extends BaseTest {
             tokenUserLinkRepo,
             tokenRepo
         );
-    }
-
-    @BeforeEach
-    public void setUp() {
-        super.clear();
-    }
-
-    @AfterEach
-    public void tearDown() {
-        super.clear();
     }
 
 
@@ -1016,4 +988,5 @@ class GetAllTokensTest extends BaseTest {
             assertEquals(tokenUserLinkCountBefore, tokenUserLinkRepo.count(), "TokenUserLink count should not change");
         }
     }
-}
+} 
+
