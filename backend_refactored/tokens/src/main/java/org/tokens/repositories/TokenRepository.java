@@ -36,4 +36,5 @@ public interface TokenRepository extends MongoRepository<AppToken, String> {
     
     List<AppToken> findByCompanyAndRoleAndTokenState(Company company, Role role, AppToken.TokenState tokenState);
 
+    void deleteByCompany(Company company);
 } 

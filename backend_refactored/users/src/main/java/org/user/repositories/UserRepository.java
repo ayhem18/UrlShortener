@@ -1,5 +1,6 @@
 package org.user.repositories;
 
+import org.company.entities.Company;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 import org.user.entities.AppUser;
@@ -12,4 +13,6 @@ public interface UserRepository extends MongoRepository<AppUser, String> {
     Optional<AppUser> findByUsername(String username);
 
     Optional<AppUser> findByEmail(String email);
+
+    void deleteByCompany(Company company);
 }

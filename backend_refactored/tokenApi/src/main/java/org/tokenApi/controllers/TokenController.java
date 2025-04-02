@@ -8,6 +8,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.access.Role;
 import org.access.RoleManager;
 import org.access.Subscription;
+import org.apiUtils.commonClasses.CommonExceptions;
 import org.apiUtils.commonClasses.TokenAuthController;
 import org.company.entities.Company;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,12 +68,12 @@ public class TokenController extends TokenAuthController {
      * Validates if the current user has higher priority than the requested role
      * @param currentUser The current authenticated user
      * @param lowerRole The role to compare against
-     * @throws TokenExceptions.InsufficientRoleAuthority If the current user's role does not have higher priority
+     * @throws CommonExceptions.InsufficientRoleAuthority If the current user's role does not have higher priority
      */
     private void validateRoleAuthority(AppUser currentUser, Role lowerRole, String errorMessage) {
         // Check if current user's role has higher priority than the requested role
         if (!currentUser.getRole().isHigherPriorityThan(lowerRole)) {
-            throw new TokenExceptions.InsufficientRoleAuthority(
+            throw new CommonExceptions.InsufficientRoleAuthority(
                 errorMessage);
         }
     }
@@ -253,7 +254,7 @@ public class TokenController extends TokenAuthController {
         }
         
         if (lowerPriorityRoles.isEmpty()) {
-            throw new TokenExceptions.InsufficientRoleAuthority("The role of the current user has no priority over any other role");
+            throw new CommonExceptions.InsufficientRoleAuthority("The role of the current user has no priority over any other role");
         }
 
         // make sure the roles are of lower priority than the current role 

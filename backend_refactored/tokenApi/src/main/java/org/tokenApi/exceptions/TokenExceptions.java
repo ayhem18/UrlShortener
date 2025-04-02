@@ -4,14 +4,6 @@ package org.tokenApi.exceptions;
  * Custom exceptions for token-related operations
  */
 public class TokenExceptions {
-    /**
-     * Thrown when a user does not have sufficient role privileges
-     */
-    public static class InsufficientRoleAuthority extends RuntimeException {
-        public InsufficientRoleAuthority(String message) {
-            super(message);
-        }
-    }
 
     /**
      * Thrown when the maximum number of tokens has been reached

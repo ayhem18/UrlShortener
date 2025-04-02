@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.access.SubscriptionManager;
+import org.apiUtils.commonClasses.CommonExceptions;
 import org.apiUtils.commonClasses.CustomExceptionHandler;
 import org.apiUtils.commonClasses.TokenAuthController;
 import org.springframework.http.HttpStatus;
@@ -51,6 +52,22 @@ public class CommonExceptionsHandler extends CustomExceptionHandler {
     public ResponseEntity<CustomErrorMessage> handleNoExistingSubscription(
             SubscriptionManager.NoExistingSubscription e, WebRequest request) {
         return super.handle(HttpStatus.BAD_REQUEST, e.getMessage(), request.getDescription(false));
+    }
+
+
+    // this exception can be thrown by at least 2 controllers: TokenController and CompanyController
+    @ExceptionHandler(CommonExceptions.InsufficientRoleAuthority.class)
+    public ResponseEntity<CustomErrorMessage> handleInsufficientRoleAuthority(
+            CommonExceptions.InsufficientRoleAuthority e, WebRequest request) {
+        return super.handle(HttpStatus.FORBIDDEN, e.getMessage(), request.getDescription(false));
+    }
+    
+
+    // this exception can be thrown by at least 2 controllers: TokenController and CompanyController
+    @ExceptionHandler(CommonExceptions.UserNotFoundException.class)
+    public ResponseEntity<CustomErrorMessage> handleUserNotFoundException(
+            CommonExceptions.UserNotFoundException e, WebRequest request) {
+        return super.handle(HttpStatus.NOT_FOUND, e.getMessage(), request.getDescription(false));
     }
     
 }

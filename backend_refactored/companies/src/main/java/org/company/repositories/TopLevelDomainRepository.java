@@ -17,7 +17,11 @@ public interface TopLevelDomainRepository extends MongoRepository<TopLevelDomain
     
     List<TopLevelDomain> findByCompany(Company company);
     
+    Optional<TopLevelDomain> findFirstByCompanyAndDomainState(Company company, TopLevelDomain.DomainState domainState);
+
     List<TopLevelDomain> findByCompanyAndDomainState(Company company, TopLevelDomain.DomainState domainState);
     
     Optional<TopLevelDomain> findByDomainAndDomainState(String domain, TopLevelDomain.DomainState domainState);
-} 
+
+    void deleteByCompany(Company company);  
+}   
