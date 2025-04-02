@@ -1,6 +1,5 @@
 package org.stubs.repositories;
 
-import org.access.Role;
 import org.company.entities.Company;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
@@ -20,7 +19,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Repository
-@SuppressWarnings({"unused", "null", "NullableProblems", "ConstantConditions"})
+@SuppressWarnings("ALL")
 public class StubTokenUserLinkRepo implements TokenUserLinkRepository {
     private final List<TokenUserLink> db;
     private final StubTokenRepo tokenRepo;
@@ -65,6 +64,11 @@ public class StubTokenUserLinkRepo implements TokenUserLinkRepository {
         return this.db.stream().filter(
                 u -> u.getUser().getEmail().equals(user.getEmail())
         ).findFirst();
+    }
+
+    @Override
+    public void deleteByUserIn(List<AppUser> users) {
+        this.db.removeIf(link -> users.contains(link.getUser()));
     }
 
     @Override

@@ -55,6 +55,14 @@ public class StubTopLevelDomainRepo implements TopLevelDomainRepository {
     }
 
     @Override
+    public Optional<TopLevelDomain> findFirstByCompanyAndDomainState(Company company, DomainState domainState) {
+        return this.db.stream()
+                .filter(domain -> domain.getCompany() != null &&
+                        domain.getCompany().getId().equals(company.getId()) &&
+                        domain.getDomainState() == domainState).findFirst();
+    }
+
+    @Override
     public List<TopLevelDomain> findByCompanyAndDomainState(Company company, DomainState domainState) {
         return this.db.stream()
                 .filter(domain -> domain.getCompany() != null && 
@@ -69,6 +77,11 @@ public class StubTopLevelDomainRepo implements TopLevelDomainRepository {
                 .filter(tld -> tld.getDomain().equals(domain) && 
                         tld.getDomainState() == domainState)
                 .findFirst();
+    }
+
+    @Override
+    public void deleteByCompany(Company company) {
+        this.db.removeIf(d -> d.getCompany().equals(company));
     }
 
     // Implement the basic MongoRepository methods

@@ -85,6 +85,12 @@ public class StubCompanyUrlDataRepo implements CompanyUrlDataRepository {
     }
 
     @Override
+    public void deleteByCompany(Company company) {
+        this.db.removeIf(d -> d.getCompany().equals(company));
+    }
+
+
+    @Override
     public Optional<CompanyUrlData> findById(ObjectId id) {
         // Since we're not setting IDs in the test environment, this is a stub implementation
         // Real implementation would use the ObjectId
@@ -149,6 +155,7 @@ public class StubCompanyUrlDataRepo implements CompanyUrlDataRepository {
     public List<CompanyUrlData> findAll() {
         return new ArrayList<>(this.db);
     }
+
 
     @Override
     public <S extends CompanyUrlData> List<S> findAll(Example<S> example, Sort sort) {

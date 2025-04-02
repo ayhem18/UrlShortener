@@ -23,5 +23,5 @@ public interface TokenUserLinkRepository extends MongoRepository<TokenUserLink, 
 
     Optional<TokenUserLink> findFirstByUser(AppUser user);
 
-    void deleteByCompany(Company company);
+    void deleteByUserIn(List<AppUser> user);
 }

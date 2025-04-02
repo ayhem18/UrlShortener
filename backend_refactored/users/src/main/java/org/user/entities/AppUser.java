@@ -9,7 +9,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -188,5 +187,13 @@ public class AppUser {
                 ", company= " + company.getId() +
                 ", role= " + role +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof AppUser)) {
+            return false;
+        }
+        return ((AppUser) obj).getEmail().equalsIgnoreCase(this.getEmail());
     }
 }

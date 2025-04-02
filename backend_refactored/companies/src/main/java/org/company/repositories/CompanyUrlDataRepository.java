@@ -15,6 +15,9 @@ import java.util.Optional;
 public interface CompanyUrlDataRepository extends MongoRepository<CompanyUrlData, ObjectId> {
     boolean existsById(String id);
     Optional<CompanyUrlData> findFirstByCompany(Company company);
+    
     List<CompanyUrlData> findByCompany(Company company);
     List<CompanyUrlData> findAll();
+
+    void deleteByCompany(Company company);
 }

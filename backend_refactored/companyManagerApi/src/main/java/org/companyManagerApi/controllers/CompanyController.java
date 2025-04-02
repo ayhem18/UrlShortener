@@ -21,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,6 +32,7 @@ import org.user.entities.AppUser;
 import org.user.repositories.UserRepository;
 
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -58,6 +60,7 @@ public class CompanyController extends TokenAuthController {
         this.topLevelDomainRepo = topLevelDomainRepo;
         this.tokenRepo = tokenRepository;
         this.companyUrlDataRepo = companyUrlDataRepo;
+
         // set the object mapper
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
@@ -174,22 +177,25 @@ public class CompanyController extends TokenAuthController {
         AppUser targetUser = this.userRepo.findById(userEmail)
                 .orElseThrow(() -> new CommonExceptions.UserNotFoundException(userEmail)); 
 
-        // make sure the current user has the authority to view the target user)
+        // make sure the current user has the authority to view the target user
         this.validateRoleAuthority(user, targetUser.getRole(), "Cannot view user with equal or higher priority");
 
-        // at this point, the target user exists, the current user has the authoriy to view the target user
+        // at this point, the target user exists, the current user has the author to view the target user
         return ResponseEntity.ok(objectMapper.writeValueAsString(targetUser));
     }
 
 
-    @GetMapping("api/company/delete")
+    @DeleteMapping("api/company/")
     public ResponseEntity<String> deleteCompany(@AuthenticationPrincipal UserDetails userDetails) throws JsonProcessingException {
         AppUser user = super.authorizeUserToken(userDetails);
         
         // deleting a company, means deleting all the tokens-user links, tokens, urlCompanyData, topLevelDomain, and users
 
         // delete all tokens-user links
-        this.tokenUserLinkRepo.deleteByCompany(user.getCompany());
+        // find all users in the
+        List<AppUser> companyUsers = this.userRepo.findByCompany(user.getCompany());
+
+        this.tokenUserLinkRepo.deleteByUserIn(companyUsers);
 
         // delete all tokens
         this.tokenRepo.deleteByCompany(user.getCompany());

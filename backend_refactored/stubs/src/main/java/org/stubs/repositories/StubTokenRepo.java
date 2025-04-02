@@ -92,6 +92,11 @@ public class StubTokenRepo implements TokenRepository {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public void deleteByCompany(Company company) {
+        this.db.removeIf(t -> t.getCompany().equals(company));
+    }
+
     // Implement the basic MongoRepository methods
     @Override
     public <S extends AppToken> S save(S entity) {
