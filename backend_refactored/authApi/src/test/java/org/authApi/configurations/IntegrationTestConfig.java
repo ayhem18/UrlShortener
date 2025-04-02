@@ -9,6 +9,8 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.utils.CustomGenerator;
 
 import java.util.Properties;
@@ -16,7 +18,7 @@ import java.util.Properties;
 @SpringBootApplication
 @ComponentScan(basePackages = {
     "org.apiUtils",
-    "org.authManagement.controllers",  
+    "org.authApi.controllers",
 })
 @EnableMongoRepositories(basePackages = {"org.company.repositories", 
                                         "org.user.repositories", 
@@ -70,5 +72,10 @@ public class IntegrationTestConfig {
     @Bean
     public CustomGenerator customGenerator() {
         return new CustomGenerator();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

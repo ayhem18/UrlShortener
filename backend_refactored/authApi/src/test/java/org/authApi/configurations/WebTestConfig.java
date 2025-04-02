@@ -18,7 +18,7 @@ import org.utils.CustomGenerator;
 )
 @ComponentScan(basePackages = {
         "org.apiUtils",
-        "org.authManagement.controllers",
+        "org.authApi.controllers",
         "org.stubs.repositories"
 })
 @PropertySource("classpath:mail.properties")

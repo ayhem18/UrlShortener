@@ -10,23 +10,6 @@ public interface Subscription {
 
     Integer getMaxNumLevels();
 
-    // Integer getMaxLevelNames();
-
-    // Integer getMaxPathVariables();
-
-    // Integer getMaxQueryParameters();
-
-    // Integer getMaxQueryValues();
-
-    // default Integer get(UrlEntity valueType) {
-    //     return switch (valueType) {
-    //         case UrlEntity.LEVEL_NAME -> this.getMaxLevelNames();
-    //         case UrlEntity.PATH_VARIABLE -> this.getMaxPathVariables();
-    //         case UrlEntity.QUERY_PARAM_VALUE -> this.getMaxQueryValues();
-    //         default -> this.getMaxQueryParameters();
-    //     };
-    // }
-
     // constraints on the number of admins and employees    
     Integer getMaxAdmins();
 
@@ -70,7 +53,7 @@ class FreeTier implements Subscription {
         return singleton;
     }
 
-    private FreeTier() {};
+    private FreeTier() {}
 
     @Override
     public String getTier() {
@@ -83,26 +66,6 @@ class FreeTier implements Subscription {
     public Integer getMaxNumLevels() {
         return 5;
     }
-
-    // @Override
-    // public Integer getMaxLevelNames() {
-        // }
-    //     return 3;
-
-    // @Override
-    // public Integer getMaxPathVariables() {
-    //     return 3;
-    // }
-
-    // @Override
-    // public Integer getMaxQueryParameters() {
-    //     return 3;
-    // }
-
-    // @Override
-    // public Integer getMaxQueryValues() {
-    //     return 3;
-    // }
 
     @Override
     public Integer getMaxAdmins() {
@@ -154,7 +117,7 @@ class TierOne implements Subscription {
         return singleton;
     }
 
-    private TierOne() {};
+    private TierOne() {}
 
 
     @Override
@@ -166,26 +129,6 @@ class TierOne implements Subscription {
     public Integer getMaxNumLevels() {
         return 10;
     }
-
-    // @Override
-    // public Integer getMaxLevelNames() {
-    //     return 10;
-    // }
-
-    // @Override
-    // public Integer getMaxPathVariables() {
-    //     return 10;
-    // }
-
-    // @Override
-    // public Integer getMaxQueryParameters() {
-    //     return 10;
-    // }
-
-    // @Override
-    // public Integer getMaxQueryValues() {
-    //     return 10;
-    // }
 
     @Override
     public Integer getMaxAdmins() {
@@ -235,7 +178,7 @@ class TierInfinity implements Subscription {
         return singleton;
     }
 
-    private TierInfinity() {};
+    private TierInfinity() {}
 
 
     @Override
@@ -249,26 +192,6 @@ class TierInfinity implements Subscription {
     public Integer getMaxNumLevels() {
         return null;
     }
-
-    // @Override
-    // public Integer getMaxLevelNames() {
-    //     return null;
-    // }
-
-    // @Override
-    // public Integer getMaxPathVariables() {
-    //     return null;
-    // }
-
-    // @Override
-    // public Integer getMaxQueryParameters() {
-    //     return null;
-    // }
-
-    // @Override
-    // public Integer getMaxQueryValues() {
-    //     return null;
-    // }
 
     @Override
     public Integer getMaxAdmins() {
