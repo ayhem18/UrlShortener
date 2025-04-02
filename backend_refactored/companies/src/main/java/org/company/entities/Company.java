@@ -105,6 +105,11 @@ public class Company {
         return emailDomain;
     }
 
+    @JsonGetter(value = "subscription")
+    public String jsonGetSubscription() {
+        return subscription.getTier();
+    }
+
     public String getId() {
         return id;
     }

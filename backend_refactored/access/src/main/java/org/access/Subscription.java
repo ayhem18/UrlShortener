@@ -1,11 +1,15 @@
 package org.access;
 
+import java.util.HashMap;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public interface Subscription {
 
-    @JsonValue
+    // @JsonValue
     String getTier();
 
     Integer getMaxNumLevels();
@@ -27,6 +31,23 @@ public interface Subscription {
             return 0;
         }
     }
+
+    @SuppressWarnings("unused") // this function is used whenever a Subscription object is serialized
+    @JsonValue
+    default String getJsonValue() throws JsonProcessingException {
+        Map<String, String> map = new HashMap<>();
+        map.put("tier", this.getTier());
+        map.put("maxNumLevels", this.getMaxNumLevels() == null ? "no limit" : this.getMaxNumLevels().toString());
+        map.put("maxAdmins", this.getMaxAdmins().toString());
+        map.put("maxEmployees", this.getMaxEmployees().toString());
+        map.put("maxHistorySize", this.getMaxHistorySize().toString());
+        map.put("encodingDailyLimit", this.getEncodingDailyLimit() == null ? "no limit" : this.getEncodingDailyLimit().toString());
+        map.put("minUrlLength", this.getMinUrlLength().toString());
+        map.put("minParameterLength", this.getMinParameterLength().toString());
+        map.put("minVariableLength", this.getMinVariableLength().toString());
+        return new ObjectMapper().writeValueAsString(map);
+    }
+
 
     // constraints on the size of the history
     Integer getMaxHistorySize();

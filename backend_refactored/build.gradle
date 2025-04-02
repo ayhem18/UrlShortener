@@ -40,7 +40,7 @@ dependencies {
 	implementation project(':authApi')
 	implementation project(':urlApi')
 	implementation project(':tokenApi')
-
+	implementation project(':companyManagerApi')
 }
 
 

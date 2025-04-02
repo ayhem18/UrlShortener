@@ -1,4 +1,4 @@
-package apiUtils.configurations;
+package org.apiUtils.configurations;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
@@ -39,13 +39,4 @@ public class OpenApiConfig {
                         .info(info)
                         .servers(List.of(devServer));
         }
-        
-//        // If you're using Spring Security, this allows Swagger UI resources to be loaded
-//        @Bean
-//        public GroupedOpenApi publicApi() {
-//                return GroupedOpenApi.builder()
-//                        .group("public-api")
-//                        .pathsToMatch("/**")
-//                        .build();
-//        }
 } 

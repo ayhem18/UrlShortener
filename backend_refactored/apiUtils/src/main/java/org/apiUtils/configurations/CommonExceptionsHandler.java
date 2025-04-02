@@ -3,12 +3,13 @@ package org.apiUtils.configurations;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.access.SubscriptionManager;
 import org.apiUtils.commonClasses.CustomExceptionHandler;
+import org.apiUtils.commonClasses.TokenAuthController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.utils.CustomErrorMessage;
@@ -16,8 +17,13 @@ import org.utils.CustomErrorMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-@ControllerAdvice
-public class ValidationExceptionHandler extends CustomExceptionHandler{
+public class CommonExceptionsHandler extends CustomExceptionHandler {
+
+    @ExceptionHandler(TokenAuthController.TokenNotFoundException.class)
+    public ResponseEntity<CustomErrorMessage> handleTokenNotFoundException(
+            TokenAuthController.TokenNotFoundException e, WebRequest request) {
+        return handle(e, request, HttpStatus.FORBIDDEN); // authenticated user but not authorized
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<CustomErrorMessage> handleValidationExceptions(
@@ -38,4 +44,13 @@ public class ValidationExceptionHandler extends CustomExceptionHandler{
             return super.handle(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(), request.getDescription(false));
         }
     }
+    
+
+    // this exception can be thrown by at least 2 controllers: authController and companyController
+    @ExceptionHandler(SubscriptionManager.NoExistingSubscription.class)
+    public ResponseEntity<CustomErrorMessage> handleNoExistingSubscription(
+            SubscriptionManager.NoExistingSubscription e, WebRequest request) {
+        return super.handle(HttpStatus.BAD_REQUEST, e.getMessage(), request.getDescription(false));
+    }
+    
 }
