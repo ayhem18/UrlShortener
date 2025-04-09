@@ -1,4 +1,4 @@
-package org.tokenApi.configurations;
+package org.companyManagerApi.configurations;
 
 import org.mockito.Mockito;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -21,12 +21,11 @@ import org.utils.CustomGenerator;
 )
 @ComponentScan(basePackages = {
         "org.apiUtils",
-        "org.stubs.repositories", 
-        "org.tokenApi.controllers",
+        "org.stubs.repositories",
+        "org.companyManagerApi.controllers",
 })
-
 @SuppressWarnings({"deprecation"})
-public class TokenApiWebConfig {
+public class CmApiWebConfig {
 
     // create some beans needed for the app
     @Bean

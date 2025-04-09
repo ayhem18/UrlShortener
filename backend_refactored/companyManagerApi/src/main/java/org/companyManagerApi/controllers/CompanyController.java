@@ -204,7 +204,6 @@ public class CompanyController extends TokenAuthController {
 
 
     /////////////////////////////////////// delete the company ///////////////////////////////////////
-
     @DeleteMapping("api/company/delete")
     public ResponseEntity<String> deleteCompany(@AuthenticationPrincipal UserDetails userDetails) throws JsonProcessingException {
         AppUser user = super.authorizeUserToken(userDetails);

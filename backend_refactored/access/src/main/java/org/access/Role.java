@@ -67,8 +67,8 @@ class Owner implements Role {
         return List.of(
 
             // company-level actions
-
-            new CanCancelSubscription(),
+            new CanDeleteCompany(),
+            new CanWorkWithSubscription(),
             new CanUpdateDomainName(),
 
             // user-level actions
@@ -117,7 +117,8 @@ class Admin implements Role {
                 new CanUseShortUrl(),
                 new CanEncodeUrl(),
                 new CanViewHistory(),
-                new CanWorkWithTokens()
+                new CanWorkWithTokens(),
+                new CanViewSubscription()
         );
     }
 

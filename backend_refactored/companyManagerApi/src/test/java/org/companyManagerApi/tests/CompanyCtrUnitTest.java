@@ -438,7 +438,6 @@ class DomainEndpointsTests extends BaseTest {
 }
 
 
-
 class TestUserView extends BaseTest {
 
     @Test
@@ -588,7 +587,6 @@ class TestUserView extends BaseTest {
         }
     }
 }
-
 
 
 class TestCompanyDeleteEndpoint extends BaseTest {

@@ -23,13 +23,13 @@ class CanUpdateDomainName implements GrantedAuthority {
 }
 
 
-class CanDeleteAccess implements GrantedAuthority {
-    private static final String AUTHORITY = "CAN_DELETE_ACCESS";
-    private static volatile CanDeleteAccess instance;
+class CanDeleteCompany implements GrantedAuthority {
+    private static final String AUTHORITY = "CAN_DELETE_COMPANY";
+    private static volatile CanDeleteCompany instance;
     
-    public CanDeleteAccess() {
+    public CanDeleteCompany() {
         if (instance == null) {
-            synchronized (CanDeleteAccess.class) {
+            synchronized (CanDeleteCompany.class) {
                 if (instance == null) {
                     instance = this;
                 }
@@ -44,13 +44,34 @@ class CanDeleteAccess implements GrantedAuthority {
 }
 
 
-class CanCancelSubscription implements GrantedAuthority {
-    private static final String AUTHORITY = "CAN_CANCEL_SUBSCRIPTION";
-    private static volatile CanCancelSubscription instance;
+class CanWorkWithSubscription implements GrantedAuthority {
+    private static final String AUTHORITY = "CAN_WORK_WITH_SUBSCRIPTION";
+    private static volatile CanWorkWithSubscription instance;
     
-    public CanCancelSubscription() {
+    public CanWorkWithSubscription() {  
         if (instance == null) {
-            synchronized (CanCancelSubscription.class) {
+            synchronized (CanWorkWithSubscription.class) {
+                if (instance == null) {
+                    instance = this;
+                }
+            }
+        }
+    }
+
+    @Override
+    public String getAuthority() {
+        return AUTHORITY;
+    }
+}
+
+
+class CanViewSubscription implements GrantedAuthority {
+    private static final String AUTHORITY = "CAN_VIEW_SUBSCRIPTION";
+    private static volatile CanViewSubscription instance;
+    
+    public CanViewSubscription() {
+        if (instance == null) {
+            synchronized (CanViewSubscription.class) {
                 if (instance == null) {
                     instance = this;
                 }
@@ -86,25 +107,6 @@ class CanViewCompanyDetails implements GrantedAuthority {
 }
 
 
-class CanViewSubscription implements GrantedAuthority {
-    private static final String AUTHORITY = "CAN_VIEW_SUBSCRIPTION";
-    private static volatile CanViewSubscription instance;
-    
-    public CanViewSubscription() {
-        if (instance == null) {
-            synchronized (CanViewSubscription.class) {
-                if (instance == null) {
-                    instance = this;
-                }
-            }
-        }
-    }
-    
-    @Override
-    public String getAuthority() {
-        return AUTHORITY;
-    }
-}
 
 
 class CanWorkWithTokens implements GrantedAuthority {

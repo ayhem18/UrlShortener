@@ -42,7 +42,7 @@ public class Company {
     private boolean verified;
 
     // Updated constructor to include ownerEmail
-    public Company(String id, String companyName, String companyAddress, String ownerEmail, String emailDomain, Subscription subscription) {
+    public Company(String id, String companyName, String companyAddress, String ownerEmail, String emailDomain, Subscription sub) {
         
         // make sure the email domain matches the owner email
         if (emailDomain != null && !ownerEmail.endsWith(emailDomain)) {
@@ -54,7 +54,7 @@ public class Company {
         this.companyAddress = companyAddress;
         this.ownerEmail = ownerEmail;
         this.emailDomain = emailDomain;
-        this.subscription = subscription;
+        this.subscription = sub;
         this.verified = false;
     }
 

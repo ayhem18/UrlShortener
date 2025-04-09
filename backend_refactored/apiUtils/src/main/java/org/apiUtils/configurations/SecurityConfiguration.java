@@ -41,6 +41,13 @@ public class SecurityConfiguration {
                     .requestMatchers(RegexRequestMatcher.regexMatcher("/api/token/revoke.*")).hasAuthority(AuthoritiesManager.CAN_WORK_WITH_TOKENS_STR)
                     .requestMatchers(RegexRequestMatcher.regexMatcher("/api/token/get.*")).hasAuthority(AuthoritiesManager.CAN_WORK_WITH_TOKENS_STR)
 
+                    // company endpoints
+                    .requestMatchers(RegexRequestMatcher.regexMatcher("/api/company/view.*")).hasAuthority(AuthoritiesManager.CAN_VIEW_COMPANY_DETAILS_STR)
+                    .requestMatchers(RegexRequestMatcher.regexMatcher("/api/company/subscription/update.*")).hasAuthority(AuthoritiesManager.CAN_WORK_WITH_SUBSCRIPTION_STR)
+                    .requestMatchers(RegexRequestMatcher.regexMatcher("/api/company/subscription/view.*")).hasAuthority(AuthoritiesManager.CAN_VIEW_SUBSCRIPTION_STR)
+                    .requestMatchers(RegexRequestMatcher.regexMatcher("/api/company/domain/update.*")).hasAuthority(AuthoritiesManager.CAN_UPDATE_DOMAIN_NAME_STR)
+                    .requestMatchers(RegexRequestMatcher.regexMatcher("/api/company/delete.*")).hasAuthority(AuthoritiesManager.CAN_DELETE_COMPANY_STR)
+
                     // any other request is authenticated
                     .anyRequest().authenticated()                
                 );
