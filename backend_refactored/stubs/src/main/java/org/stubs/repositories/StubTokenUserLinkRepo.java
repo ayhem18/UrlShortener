@@ -118,6 +118,10 @@ public class StubTokenUserLinkRepo implements TokenUserLinkRepository {
         this.db.remove(entity);
     }
 
+    @Override
+    public List<TokenUserLink> findByUsersIn(List<AppUser> users) {
+        return this.db.stream().filter(link -> users.contains(link.getUser())).collect(Collectors.toList());
+    }
 
     // Stub implementations for other required methods
     @Override
@@ -157,4 +161,5 @@ public class StubTokenUserLinkRepo implements TokenUserLinkRepository {
     public List<TokenUserLink> findAll(Sort sort) { return List.of(); }
     @Override
     public Page<TokenUserLink> findAll(Pageable pageable) { return null; }
+
 } 

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.access.Role;
 import org.access.Subscription;
 import org.access.SubscriptionManager;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.apiUtils.commonClasses.CommonExceptions;
 import org.apiUtils.commonClasses.TokenAuthController;
 import org.company.entities.Company;
@@ -23,8 +24,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.InvalidUrlException;
 import org.tokens.repositories.TokenRepository;
 import org.tokens.repositories.TokenUserLinkRepository;
 import org.springframework.validation.annotation.Validated;
@@ -44,6 +47,7 @@ public class CompanyController extends TokenAuthController {
     private final TokenRepository tokenRepo;
     private final CompanyUrlDataRepository companyUrlDataRepo;
     private final ObjectMapper objectMapper;
+    private final UrlValidator urlValidator;
 
 
     @Autowired
@@ -61,6 +65,7 @@ public class CompanyController extends TokenAuthController {
         this.tokenRepo = tokenRepository;
         this.companyUrlDataRepo = companyUrlDataRepo;
 
+        this.urlValidator = new UrlValidator();
         // set the object mapper
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
@@ -96,7 +101,7 @@ public class CompanyController extends TokenAuthController {
         Subscription newSub = SubscriptionManager.getSubscription(subscription);
 
         if (newSub.equals(userCompany.getSubscription())) {
-            throw new CompanyMngExceptions.SameSubscriptionInUpdateException();
+            throw new CompanyMngExceptions.SameSubscriptionInUpdateException("The subscription is the same as the current one");
         }
 
         this.updateSubscriptionTransaction(userCompany, newSub);
@@ -134,28 +139,36 @@ public class CompanyController extends TokenAuthController {
         TopLevelDomain newCompanyDomain = new TopLevelDomain(newDomainId, newDomain, userCompany);
         this.topLevelDomainRepo.save(newCompanyDomain); 
     }
-    
-    @GetMapping("api/company/domain/update")
+
+
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    @PutMapping("api/company/domain/update")
     public ResponseEntity<String> updateDomain(@RequestParam("newDomain") String newDomain, 
                                                 @RequestParam(value="deprecate") boolean deprecate,                                            
                                                 @AuthenticationPrincipal UserDetails userDetails)
                                                 throws JsonProcessingException {
         // authorize the user
         AppUser user = super.authorizeUserToken(userDetails);
+        
+//        // verify whether the new domain is indeed a valid domain
+//        if (!this.urlValidator.isValid(newDomain)) {
+//            throw new InvalidUrlException("The new domain: " + newDomain + " is not valid");
+//        }
+        
         Company userCompany = user.getCompany();                                        
         
         // get the current active domain
         TopLevelDomain currentCompanyDomain = this.topLevelDomainRepo.
                                             findFirstByCompanyAndDomainState(userCompany, TopLevelDomain.DomainState.ACTIVE).get();
         
-        // set the state of the old domain and update the  
         this.updateDomainTransaction(userCompany, currentCompanyDomain, newDomain, deprecate);
         return ResponseEntity.ok(objectMapper.writeValueAsString(userCompany));
     }
 
 
     /////////////////////////////////////// view the company users ///////////////////////////////////////
-    private void validateRoleAuthority(AppUser currentUser, Role lowerRole, String errorMessage) {
+    private void 
+    validateRoleAuthority(AppUser currentUser, Role lowerRole, String errorMessage) {
         // Check if current user's role has higher priority than the requested role
         if (!currentUser.getRole().isHigherPriorityThan(lowerRole)) {
             throw new CommonExceptions.InsufficientRoleAuthority(
@@ -175,20 +188,29 @@ public class CompanyController extends TokenAuthController {
         }
 
         AppUser targetUser = this.userRepo.findById(userEmail)
-                .orElseThrow(() -> new CommonExceptions.UserNotFoundException(userEmail)); 
+                .orElseThrow(() -> new CommonExceptions.UserNotFoundException("There is no user with the email: " + userEmail)); 
+
+        // make sure the target user is in the same company
+        if (!targetUser.getCompany().equals(user.getCompany())) {
+            throw new CommonExceptions.UserNotFoundException("There is no user with the email: " + userEmail + " in the company: " + user.getCompany().getCompanyName());
+        }
 
         // make sure the current user has the authority to view the target user
         this.validateRoleAuthority(user, targetUser.getRole(), "Cannot view user with equal or higher priority");
 
-        // at this point, the target user exists, the current user has the author to view the target user
+        // at this point, the target user exists, the current user has the authority to view the target user
         return ResponseEntity.ok(objectMapper.writeValueAsString(targetUser));
     }
 
 
-    @DeleteMapping("api/company/")
+    /////////////////////////////////////// delete the company ///////////////////////////////////////
+
+    @DeleteMapping("api/company/delete")
     public ResponseEntity<String> deleteCompany(@AuthenticationPrincipal UserDetails userDetails) throws JsonProcessingException {
         AppUser user = super.authorizeUserToken(userDetails);
-        
+
+        String companyJson = objectMapper.writeValueAsString(user.getCompany());
+
         // deleting a company, means deleting all the tokens-user links, tokens, urlCompanyData, topLevelDomain, and users
 
         // delete all tokens-user links
@@ -209,8 +231,9 @@ public class CompanyController extends TokenAuthController {
         // delete all users in the company
         this.userRepo.deleteByCompany(user.getCompany());
 
-        // delete the company
+        // finally delete the company
         this.companyRepo.delete(user.getCompany());
-        return ResponseEntity.ok(objectMapper.writeValueAsString(user.getCompany()));
+        
+        return ResponseEntity.ok(companyJson);
     }
 }

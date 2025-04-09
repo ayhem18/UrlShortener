@@ -1,6 +1,8 @@
 package org.access;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SubscriptionManager {
@@ -39,6 +41,8 @@ public class SubscriptionManager {
         STRING_SUB_MAP.put(TIER1_SUB.toLowerCase(), TierOne.getInstance());
         STRING_SUB_MAP.put(TIER_INF_SUB.toLowerCase(), TierInfinity.getInstance());
     }
+
+    public static final List<String> SUB_NAMES = new ArrayList<>(STRING_SUB_MAP.keySet());
 
     public static Subscription getSubscription(String subStr) throws NoExistingSubscription {
 

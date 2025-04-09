@@ -142,12 +142,11 @@ public class StubCompanyRepo implements CompanyRepository {
 
     @Override
     public void deleteById(String s) {
-
     }
 
     @Override
     public void delete(Company entity) {
-
+        this.db.remove(entity);
     }
 
     @Override

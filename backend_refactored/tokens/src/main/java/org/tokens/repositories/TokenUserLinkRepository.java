@@ -3,7 +3,6 @@ package org.tokens.repositories;
 import org.tokens.entities.AppToken;
 import org.tokens.entities.TokenUserLink;
 import org.user.entities.AppUser;
-import org.company.entities.Company;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
@@ -18,7 +17,9 @@ public interface TokenUserLinkRepository extends MongoRepository<TokenUserLink, 
     Optional<TokenUserLink> findByUserAndToken(AppUser user, AppToken token);
     
     List<TokenUserLink> findByUser(AppUser user);
-    
+
+    List<TokenUserLink> findByUsersIn(List<AppUser> users);
+
     List<TokenUserLink> findByToken(AppToken token);
 
     Optional<TokenUserLink> findFirstByUser(AppUser user);
