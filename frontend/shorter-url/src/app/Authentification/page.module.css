@@ -1,0 +1,334 @@
+.authContent{
+  position: absolute;
+  top: 0px;
+}
+
+.parentContainer {
+  position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100vh;
+    width: 1021px;
+}
+
+.login {
+    font-family: "Montserrat", sans-serif;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin: 0 auto;
+}
+
+.signup{
+    font-family: "Montserrat", sans-serif;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75em;
+    margin: 0 auto;
+}
+
+.page__title {
+    color: black;
+    font-size: 40px;
+    font-weight: 800;
+}
+
+.link__title {
+    color: black;
+    font-size: 20px;
+    font-weight: 300;
+}
+
+.link {
+    color: #0058DD;
+}
+
+.ssoButtons {
+    display: grid;
+    grid-template-rows: repeat(2, 1fr);
+    margin: 0 auto;
+}
+
+.ssoButton {
+    margin: 0px;
+}
+
+.or {
+    font-size: 20px;
+    font-weight: 600;
+    text-align: center;
+    color: #A6A6A6;
+}
+
+.inputs {
+    display: flex;
+    flex-direction: column;
+    row-gap: 29px;
+    margin: 0 auto;
+}
+
+.label {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 8px;
+}
+
+.input {
+    width: 650px;
+    height: 40px;
+    border: solid 2px #A6A6A6;
+    background-color: #ffffff;
+    color: black;
+    border-radius: 5px;
+    text-align: left;
+    font-size: 20px;
+    padding-left: 24px;
+}
+
+.input:focus::placeholder {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.company__input:focus::placeholder {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.name__input:focus::placeholder {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.input::placeholder {
+    font-weight: 400;
+    font-size: 20px;
+    color: #A6A6A6;
+    transform: translateX(-2px);
+}
+
+.input:focus {
+    outline: none;
+    border-color: black;
+    transition: 250ms ease-in-out;
+}
+
+.forgot {
+    font-size: 16px;
+    font-weight: 400;
+    color: #0058DD;
+    justify-self: flex-end;
+    margin-top: 11px;
+    cursor: pointer;
+}
+
+.submit__btn {
+    all: unset;
+    width: 400px;
+    height: 50px;
+    background-color: #2A5BD7;
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 10px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    margin-top: 53px;
+}
+
+.submit__btn:hover {
+    background-color: #3A6BFF;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.submit__btn:active {
+    background-color: #1E4ABC;
+    transform: scale(0.98);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.terms__container__login {
+    position: relative;
+    top: 75px;
+}
+
+.terms__container__signup{
+    position: relative;
+    top: 40px;
+  }
+
+.terms {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.important {
+    color: #0058DD;
+    text-decoration: underline;
+}
+
+.name__inputs{
+    display: flex;
+    flex-direction: row;
+    column-gap: 25px;
+  }
+  
+  .company__inputs{
+    display: flex;
+    flex-direction: row;
+    column-gap: 10px;
+  }
+  
+  .company__input{
+    width: 320px;
+    height: 40px;
+    border: solid 2px #A6A6A6;
+    background-color: #ffffff;
+    color: black;
+    border-radius: 5px;
+    text-align: left;
+    font-size: 20px;
+    padding-left: 24px;
+  }
+  
+  .company__input::placeholder {
+    font-weight: 400;
+    font-size: 14px;
+    color: #A6A6A6;
+    transform: translateX(-2px);
+  }
+  
+  .company__input:focus {
+    outline: none;
+    border-color: black;
+    transition: 250ms ease-in-out;
+  }
+  
+  .name__input{
+    width: 200px;
+    height: 40px;
+    border: solid 2px #A6A6A6;
+    background-color: #ffffff;
+    color: black;
+    border-radius: 5px;
+    text-align: left;
+    font-size: 20px;
+    padding-left: 24px;
+  }
+  
+  .name__input::placeholder {
+    font-weight: 400;
+    font-size: 15px;
+    color: #A6A6A6;
+    transform: translateX(-2px);
+  }
+  
+  .name__input:focus {
+    outline: none;
+    border-color: black;
+    transition: 250ms ease-in-out;
+  }
+  
+  .tier__input{
+    width: 320px;
+    height: 40px;
+    border: solid 2px #A6A6A6;
+    background-color: #ffffff;
+    color: #A6A6A6;
+    border-radius: 5px;
+    text-align: left;
+    font-size: 15px;
+    padding-left: 24px;
+  }
+  
+  .tier__input {
+    color: #A6A6A6;
+  }
+  
+  
+  .tier__input:valid {
+    color: black;
+  }
+  
+  .select__tier {
+    color: black;
+  }
+  
+  .select__itier {
+    color: #FCA311;
+  }
+  
+  
+  .disabled__tier {
+    color: #A6A6A6;
+  }
+  
+  .tier__input option:checked {
+    background-color: #f0f0f0;
+  }
+
+  .backgroundContainer{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100vh;
+    width: 899px;
+    background-color: #14213D;
+    margin-left: 100%;
+    overflow: hidden;
+    position: relative;
+  
+  }
+  
+  .stars{
+    position: absolute;
+    top: -100px;
+    left: -200px;
+  }
+  
+  .cloud{
+    position: absolute;
+    bottom: -220px;
+    left: -30px;
+  }
+  
+  .planet{
+    position: absolute;
+    top: 250px;
+    right: -100px;
+    transform: translateY(-50%);
+  }
+  
+  .auth__logo{
+    position: absolute;
+    top: 140px;
+    left: 120px;
+  }
+  
+  .graph{
+    position: absolute;
+    top: 58%;
+    left: 45%;
+    transform: translate(-50%, -50%);
+  }
+  
+  .slogan{
+    position: absolute;
+    top: 30%;
+    left: 10%;
+    font-family: "Merriweather Sans", sans-serif;
+    font-size: 24px;
+    text-align: center;
+    color: #FFFFFF;
+    width: 632px;
+  }
+  
+  .slogan__color{
+    color: #FCA311;
+  }
