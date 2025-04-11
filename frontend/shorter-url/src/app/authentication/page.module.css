@@ -64,7 +64,7 @@
 .inputs {
     display: flex;
     flex-direction: column;
-    row-gap: 29px;
+    row-gap: 10px;
     margin: 0 auto;
 }
 
@@ -331,4 +331,18 @@
   
   .slogan__color{
     color: #FCA311;
+  }
+
+  .error {
+    border-color: #EB5252 !important;
+  }
+  
+  .errorMessage {
+    color: #EB5252;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+  }
+
+  .form{
+    margin: 0 auto;
   }
