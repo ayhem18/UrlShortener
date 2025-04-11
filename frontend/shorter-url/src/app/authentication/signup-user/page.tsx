@@ -8,7 +8,7 @@ export default function SignU() {
     <div className={styles.parentContainer}>
       <div className={styles.signup}>
         <p className={styles.page__title}>Create your account</p>
-        <p className={styles.link__title}>Already have an account ? <span className={styles.link}> <Link href="/Authentification/signup-company">Log in</Link></span></p>
+        <p className={styles.link__title}>Already have an account ? <span className={styles.link}> <Link href="/authentication/signup-company">Log in</Link></span></p>
         <div className={styles.ssoButtons}>
           <Image
             src="/yandex.svg"

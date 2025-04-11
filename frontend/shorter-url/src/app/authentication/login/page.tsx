@@ -8,7 +8,7 @@ export default function LoginPage() {
     <div className={styles.parentContainer}>
       <div className={styles.login}>
         <p className={styles.page__title}>Log in with you company account</p>
-        <p className={styles.link__title}>Don&apos;t have an account ? <span className={styles.link}><Link href="/Authentification/signup-user">Sign up</Link></span></p>
+        <p className={styles.link__title}>Don&apos;t have an account ? <span className={styles.link}><Link href="/authentication/signup-user">Sign up</Link></span></p>
         <div className={styles.ssoButtons}>
           <Image
             src="/yandex.svg"

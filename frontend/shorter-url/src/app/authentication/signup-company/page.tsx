@@ -8,7 +8,7 @@ export default function SignOPage() {
     <div className={styles.parentContainer}>
       <div className={styles.signup}>
         <p className={styles.page__title}>Register your company</p>
-        <p className={styles.link__title}>Already have an account ? <span className={styles.link}> <Link href="/Authentification/login">Log in</Link></span></p>
+        <p className={styles.link__title}>Already have an account ? <span className={styles.link}> <Link href="/authentication/login">Log in</Link></span></p>
         <div className={styles.ssoButtons}>
           <Image
             src="/yandex.svg"
