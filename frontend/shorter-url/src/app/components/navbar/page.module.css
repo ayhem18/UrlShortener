@@ -1,0 +1,84 @@
+.nav__container {
+    display: flex;
+    flex-direction: row;
+    width: 100vw;
+    height: 90px;
+    background-color: #14213D;
+    justify-content: center;
+    align-items: center;
+}
+
+.logo {
+    margin-right: auto;
+    margin-left: 81px;
+}
+
+.nav__items {
+    font-family: "Montserrat", sans-serif;
+    display: flex;
+    position: relative;
+    left: -23%;
+    gap: 120px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.nav__item{
+    font-size: 24px;
+    font-weight: 400;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.nav__item:hover{
+    font-weight: 900;
+}
+
+.nav__item.active {
+    font-weight: 900;
+  }
+
+.auth{
+    font-family: "Montserrat", sans-serif;
+    display: flex;
+    flex-direction: row;
+    column-gap: 23px;
+    justify-content: center;
+    align-items: center;
+    margin-right: 2%;
+}
+
+.login{
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.sign{
+    all:unset;
+    font-family: "Montserrat", sans-serif;
+    width: 140px;
+    height: 40px;
+    color: black;
+    border-radius: 10px;
+    font-size: 20px;
+    font-weight: 700;
+    background-color: #E5E5E5;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.sign:hover{
+    background-color: #ffffff;
+}
+
+.sign:active {
+    transform: scale(0.99);
+  }
+  

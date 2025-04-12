@@ -137,8 +137,8 @@ export default function SignOPage() {
             </div>
             <div className={styles.token}>
               <p className={styles.label}>Subscription</p>
-              <select className={`${styles.tier__input} ${errors.subscription ? styles.error : ''}`} name="subscription"  defaultValue="" required value={formData.subscription} onChange={handleChange}>
-                <option value=""   hidden className={styles.disabled__tier}> Subscription</option>
+              <select className={`${styles.tier__input} ${errors.subscription ? styles.error : ''}`} name="subscription"  defaultValue="0" required value={formData.subscription} onChange={handleChange}>
+                <option value="0"   hidden className={styles.disabled__tier}> Subscription</option>
                 <option value="1" className={styles.select__tier}>Free Tier</option>
                 <option value="2" className={styles.select__tier}>Tier One</option>
                 <option value="3" className={styles.select__itier}>Tier Infinity</option>
