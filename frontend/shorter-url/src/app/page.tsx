@@ -1,8 +1,7 @@
-import { redirect } from 'next/navigation';
+"use client";
 
+import Home from '../app/components/home/page';
 
-
-export default function Home() {
-  redirect('/components/navbar');
-  return null;
+export default function Page() {
+  return <Home />;
 }

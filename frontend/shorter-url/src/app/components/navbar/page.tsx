@@ -1,14 +1,19 @@
-// src/app/components/navbar/Navbar.tsx
 "use client";
 
 import Image from "next/image";
-import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import styles from "./page.module.css";
 
 
 export default function Navbar() {
-  const [activeItem, setActiveItem] = useState('Home');
+  const pathname = usePathname();
+
+  const navItems = [
+    { name: "Home", href: "/components/home" },
+    { name: "Features", href: "/features" },
+    { name: "Pricing", href: "/pricing" },
+  ];
 
   return (
     <nav className={styles.nav__container}>
@@ -20,13 +25,14 @@ export default function Navbar() {
         className={styles.logo}
       />
       <ul className={styles.nav__items}>
-        {['Home', 'Features', 'Pricing'].map((item) => (
-          <li 
-            key={item}
-            className={`${styles.nav__item} ${activeItem === item ? styles.active : ''}`}
-            onClick={() => setActiveItem(item)}
-          >
-            {item}
+        {navItems.map(({ name, href }) => (
+          <li key={name}>
+            <Link
+              href={href}
+              className={`${styles.nav__item} ${pathname  === href ? styles.active : ""}`}
+            >
+              {name}
+            </Link>
           </li>
         ))}
       </ul>
