@@ -57,6 +57,26 @@
     font-weight: 600;
     color: #ffffff;
     cursor: pointer;
+    text-decoration: none;
+    position: relative;
+    display: inline-block;
+}
+
+.login::after {
+  content: "";
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0%;
+  height: 3px;
+  background-color: currentColor;
+  transition: width 0.3s ease;
+  border-radius: 20px;
+}
+
+.login:hover::after {
+  width: 65%;
 }
 
 .sign{

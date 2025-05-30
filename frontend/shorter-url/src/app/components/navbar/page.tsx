@@ -37,8 +37,8 @@ export default function Navbar() {
         ))}
       </ul>
       <div className={styles.auth}>
-        <p className={styles.login}>Login</p>
-        <button className={styles.sign}>Sign Up</button>
+        <Link href={"/authentication/login"}><p className={styles.login}>Login</p></Link>
+        <Link href={"/authentication/signup-user"}><button className={styles.sign}>Sign Up</button></Link>
       </div>
     </nav>
   );
