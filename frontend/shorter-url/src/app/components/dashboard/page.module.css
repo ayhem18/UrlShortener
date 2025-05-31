@@ -1,0 +1,11 @@
+.dashboardWrapper {
+  display: flex;
+  height: calc(100vh - 90px);
+  margin-top: 90px;
+}
+
+.mainContent {
+  flex-grow: 1;
+  overflow: hidden;
+  margin-left: 81px;
+}

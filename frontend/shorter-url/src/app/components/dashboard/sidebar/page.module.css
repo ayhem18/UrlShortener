@@ -1,0 +1,65 @@
+.sidebar__container {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    width: 81px;
+    height: calc(100vh - 90px);
+    background-color: #14213D;
+    align-items: center;
+    z-index: 1000;
+}
+
+.sidebar__icons{
+    display: flex;
+    flex-direction: column;
+    margin-top: 25px;
+    row-gap: 50px;
+}
+
+
+
+.icon__paint {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.icon__paint::after {
+  content: "";
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background-color: white;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0.6;
+  pointer-events: none;
+  transition: transform 0.4s ease-out, opacity 0.4s ease;
+  z-index: 1;
+}
+
+.icon__paint.ripple::after {
+  transform: translate(-50%, -50%) scale(1);
+  background-color: #FCA311;
+  opacity: 0;
+}
+
+.sidebar__icon {
+  width: 100%;
+  height: 100%;
+  fill: white;
+  transition: fill 0.3s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.icon__paint.ripple .sidebar__icon {
+  fill: #FCA311;
+}
+
+.icon__paint.selected .sidebar__icon {
+  fill: #FCA311;
+}

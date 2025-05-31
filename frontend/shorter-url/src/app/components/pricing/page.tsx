@@ -5,7 +5,7 @@ import styles from "./page.module.css";
 import Image from "next/image";
 import { useState } from "react";
 
-export default function Home() {
+export default function Pricing() {
 
   return (
     <div className={styles.bg_style}>
