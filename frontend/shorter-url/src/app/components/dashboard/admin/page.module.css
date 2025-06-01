@@ -216,6 +216,7 @@
 
 .token {
   display: flex;
+  justify-content: space-between;
   width: 600px;
   height: 70px;
   align-items: center;
@@ -247,4 +248,43 @@
   display: flex;
   gap: 10px;
   align-items: center;
+}
+
+.copy__icon {
+  fill: grey;
+  transition: fill 0.3s ease;
+  cursor: pointer;
+}
+
+.copy__icon:hover {
+  fill: #FCA311;
+}
+
+.tooltip {
+  visibility: hidden;
+  opacity: 0;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 4px 8px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 12px;
+
+  transition: opacity 0.3s ease;
+}
+
+.copy__wrapper:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+.copy__wrapper {
+  position: relative;
+  display: inline-block;
 }

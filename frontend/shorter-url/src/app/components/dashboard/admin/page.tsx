@@ -5,6 +5,7 @@ import styles from "./page.module.css";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import CopyIcon from '@/assets/copy.svg';
 import UserCard from "@/app/components/dashboard/usercard/page";
 
 type User = {
@@ -32,6 +33,7 @@ export default function DashboardAdmin() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>(data);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [copied, setCopied] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const categories = [
@@ -65,7 +67,11 @@ export default function DashboardAdmin() {
     }
   }, [filteredData]);
 
-
+  const handleCopy = (token: string) => {
+    navigator.clipboard.writeText(token)
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1000);
+  };
   return (
     <div className={styles.bg_style}>
       <div className={styles.mainLayout}>
@@ -75,7 +81,13 @@ export default function DashboardAdmin() {
             <div className={styles.token__field}>
               <div className={styles.token__message}>
                 <div className={styles.token}>
-                  <p>27966f223566ae5d8961f1</p>
+                  <p>{data[0].token}</p>
+                  <div className={styles.copy__wrapper}>
+                    <CopyIcon onClick={() => handleCopy(data[0].token)}
+                      className={styles.copy__icon}></CopyIcon>
+                    <span className={styles.tooltip}>{copied ? "Copied" : "Copy"}</span>
+                  </div>
+
                 </div>
                 {showSuccessMessage && (
                   <p className={styles.success_message}>Token generated successfully.</p>
